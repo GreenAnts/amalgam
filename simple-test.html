@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Import Test</title>
+</head>
+<body>
+    <h1>Simple Import Test</h1>
+    <div id="result"></div>
+
+    <script type="module">
+        const resultDiv = document.getElementById('result');
+        
+        async function testImports() {
+            try {
+                console.log('Testing logger import...');
+                const { logger } = await import('./utils/logger.js');
+                console.log('Logger imported successfully:', logger);
+                
+                console.log('Testing helpers import...');
+                const { deepCopy } = await import('./utils/helpers.js');
+                console.log('Helpers imported successfully:', deepCopy);
+                
+                resultDiv.innerHTML = '<p style="color: green;">✅ All imports successful!</p>';
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">❌ Import failed: ${error.message}</p>`;
+            }
+        }
+        
+        testImports();
+    </script>
+</body>
+</html>

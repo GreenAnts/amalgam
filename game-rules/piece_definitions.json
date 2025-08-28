@@ -1,0 +1,125 @@
+{
+  "piece_definitions": {
+    "description": "Complete mapping of all piece types, counts, and abilities",
+    "notation_system": "Format: PlayerType_PieceName (C = Circles, S = Squares)",
+    
+    "circles_pieces": {
+      "C_Ruby": {
+        "count": 2,
+        "individual_labels": ["C_Ruby1", "C_Ruby2"],
+        "ability": "Fireball (line attack)",
+        "placement": "Setup phase in circles starting area"
+      },
+      "C_Pearl": {
+        "count": 2,
+        "individual_labels": ["C_Pearl1", "C_Pearl2"],
+        "ability": "Tidal Wave (area attack)",
+        "placement": "Setup phase in circles starting area"
+      },
+      "C_Amber": {
+        "count": 2,
+        "individual_labels": ["C_Amber1", "C_Amber2"],
+        "ability": "Sap (line between pieces)",
+        "placement": "Setup phase in circles starting area"
+      },
+      "C_Jade": {
+        "count": 2,
+        "individual_labels": ["C_Jade1", "C_Jade2"],
+        "ability": "Launch (piece movement)",
+        "placement": "Setup phase in circles starting area"
+      },
+      "C_Amalgam": {
+        "count": 1,
+        "individual_labels": ["C_Amalgam"],
+        "ability": "All four gem abilities (Fireball, Tidal Wave, Sap, Launch)",
+        "placement": "Pre-placed at [0, 6]"
+      },
+      "C_Portal": {
+        "count": 2,
+        "individual_labels": ["C_Portal1", "C_Portal2"],
+        "ability": "Portal Swap (movement type), special movement and combat rules",
+        "placement": "Pre-placed at [6, 6] and [-6, 6]"
+      },
+      "C_Void": {
+        "count": 1,
+        "individual_labels": ["C_Void"],
+        "ability": "8-directional attack (all adjacent), ability amplification",
+        "placement": "Pre-placed at [0, 12]"
+      }
+    },
+    
+    "squares_pieces": {
+      "S_Ruby": {
+        "count": 2,
+        "individual_labels": ["S_Ruby1", "S_Ruby2"],
+        "ability": "Fireball (line attack)",
+        "placement": "Setup phase in squares starting area"
+      },
+      "S_Pearl": {
+        "count": 2,
+        "individual_labels": ["S_Pearl1", "S_Pearl2"],
+        "ability": "Tidal Wave (area attack)",
+        "placement": "Setup phase in squares starting area"
+      },
+      "S_Amber": {
+        "count": 2,
+        "individual_labels": ["S_Amber1", "S_Amber2"],
+        "ability": "Sap (line between pieces)",
+        "placement": "Setup phase in squares starting area"
+      },
+      "S_Jade": {
+        "count": 2,
+        "individual_labels": ["S_Jade1", "S_Jade2"],
+        "ability": "Launch (piece movement)",
+        "placement": "Setup phase in squares starting area"
+      },
+      "S_Amalgam": {
+        "count": 1,
+        "individual_labels": ["S_Amalgam"],
+        "ability": "All four gem abilities (Fireball, Tidal Wave, Sap, Launch)",
+        "placement": "Pre-placed at [0, -6]"
+      },
+      "S_Portal": {
+        "count": 2,
+        "individual_labels": ["S_Portal1", "S_Portal2"],
+        "ability": "Portal Swap (movement type), special movement and combat rules",
+        "placement": "Pre-placed at [6, -6] and [-6, -6]"
+      },
+      "S_Void": {
+        "count": 1,
+        "individual_labels": ["S_Void"],
+        "ability": "8-directional attack (all adjacent), ability amplification",
+        "placement": "Pre-placed at [0, -12]"
+      }
+    },
+    
+    "ability_combinations": {
+      "fireball_formations": ["Ruby + Ruby", "Ruby + Amalgam", "Amalgam + Ruby"],
+      "tidal_wave_formations": ["Pearl + Pearl", "Pearl + Amalgam", "Amalgam + Pearl"],
+      "sap_formations": ["Amber + Amber", "Amber + Amalgam", "Amalgam + Amber"],
+      "launch_formations": ["Jade + Jade", "Jade + Amalgam", "Amalgam + Jade"],
+      "nexus_formations": ["Pearl + Amber", "Pearl + Amalgam", "Amber + Amalgam"],
+      "impossible_formations": ["Amalgam + Amalgam (only 1 per player)"]
+    },
+    
+    "combat_interactions": {
+      "standard_pieces": {
+        "pieces": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam"],
+        "can_attack": ["Opponent Ruby", "Opponent Pearl", "Opponent Amber", "Opponent Jade", "Opponent Amalgam", "Opponent Void"],
+        "cannot_attack": ["Opponent Portal pieces"]
+      },
+      "portal_pieces": {
+        "pieces": ["Portal"],
+        "can_attack": ["Opponent Portal pieces only"],
+        "cannot_attack": ["All other opponent piece types"],
+        "attack_range": ["8-directional adjacent", "Golden line connections"]
+      },
+      "void_pieces": {
+        "pieces": ["Void"],
+        "can_attack": ["ALL opponent piece types"],
+        "cannot_attack": ["None - attacks everything"],
+        "special_property": "Only piece that can destroy opponent Portals besides other Portals"
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam - Abstract Strategy Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="board-container">
+            <svg id="board" viewBox="0 0 1200 1200" aria-label="Amalgam game board">
+                <!-- Board will be rendered here -->
+            </svg>
+        </div>
+        <div class="side-panel">
+            <div class="game-info">
+                <h2>Amalgam</h2>
+                <div id="status" class="status">Setup Phase - Squares' turn (1/16)</div>
+                <div id="score" class="score">
+                    <span>Circles: <span id="score-circles">0</span></span>
+                    <span>Squares: <span id="score-squares">0</span></span>
+                </div>
+                <div class="game-phase">
+                    <span class="game-phase game-phase--setup">Setup Phase</span>
+                </div>
+                <div id="piece-selection-panel" class="piece-selection-panel" style="margin-top: 1rem;"></div>
+            </div>
+            <div class="controls">
+                <button id="new-game" class="btn">New Game</button>
+                <button id="undo" class="btn" disabled>Undo</button>
+            </div>
+            <div class="piece-info">
+                <h3>Piece Types</h3>
+                <div class="piece-ability">Ruby (R) - Fireball ability</div>
+                <div class="piece-ability">Pearl (P) - Tidal Wave ability</div>
+                <div class="piece-ability">Amber (A) - Sap ability</div>
+                <div class="piece-ability">Jade (J) - Launch ability</div>
+                <div class="piece-ability">Amalgam (M) - All abilities</div>
+                <div class="piece-ability">Portal (O) - Special movement</div>
+                <div class="piece-ability">Void (V) - Victory piece</div>
+            </div>
+            <div class="move-history">
+                <h3>Move History</h3>
+                <div id="move-list" class="move-list">
+                    <!-- Move history will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="main.js"></script>
+</body>
+</html>

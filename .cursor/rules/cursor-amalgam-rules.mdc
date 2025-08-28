@@ -1,0 +1,5 @@
+---
+description: Always follow the rules in cursor-amalgam-rules.json .cursor/rules/cursor-amalgam-rules.json. If unable to locate rules - do not execute the prompt and notiffy me that you were unable to locate the rules.
+globs:
+alwaysApply: true
+---

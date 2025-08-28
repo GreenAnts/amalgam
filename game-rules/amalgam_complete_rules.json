@@ -1,0 +1,603 @@
+{
+  "amalgam_game_rules": {
+    "game_overview": {
+      "name": "Amalgam",
+      "players": 2,
+      "description": "Abstract strategy board game with piece abilities and territorial objectives",
+      "game_type": "Turn-based tactical combat with special abilities"
+    },
+    
+    "board_structure": {
+      "coordinate_system": "Vector2 integer coordinates with center at [0, 0]",
+      "total_intersections": 400,
+      "layout_description": "Complex geometric pattern with cross-shaped center extending into four quadrants",
+      "intersection_types": {
+        "standard_intersections": "Regular board positions where most pieces can be placed",
+        "golden_line_intersections": "Special positions connected by golden line paths for Portal movement",
+        "starting_zone_intersections": "Restricted areas for initial piece placement during setup"
+      },
+      "data_reference": "See board_positions.json for complete list of all valid coordinates - board shape cannot be accurately described without the full coordinate data"
+    },
+    
+    "golden_line_network": {
+      "description": "Visible yellow paths connecting strategic board intersections",
+      "purpose": [
+        "Portal pieces can only move along these paths",
+        "Portal pieces using standard movement must land on golden line intersections",
+        "Non-Portal pieces on golden line intersections can use Portal Swap movement"
+      ],
+      "network_structure": {
+        "outer_terminals": "Four cardinal endpoints at board edges: [-12,0], [0,12], [12,0], [0,-12]",
+        "connection_hubs": "Strategic intersection points that connect multiple golden line paths",
+        "inner_patterns": "Complex geometric patterns including squares, crosses, and diagonal lines in central area"
+      },
+      "data_reference": "See golden_lines.json for complete network topology and connections"
+    },
+    
+    "piece_types": {
+      "gem_pieces": {
+        "description": "Basic pieces with unique abilities, placed during setup phase",
+        "types": ["Ruby (Fireball)", "Pearl (Tidal Wave)", "Amber (Sap)", "Jade (Launch)"],
+        "count_per_player": "2 of each type",
+        "placement": "Setup phase in designated starting areas"
+      },
+      "special_pieces": {
+        "description": "Powerful pieces with unique properties, pre-placed before setup",
+        "amalgam": {
+          "ability": "Can use all four gem abilities (Fireball, Tidal Wave, Sap, Launch)",
+          "count": 1,
+          "strategic_importance": "Victory target - opponent must reach this position with Void"
+        },
+        "portal": {
+          "ability": "Special movement rules, Portal Swap capability, unique combat targeting",
+          "count": 2,
+          "movement_restriction": "Can only move on golden line intersections"
+        },
+        "void": {
+          "ability": "Attacks all adjacent opponents, amplifies other abilities",
+          "count": 1,
+          "victory_piece": "Must reach opponent's Amalgam position to win"
+        }
+      },
+      "data_reference": "See piece_definitions.json for complete piece specifications and combat interactions"
+    },
+    
+    "setup_phase": {
+      "overview": {
+        "description": "Initial piece placement before gameplay begins",
+        "duration": "16 alternating turns (8 pieces per player)",
+        "starting_player": "Squares player places first piece and gets first gameplay move"
+      },
+      
+      "pre_placement": {
+        "description": "These pieces are automatically positioned before player setup begins",
+        "circles_pieces": [
+          "C_Void at [0, 12]",
+          "C_Amalgam at [0, 6]", 
+          "C_Portal1 at [6, 6]",
+          "C_Portal2 at [-6, 6]"
+        ],
+        "squares_pieces": [
+          "S_Void at [0, -12]",
+          "S_Amalgam at [0, -6]",
+          "S_Portal1 at [6, -6]", 
+          "S_Portal2 at [-6, -6]"
+        ]
+      },
+      
+      "player_placement": {
+        "pieces_to_place": "Each player places exactly 8 gem pieces: 2 Ruby, 2 Pearl, 2 Amber, 2 Jade",
+        "placement_sequence": [
+          "Turn 1: Squares places first gem in squares starting area",
+          "Turn 2: Circles places first gem in circles starting area",
+          "Turn 3: Squares places second gem",
+          "...alternating continues...",
+          "Turn 16: Circles places final gem"
+        ],
+        "placement_restrictions": {
+          "circles_area": "Upper board region with Y coordinate >= 7",
+          "squares_area": "Lower board region with Y coordinate <= -7",
+          "piece_limits": "Cannot place more than 2 pieces of any single gem type",
+          "occupancy": "Cannot place on occupied intersections"
+        }
+      },
+      
+      "post_setup": {
+        "game_start": "After all 16 pieces placed, regular gameplay begins",
+        "first_move": "Squares player takes first gameplay turn",
+        "board_state": "Players start separated with no immediate combat possibilities"
+      },
+      
+      "data_reference": "See starting_positions.json for complete placement zone coordinates"
+    },
+    
+    "turn_structure": {
+      "overview": {
+        "turn_sequence": "Each turn consists of up to 3 mandatory steps with one exception rule",
+        "player_alternation": "Squares player and Circles player alternate turns",
+        "step_skipping": "Steps 1 and 2 can be skipped only when using pre-positioned abilities"
+      },
+      
+      "normal_turn_sequence": {
+        "step_1_movement": {
+          "name": "Movement",
+          "requirement": "Mandatory",
+          "action": "Choose one movement type and move one of your pieces",
+          "exception": "Skip if using ability with pre-positioned formation"
+        },
+        "step_2_attack": {
+          "name": "Attack",
+          "requirement": "Mandatory and automatic",
+          "action": "Moved piece attacks all valid adjacent opponents simultaneously",
+          "player_control": "No player choice - all valid targets attacked automatically",
+          "exception": "Skip if Step 1 was skipped"
+        },
+        "step_3_ability": {
+          "name": "Ability",
+          "requirement": "Optional",
+          "action": "Activate any abilities enabled by formations involving the moved piece",
+          "multiple_abilities": "Can activate all valid formations created by the movement"
+        }
+      },
+      
+      "ability_only_turn": {
+        "description": "Skip Steps 1 and 2 to activate pre-positioned abilities",
+        "requirements": "Ability formations already exist from previous positioning",
+        "sequence": "Only Step 3 (Ability) is performed",
+        "limitation": "Can only use abilities with existing formations - no new movement"
+      },
+      
+      "launch_special_sequence": {
+        "description": "Launch ability triggers additional combat and ability phases",
+        "sequence": [
+          "Normal Step 1 (Movement)",
+          "Normal Step 2 (Attack)",
+          "Step 3 (Launch Ability activation)",
+          "Additional Step 2 (Launched piece attacks at landing position)",
+          "Optional Additional Step 3 (Launched piece may activate abilities at landing position)"
+        ],
+        "turn_ownership": "All phases remain part of original player's turn"
+      }
+    },
+    
+    "movement_rules": {
+      "overview": {
+        "when_used": "Step 1 of every turn - exactly one movement type must be chosen",
+        "movement_types": "Six different movement methods available depending on piece type and board position",
+        "destination_rules": "Destination must be valid board intersection and unoccupied (unless special rules apply)"
+      },
+      
+      "standard_movement": {
+        "description": "Move to any 8-directional adjacent board intersection",
+        "applies_to": "All piece types",
+        "range": "Exactly 1 board intersection in any direction",
+        "valid_directions": [
+          "Horizontal (same Y coordinate)",
+          "Vertical (same X coordinate)", 
+          "Diagonal (X and Y coordinates both change by 1)"
+        ],
+        "restrictions": {
+          "non_portal_pieces": "Destination must be any valid board intersection",
+          "portal_pieces": "Destination must be valid board intersection AND golden line intersection"
+        }
+      },
+      
+      "nexus_movement": {
+        "description": "Move adjacent to formations of Pearl + Amber pieces",
+        "applies_to": "All piece types when positioned adjacent to valid nexus",
+        "nexus_definition": {
+          "formation": "Exactly 2 of your pieces from different types: Pearl, Amber, or Amalgam",
+          "valid_combinations": [
+            "Your Pearl + Your Amber",
+            "Your Pearl + Your Amalgam", 
+            "Your Amber + Your Amalgam"
+          ],
+          "positioning": "Nexus pieces must be 8-directional adjacent to each other"
+        },
+        "movement_rule": {
+          "eligibility": "Any of your pieces that is 8-directional adjacent to any piece in a nexus formation",
+          "destinations": "Any board intersection that is 8-directional adjacent to any piece in the nexus formation",
+          "range": "Multiple intersections available - player chooses one destination"
+        },
+        "restrictions": "Standard occupancy rules apply - cannot move to occupied intersections"
+      },
+      
+      "portal_swap": {
+        "description": "Exchange positions between piece on golden line and Portal piece",
+        "applies_to": "Any non-Portal piece positioned on golden line intersection",
+        "requirements": {
+          "initiating_piece": "Must be your piece positioned on golden line intersection",
+          "target_piece": "Must be one of your Portal pieces",
+          "ownership": "Both pieces must belong to you"
+        },
+        "effect": "Initiating piece and target Portal instantly exchange board positions",
+        "strategic_use": "Can create ability formations by repositioning pieces"
+      },
+      
+      "portal_line_movement": {
+        "description": "Portal movement along golden line paths",
+        "applies_to": "Portal pieces only",
+        "path_rule": "Portal moves along connected golden line paths until reaching destination",
+        "destinations": "Any unoccupied golden line intersection connected by golden line paths",
+        "restrictions": "Cannot move through occupied golden line intersections"
+      },
+      
+      "portal_standard_movement": {
+        "description": "Portal pieces using 8-directional adjacent movement",
+        "applies_to": "Portal pieces only",
+        "range": "Exactly 1 board intersection in any 8-directional direction",
+        "restriction": "Destination must be both valid board intersection AND golden line intersection"
+      },
+      
+      "portal_phasing": {
+        "description": "Movement through other pieces in straight lines",
+        "movement_pattern": "Must continue in exactly same direction vector until reaching empty intersection",
+        
+        "non_portal_phasing": {
+          "applies_to": "All non-Portal piece types",
+          "rule": "Can move through Portal pieces in straight line",
+          "mechanism": "Continue moving in chosen direction while encountering Portal pieces, stop at first non-Portal piece or empty intersection",
+          "destination": "First empty intersection or intersection with non-Portal piece"
+        },
+        
+        "portal_phasing": {
+          "applies_to": "Portal pieces only",
+          "rule": "Can move through any piece type in straight line",
+          "mechanism": "Continue moving in chosen direction while encountering any pieces, stop at first empty intersection",
+          "destination": "First empty intersection found"
+        },
+        
+        "restrictions": {
+          "direction_rule": "Must maintain exact same direction vector throughout movement",
+          "destination_rule": "Final destination must be unoccupied",
+          "portal_golden_line_rule": "Portal pieces must land on golden line intersection"
+        }
+      }
+    },
+    
+    "attack_rules": {
+      "overview": {
+        "timing": "Automatic Step 2 after movement - no player choice in targeting",
+        "attack_pattern": "All valid adjacent opponents attacked simultaneously",
+        "combat_outcome": "Attacker always survives, valid targets always destroyed"
+      },
+      
+      "standard_combat": {
+        "applies_to": "Ruby, Pearl, Amber, Jade, and Amalgam pieces",
+        "attack_range": "All 8-directional adjacent board intersections",
+        "valid_targets": "Opponent pieces that are NOT Portal pieces",
+        "immune_targets": "Opponent Portal pieces cannot be attacked",
+        "effect": "All valid adjacent opponent pieces destroyed and removed from board"
+      },
+      
+      "portal_combat": {
+        "applies_to": "Portal pieces only",
+        "attack_range": [
+          "All 8-directional adjacent board intersections",
+          "All opponent Portals at connected golden line intersections"
+        ],
+        "valid_targets": "ONLY opponent Portal pieces",
+        "immune_targets": "All non-Portal opponent pieces cannot be attacked",
+        "golden_line_attacks": "Can attack opponent Portals at distance via golden line connections",
+        "effect": "All valid Portal targets destroyed and removed from board"
+      },
+      
+      "void_combat": {
+        "applies_to": "Void pieces only",
+        "attack_range": "All 8-directional adjacent board intersections", 
+        "valid_targets": "ALL opponent pieces of any type (including Portals)",
+        "immune_targets": "No opponent pieces are immune to Void attacks",
+        "special_property": "Only non-Portal piece type that can destroy opponent Portals",
+        "effect": "All adjacent opponent pieces destroyed and removed from board"
+      },
+      
+      "combat_interactions": {
+        "safe_adjacencies": [
+          "Your pieces adjacent to your own pieces (same player)",
+          "Your non-Void and non-Portal pieces adjacent to opponent Portals"
+        ],
+        "destructive_adjacencies": [
+          "Your piece moves adjacent to opponent piece it can attack",
+          "Results in opponent piece destruction during Step 2"
+        ],
+        "impossible_adjacencies": [
+          "Portals from different players (whoever moves there destroys the other)",
+          "Your pieces adjacent to opponent pieces they can attack (would be destroyed in Step 2)"
+        ]
+      }
+    },
+    
+    "abilities": {
+      "overview": {
+        "when_activated": "Optional Step 3 of turn, after movement creates required formations",
+        "movement_requirement": "At least one piece in formation must have moved during current turn's Step 1",
+        "multiple_abilities": "If movement creates multiple formations involving the moved piece, all can be activated in same turn - each formation fires in one chosen direction",
+        "amplification": "When Void piece is positioned in formation, ability gains enhanced range and targeting"
+      },
+      
+      "fireball": {
+        "type": "Line attack ability",
+        "effect": "Destroys first valid target in chosen direction",
+        
+        "formation_requirements": {
+          "pieces_needed": "Exactly 2 pieces from your pieces",
+          "valid_piece_types": ["Ruby", "Amalgam"],
+          "valid_combinations": ["Ruby + Ruby", "Ruby + Amalgam"],
+          "positioning": "Both pieces must be 8-directional adjacent",
+          "alignment": "Pieces must form straight line (horizontal, vertical, or diagonal)"
+        },
+        
+        "standard_fireball": {
+          "formation": "2 Ruby/Amalgam pieces 8-directional adjacent in straight line",
+          "targeting": {
+            "firing_directions": "Two possible directions extending from the formation line",
+            "direction_choice": "Player chooses exactly one direction per activation",
+            "range": "6 board intersections from forward formation piece",
+            "range_origin": "First board intersection beyond forward piece in chosen direction"
+          },
+          "target_selection": {
+            "valid_targets": "First opponent piece encountered that is NOT a Portal piece",
+            "blocking_pieces": "Opponent Portal pieces block attack and cannot be targeted",
+            "path_behavior": "Continues through empty intersections until hitting target or range limit"
+          },
+          "effect": "Targeted opponent piece is destroyed and removed from board"
+        },
+        
+        "amplified_fireball": {
+          "formation": "2 Ruby/Amalgam pieces + 1 Void piece in straight line",
+          "void_positioning": "Void must be 8-directional adjacent to formation, extending the line",
+          "targeting": {
+            "firing_directions": "Two possible directions extending from the formation line",
+            "direction_choice": "Player chooses exactly one direction per activation", 
+            "range": "9 board intersections from Void piece",
+            "range_origin": "First board intersection beyond Void piece in chosen direction"
+          },
+          "target_selection": {
+            "valid_targets": "First opponent piece encountered of ANY type (including Portals)",
+            "blocking_pieces": "No pieces block amplified fireball",
+            "path_behavior": "Continues through empty intersections until hitting target or range limit"
+          },
+          "effect": "Targeted opponent piece is destroyed and removed from board"
+        }
+      },
+      
+      "tidal_wave": {
+        "type": "Area attack ability",
+        "effect": "Destroys all valid targets in rectangular area",
+        
+        "formation_requirements": {
+          "pieces_needed": "Exactly 2 pieces from your pieces",
+          "valid_piece_types": ["Pearl", "Amalgam"],
+          "valid_combinations": ["Pearl + Pearl", "Pearl + Amalgam"],
+          "positioning": "Both pieces must be 8-directional adjacent",
+          "alignment": "Pieces must form straight line (horizontal, vertical, or diagonal)"
+        },
+        
+        "standard_tidal_wave": {
+          "formation": "2 Pearl/Amalgam pieces 8-directional adjacent in straight line",
+          "targeting": {
+            "firing_directions": "Two possible directions extending from the formation line",
+            "direction_choice": "Player chooses exactly one direction per activation",
+            "area_shape": "Rectangle extending 4 intersections forward by 5 intersections wide",
+            "area_origin": "First board intersection beyond forward formation piece in chosen direction"
+          },
+          "target_selection": {
+            "valid_targets": "ALL opponent pieces in area that are NOT Portal pieces",
+            "immune_pieces": "Opponent Portal pieces cannot be targeted",
+            "area_coverage": "All intersections in rectangle are checked for valid targets"
+          },
+          "effect": "All targeted opponent pieces are destroyed and removed from board simultaneously"
+        },
+        
+        "amplified_tidal_wave": {
+          "formation": "2 Pearl/Amalgam pieces + 1 Void piece in straight line",
+          "void_positioning": "Void must be 8-directional adjacent to formation, extending the line",
+          "targeting": {
+            "firing_directions": "Two possible directions extending from the formation line",
+            "direction_choice": "Player chooses exactly one direction per activation",
+            "area_shape": "Rectangle extending 5 intersections forward by 7 intersections wide", 
+            "area_origin": "The board intersection where Void piece is positioned"
+          },
+          "target_selection": {
+            "valid_targets": "ALL opponent pieces in area of ANY type (including Portals)",
+            "immune_pieces": "No pieces are immune to amplified tidal wave",
+            "area_coverage": "All intersections in rectangle are checked for valid targets"
+          },
+          "effect": "All targeted opponent pieces are destroyed and removed from board simultaneously"
+        }
+      },
+      
+      "sap": {
+        "type": "Line between pieces ability",
+        "effect": "Destroys all valid targets on connecting line and parallel lines",
+        
+        "formation_requirements": {
+          "pieces_needed": "Exactly 2 pieces from your pieces",
+          "valid_piece_types": ["Amber", "Amalgam"],
+          "valid_combinations": ["Amber + Amber", "Amber + Amalgam"],
+          "positioning": "Pieces must form straight line (any distance apart)",
+          "distance_rule": "No distance limitation - pieces can be separated by any number of intersections"
+        },
+        
+        "standard_sap": {
+          "formation": "2 Amber/Amalgam pieces aligned in straight line at any distance",
+          "targeting": {
+            "target_area": "All board intersections on direct line between the two formation pieces",
+            "area_exclusions": "Formation pieces themselves are not part of target area"
+          },
+          "target_selection": {
+            "valid_targets": "ALL opponent pieces on connecting line that are NOT Portal pieces",
+            "immune_pieces": "Opponent Portal pieces cannot be targeted",
+            "line_coverage": "Every intersection between formation pieces is checked"
+          },
+          "effect": "All targeted opponent pieces are destroyed and removed from board simultaneously"
+        },
+        
+        "amplified_sap": {
+          "formation": "2 Amber/Amalgam pieces aligned + 1 Void piece on connecting line",
+          "void_positioning": "Void must be positioned on any board intersection between the two formation pieces",
+          "targeting": {
+            "target_area": "Main line between formation pieces PLUS two parallel lines offset by 1 intersection",
+            "total_width": "3 parallel lines covering the area",
+            "area_exclusions": "Formation pieces themselves are not part of target area"
+          },
+          "target_selection": {
+            "valid_targets": "ALL opponent pieces in 3-line area of ANY type (including Portals)",
+            "immune_pieces": "No pieces are immune to amplified sap",
+            "area_coverage": "Every intersection across all 3 parallel lines is checked"
+          },
+          "effect": "All targeted opponent pieces are destroyed and removed from board simultaneously"
+        }
+      },
+      
+      "launch": {
+        "type": "Piece movement ability",
+        "effect": "Relocates adjacent piece to distant location with potential combat",
+        
+        "formation_requirements": {
+          "pieces_needed": "Exactly 2 pieces from your pieces",
+          "valid_piece_types": ["Jade", "Amalgam"],
+          "valid_combinations": ["Jade + Jade", "Jade + Amalgam"],
+          "positioning": "Both pieces must be 8-directional adjacent",
+          "alignment": "Pieces must form straight line (horizontal, vertical, or diagonal)",
+          "launched_piece": "Must have any piece 8-directional adjacent to formation, extending the line"
+        },
+        
+        "launched_piece_rules": {
+          "ownership": "Can launch pieces belonging to either player (your pieces OR opponent pieces)",
+          "catapult_direction": "Launched piece travels AWAY from the Jade formation",
+          "recursive_combat": "After landing, launched piece immediately performs Step 2 (Attack) and optional Step 3 (Abilities)"
+        },
+        
+        "standard_launch": {
+          "formation": "2 Jade/Amalgam pieces + 1 adjacent piece extending the line",
+          "targeting": {
+            "launch_direction": "Away from Jade formation through launched piece's position",
+            "range": "4 board intersections from forward formation piece",
+            "range_origin": "First board intersection beyond forward Jade piece in launch direction"
+          },
+          "landing_rules": {
+            "valid_landings": [
+              "Empty board intersections",
+              "Opponent pieces that launched piece can normally attack"
+            ],
+            "invalid_landings": [
+              "Your own pieces",
+              "Opponent pieces that launched piece cannot normally attack"
+            ],
+            "portal_restriction": "Launched Portal pieces can ONLY land on golden line intersections"
+          },
+          "combat_resolution": "If landing on opponent piece, normal attack rules apply - opponent destroyed if valid target"
+        },
+        
+        "amplified_launch": {
+          "formation": "2 Jade/Amalgam pieces + launched piece + 1 Void piece extending opposite direction",
+          "void_positioning": "Void must be 8-directional adjacent to formation, opposite from launched piece",
+          "targeting": {
+            "launch_direction": "Away from Jade formation through launched piece's position",
+            "range": "6 board intersections from forward formation piece", 
+            "range_origin": "First board intersection beyond forward Jade piece in launch direction"
+          },
+          "landing_rules": "Same as standard launch but with extended range",
+          "combat_resolution": "Same as standard launch"
+        },
+        
+        "post_launch_sequence": {
+          "step_2_attack": "Launched piece immediately attacks all valid adjacent opponents at landing position",
+          "step_3_abilities": "If landing position creates ability formations, launched piece may activate them",
+          "turn_continuation": "Original player's turn continues - launched piece actions are part of current turn"
+        }
+      }
+    },
+    
+    "victory_conditions": {
+      "objective_victory": {
+        "description": "Move your Void piece to opponent's Amalgam starting position",
+        "circles_win": "C_Void reaches board intersection [0, -6]",
+        "squares_win": "S_Void reaches board intersection [0, 6]",
+        "game_end": "Immediate victory when Void reaches target intersection"
+      },
+      
+      "elimination_victory": {
+        "description": "Destroy all opponent pieces except Portal pieces",
+        "circles_win": "All Square pieces destroyed except S_Portal1 and S_Portal2",
+        "squares_win": "All Circle pieces destroyed except C_Portal1 and C_Portal2",
+        "portal_rule": "Portal pieces do not count toward elimination victory but can be destroyed",
+        "game_end": "Victory achieved when only opponent Portals remain on board"
+      },
+      
+      "surrender": {
+        "description": "Player voluntarily concedes the game",
+        "process": "Player declares surrender, opponent acknowledges",
+        "game_end": "Immediate victory for opponent"
+      },
+      
+      "draw": {
+        "description": "Both players agree to end game without winner",
+        "process": "Mutual agreement to declare draw",
+        "game_end": "Game ends with no victor"
+      }
+    },
+    
+    "terminology_reference": {
+      "spatial_terms": {
+        "board_intersection": "Any valid position on the game board where pieces can be placed",
+    "terminology_reference": {
+      "spatial_terms": {
+        "board_intersection": "Any valid position on the game board where pieces can be placed",
+        "8_directional_adjacent": "Positions that are exactly one intersection away horizontally, vertically, or diagonally",
+        "straight_line": "Horizontal alignment (same Y), vertical alignment (same X), or diagonal alignment (equal X and Y differences)",
+        "golden_line_intersection": "Board intersection that lies on one of the golden line paths",
+        "golden_line_path": "Visible yellow line connecting specific board intersections for Portal movement"
+      },
+      
+      "piece_terms": {
+        "piece": "Individual game component with specific type and position",
+        "piece_type": "Category of piece (Ruby, Pearl, Amber, Jade, Amalgam, Portal, Void)",
+        "your_pieces": "All pieces belonging to the current player (Circles or Squares)",
+        "formation": "Specific arrangement of 2+ pieces that enables abilities",
+        "launched_piece": "Any piece being moved by Launch ability (can belong to either player)"
+      },
+      
+      "measurement_terms": {
+        "range_N_intersections": "Can affect targets up to N board intersections away",
+        "range_origin": "Starting intersection from which range is measured",
+        "area_forward_by_wide": "Rectangular area extending N intersections forward and M intersections wide",
+        "distance_unlimited": "No maximum distance restriction"
+      },
+      
+      "game_flow_terms": {
+        "activation": "Using an ability during Step 3 of a turn",
+        "formation_requirements": "Piece arrangement needed before ability can be activated",
+        "movement_requirement": "At least one piece in formation must have moved during current turn's Step 1",
+        "targeting": "Process of selecting which intersections/pieces are affected by ability",
+        "effect": "What happens to targeted pieces or intersections"
+      },
+      
+      "combat_terms": {
+        "valid_target": "Piece that can be affected by an attack or ability",
+        "blocking_piece": "Piece that stops an attack from continuing but is not necessarily damaged",
+        "destroyed": "Piece removed from board permanently",
+        "8_directional_attack": "Attack affects all 8 adjacent intersections simultaneously"
+      },
+      
+      "ability_terms": {
+        "standard_version": "Basic ability using minimum formation requirements",
+        "amplified_version": "Enhanced ability when Void piece amplifies the formation",
+        "firing_direction": "Direction in which line-based ability travels",
+        "bidirectional_capability": "Ability can fire in two directions but player must choose one",
+        "recursive_combat": "Additional Step 2 and Step 3 triggered by Launch ability"
+      }
+    },
+    
+    "data_files_reference": {
+      "required_files": [
+        "board_positions.json - Complete list of all valid board intersection coordinates",
+        "golden_lines.json - Network topology showing all golden line connections between intersections",
+        "starting_positions.json - Placement zones for setup phase with exact coordinate lists",
+        "piece_definitions.json - Complete piece type specifications, counts, and combat interactions"
+      ],
+      "usage": "These data files contain the precise coordinate information necessary for implementing the game rules. The rules document references these files rather than including the full coordinate data inline."
+    }
+  }
+}

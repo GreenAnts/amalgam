@@ -1,0 +1,427 @@
+{
+  "piece_definitions": {
+    "description": "Complete mapping of all piece types, counts, abilities, and combat interactions",
+    "notation_system": "Format: PlayerType_PieceName (C = Circles, S = Squares)",
+    
+    "piece_types": {
+      "Ruby": {
+        "description": "Gem piece with Fireball ability",
+        "ability": "Fireball (line attack)",
+        "count_per_player": 2,
+        "combat": {
+          "can_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "cannot_attack": ["Portal"],
+          "attack_range": "8-directional adjacent"
+        }
+      },
+      
+      "Pearl": {
+        "description": "Gem piece with Tidal Wave ability",
+        "ability": "Tidal Wave (area attack)",
+        "count_per_player": 2,
+        "combat": {
+          "can_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "cannot_attack": ["Portal"],
+          "attack_range": "8-directional adjacent"
+        }
+      },
+      
+      "Amber": {
+        "description": "Gem piece with Sap ability",
+        "ability": "Sap (line between pieces)",
+        "count_per_player": 2,
+        "combat": {
+          "can_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "cannot_attack": ["Portal"],
+          "attack_range": "8-directional adjacent"
+        }
+      },
+      
+      "Jade": {
+        "description": "Gem piece with Launch ability",
+        "ability": "Launch (piece movement)",
+        "count_per_player": 2,
+        "combat": {
+          "can_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "cannot_attack": ["Portal"],
+          "attack_range": "8-directional adjacent"
+        }
+      },
+      
+      "Amalgam": {
+        "description": "Special piece that can use all four gem abilities",
+        "ability": "All four gem abilities (Fireball, Tidal Wave, Sap, Launch)",
+        "count_per_player": 1,
+        "is_pre_placed": true,
+        "combat": {
+          "can_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "cannot_attack": ["Portal"],
+          "attack_range": "8-directional adjacent"
+        }
+      },
+      
+      "Portal": {
+        "description": "Special piece with unique movement and combat rules",
+        "ability": "Portal Swap, special movement rules",
+        "count_per_player": 2,
+        "is_pre_placed": true,
+        "movement_restriction": "Can only move on golden line intersections",
+        "combat": {
+          "can_attack": ["Portal only"],
+          "cannot_attack": ["Ruby", "Pearl", "Amber", "Jade", "Amalgam", "Void"],
+          "attack_range": ["8-directional adjacent", "Golden line connections"]
+        }
+      },
+      
+      "Void": {
+        "description": "Powerful piece that can attack all piece types",
+        "ability": "8-directional attack, ability amplification",
+        "count_per_player": 1,
+        "is_pre_placed": true,
+        "victory_piece": true,
+        "combat": {
+          "can_attack": ["ALL piece types including Portal"],
+          "cannot_attack": ["None"],
+          "attack_range": "8-directional adjacent"
+        }
+      }
+    },
+    
+    "circles_pieces": {
+      "C_Ruby1": {
+        "type": "Ruby",
+        "player": "circles",
+        "ability": "Fireball",
+        "placement": "setup_phase"
+      },
+      "C_Ruby2": {
+        "type": "Ruby",
+        "player": "circles",
+        "ability": "Fireball",
+        "placement": "setup_phase"
+      },
+      "C_Pearl1": {
+        "type": "Pearl",
+        "player": "circles",
+        "ability": "Tidal Wave",
+        "placement": "setup_phase"
+      },
+      "C_Pearl2": {
+        "type": "Pearl",
+        "player": "circles",
+        "ability": "Tidal Wave",
+        "placement": "setup_phase"
+      },
+      "C_Amber1": {
+        "type": "Amber",
+        "player": "circles",
+        "ability": "Sap",
+        "placement": "setup_phase"
+      },
+      "C_Amber2": {
+        "type": "Amber",
+        "player": "circles",
+        "ability": "Sap",
+        "placement": "setup_phase"
+      },
+      "C_Jade1": {
+        "type": "Jade",
+        "player": "circles",
+        "ability": "Launch",
+        "placement": "setup_phase"
+      },
+      "C_Jade2": {
+        "type": "Jade",
+        "player": "circles",
+        "ability": "Launch",
+        "placement": "setup_phase"
+      },
+      "C_Amalgam": {
+        "type": "Amalgam",
+        "player": "circles",
+        "ability": "All four abilities",
+        "placement": "pre_placed",
+        "coords": [0, 6]
+      },
+      "C_Portal1": {
+        "type": "Portal",
+        "player": "circles",
+        "ability": "Portal Swap",
+        "placement": "pre_placed",
+        "coords": [6, 6]
+      },
+      "C_Portal2": {
+        "type": "Portal",
+        "player": "circles",
+        "ability": "Portal Swap",
+        "placement": "pre_placed",
+        "coords": [-6, 6]
+      },
+      "C_Void": {
+        "type": "Void",
+        "player": "circles",
+        "ability": "Universal attack, amplification",
+        "placement": "pre_placed",
+        "coords": [0, 12],
+        "victory_piece": true
+      }
+    },
+    
+    "squares_pieces": {
+      "S_Ruby1": {
+        "type": "Ruby",
+        "player": "squares",
+        "ability": "Fireball",
+        "placement": "setup_phase"
+      },
+      "S_Ruby2": {
+        "type": "Ruby",
+        "player": "squares",
+        "ability": "Fireball",
+        "placement": "setup_phase"
+      },
+      "S_Pearl1": {
+        "type": "Pearl",
+        "player": "squares",
+        "ability": "Tidal Wave",
+        "placement": "setup_phase"
+      },
+      "S_Pearl2": {
+        "type": "Pearl",
+        "player": "squares",
+        "ability": "Tidal Wave",
+        "placement": "setup_phase"
+      },
+      "S_Amber1": {
+        "type": "Amber",
+        "player": "squares",
+        "ability": "Sap",
+        "placement": "setup_phase"
+      },
+      "S_Amber2": {
+        "type": "Amber",
+        "player": "squares",
+        "ability": "Sap",
+        "placement": "setup_phase"
+      },
+      "S_Jade1": {
+        "type": "Jade",
+        "player": "squares",
+        "ability": "Launch",
+        "placement": "setup_phase"
+      },
+      "S_Jade2": {
+        "type": "Jade",
+        "player": "squares",
+        "ability": "Launch",
+        "placement": "setup_phase"
+      },
+      "S_Amalgam": {
+        "type": "Amalgam",
+        "player": "squares",
+        "ability": "All four abilities",
+        "placement": "pre_placed",
+        "coords": [0, -6]
+      },
+      "S_Portal1": {
+        "type": "Portal",
+        "player": "squares",
+        "ability": "Portal Swap",
+        "placement": "pre_placed",
+        "coords": [6, -6]
+      },
+      "S_Portal2": {
+        "type": "Portal",
+        "player": "squares",
+        "ability": "Portal Swap",
+        "placement": "pre_placed",
+        "coords": [-6, -6]
+      },
+      "S_Void": {
+        "type": "Void",
+        "player": "squares",
+        "ability": "Universal attack, amplification",
+        "placement": "pre_placed",
+        "coords": [0, -12],
+        "victory_piece": true
+      }
+    },
+    
+    "ability_formations": {
+      "fireball": {
+        "description": "Line attack ability",
+        "required_pieces": ["Ruby", "Amalgam"],
+        "formation": "2 pieces 8-directional adjacent in straight line",
+        "valid_combinations": [
+          ["Ruby", "Ruby"],
+          ["Ruby", "Amalgam"],
+          ["Amalgam", "Ruby"]
+        ],
+        "standard_effect": {
+          "type": "line_attack",
+          "range": 6,
+          "targets": "First opponent piece (not Portal)",
+          "direction": "Bidirectional from formation"
+        },
+        "amplified_effect": {
+          "type": "line_attack",
+          "range": 9,
+          "targets": "First opponent piece (any type)",
+          "direction": "Bidirectional from formation",
+          "requires": "Void piece adjacent to formation"
+        }
+      },
+      
+      "tidal_wave": {
+        "description": "Area attack ability",
+        "required_pieces": ["Pearl", "Amalgam"],
+        "formation": "2 pieces 8-directional adjacent in straight line",
+        "valid_combinations": [
+          ["Pearl", "Pearl"],
+          ["Pearl", "Amalgam"],
+          ["Amalgam", "Pearl"]
+        ],
+        "standard_effect": {
+          "type": "area_attack",
+          "area": "4x5 rectangle",
+          "targets": "All opponent pieces in area (not Portal)",
+          "direction": "Bidirectional from formation"
+        },
+        "amplified_effect": {
+          "type": "area_attack",
+          "area": "5x7 rectangle",
+          "targets": "All opponent pieces in area (any type)",
+          "direction": "Bidirectional from formation",
+          "requires": "Void piece adjacent to formation"
+        }
+      },
+      
+      "sap": {
+        "description": "Line between pieces ability",
+        "required_pieces": ["Amber", "Amalgam"],
+        "formation": "2 pieces in straight line (any distance)",
+        "valid_combinations": [
+          ["Amber", "Amber"],
+          ["Amber", "Amalgam"],
+          ["Amalgam", "Amber"]
+        ],
+        "standard_effect": {
+          "type": "line_between",
+          "targets": "All opponent pieces on connecting line (not Portal)",
+          "area": "Direct line between formation pieces"
+        },
+        "amplified_effect": {
+          "type": "line_between",
+          "targets": "All opponent pieces in 3-line area (any type)",
+          "area": "3 parallel lines",
+          "requires": "Void piece on connecting line"
+        }
+      },
+      
+      "launch": {
+        "description": "Piece movement ability",
+        "required_pieces": ["Jade", "Amalgam"],
+        "formation": "2 pieces 8-directional adjacent + adjacent piece",
+        "valid_combinations": [
+          ["Jade", "Jade"],
+          ["Jade", "Amalgam"],
+          ["Amalgam", "Jade"]
+        ],
+        "standard_effect": {
+          "type": "piece_movement",
+          "range": 4,
+          "target": "Any adjacent piece (own or opponent)",
+          "direction": "Away from formation",
+          "post_launch": "Launched piece gets attack and ability turn"
+        },
+        "amplified_effect": {
+          "type": "piece_movement",
+          "range": 6,
+          "target": "Any adjacent piece (own or opponent)",
+          "direction": "Away from formation",
+          "requires": "Void piece opposite from launched piece",
+          "post_launch": "Launched piece gets attack and ability turn"
+        }
+      },
+      
+      "nexus": {
+        "description": "Movement enhancement",
+        "required_pieces": ["Pearl", "Amber", "Amalgam"],
+        "formation": "2 pieces 8-directional adjacent",
+        "valid_combinations": [
+          ["Pearl", "Amber"],
+          ["Pearl", "Amalgam"],
+          ["Amber", "Amalgam"]
+        ],
+        "effect": {
+          "type": "movement_enhancement",
+          "allows": "Any piece adjacent to nexus can move to any position adjacent to nexus"
+        }
+      }
+    },
+    
+    "movement_types": {
+      "standard": {
+        "description": "8-directional adjacent movement",
+        "applies_to": "All piece types",
+        "range": 1,
+        "restrictions": {
+          "portal": "Must land on golden line intersection"
+        }
+      },
+      
+      "nexus": {
+        "description": "Move adjacent to Pearl+Amber formations",
+        "applies_to": "All piece types when adjacent to valid nexus",
+        "range": "Multiple positions adjacent to nexus",
+        "requirements": "Valid nexus formation exists"
+      },
+      
+      "portal_swap": {
+        "description": "Exchange positions with Portal piece",
+        "applies_to": "Non-Portal pieces on golden line intersections",
+        "requirements": "Own Portal piece exists",
+        "effect": "Instant position exchange"
+      },
+      
+      "portal_line": {
+        "description": "Move along golden line paths",
+        "applies_to": "Portal pieces only",
+        "restrictions": "Must follow golden line connections"
+      },
+      
+      "portal_standard": {
+        "description": "Standard movement for Portal pieces",
+        "applies_to": "Portal pieces only",
+        "range": 1,
+        "restrictions": "Must land on golden line intersection"
+      },
+      
+      "portal_phasing": {
+        "description": "Move through pieces in straight lines",
+        "applies_to": "All piece types",
+        "restrictions": {
+          "non_portal": "Can only move through Portal pieces",
+          "portal": "Can move through any piece type",
+          "direction": "Must maintain exact direction vector"
+        }
+      }
+    },
+    
+    "victory_conditions": {
+      "objective_victory": {
+        "description": "Move Void to opponent's Amalgam position",
+        "circles_target": [0, -6],
+        "squares_target": [0, 6],
+        "trigger": "Immediate when Void reaches target"
+      },
+      
+      "elimination_victory": {
+        "description": "Destroy all opponent pieces except Portal pieces",
+        "circles_win": "All Square pieces destroyed except S_Portal1 and S_Portal2",
+        "squares_win": "All Circle pieces destroyed except C_Portal1 and C_Portal2",
+        "portal_rule": "Portal pieces do not count toward elimination"
+      }
+    }
+  }
+}

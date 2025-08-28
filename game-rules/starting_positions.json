@@ -1,0 +1,103 @@
+{
+  "starting_positions": {
+    "description": "Valid placement zones for each player during setup phase",
+    "placement_rules": "Players can only place gems in their designated areas",
+    
+    "pre_placed_pieces": {
+      "description": "These pieces are automatically placed before setup phase begins",
+      "circles_pieces": {
+        "C_Void": [0, 12],
+        "C_Amalgam": [0, 6],
+        "C_Portal1": [6, 6],
+        "C_Portal2": [-6, 6]
+      },
+      "squares_pieces": {
+        "S_Void": [0, -12],
+        "S_Amalgam": [0, -6],
+        "S_Portal1": [6, -6],
+        "S_Portal2": [-6, -6]
+      }
+    },
+    
+    "circles_starting_area": {
+      "description": "Upper board area where Circles player places Ruby, Pearl, Amber, Jade pieces",
+      "y_coordinate_rule": "All positions have Y >= 7",
+      "total_positions": 44,
+      
+      "positions_by_row": {
+        "y_11": [
+          [1,11], [2,11], [3,11], [4,11],
+          [-1,11], [-2,11], [-3,11], [-4,11]
+        ],
+        "y_10": [
+          [1,10], [2,10], [3,10], [4,10], [5,10], [6,10],
+          [-1,10], [-2,10], [-3,10], [-4,10], [-5,10], [-6,10]
+        ],
+        "y_9": [
+          [1,9], [2,9], [3,9], [4,9], [5,9], [6,9], [7,9],
+          [-1,9], [-2,9], [-3,9], [-4,9], [-5,9], [-6,9], [-7,9]
+        ],
+        "y_8": [
+          [1,8], [2,8], [3,8], [4,8], [5,8], [6,8], [7,8],
+          [-1,8], [-2,8], [-3,8], [-4,8], [-5,8], [-6,8], [-7,8]
+        ],
+        "y_7": [
+          [2,7], [3,7], [4,7], [5,7], [6,7],
+          [-2,7], [-3,7], [-4,7], [-5,7], [-6,7]
+        ]
+      }
+    },
+    
+    "squares_starting_area": {
+      "description": "Lower board area where Squares player places Ruby, Pearl, Amber, Jade pieces",
+      "y_coordinate_rule": "All positions have Y <= -7",
+      "total_positions": 44,
+      
+      "positions_by_row": {
+        "y_-11": [
+          [1,-11], [2,-11], [3,-11], [4,-11],
+          [-1,-11], [-2,-11], [-3,-11], [-4,-11]
+        ],
+        "y_-10": [
+          [1,-10], [2,-10], [3,-10], [4,-10], [5,-10], [6,-10],
+          [-1,-10], [-2,-10], [-3,-10], [-4,-10], [-5,-10], [-6,-10]
+        ],
+        "y_-9": [
+          [1,-9], [2,-9], [3,-9], [4,-9], [5,-9], [6,-9], [7,-9],
+          [-1,-9], [-2,-9], [-3,-9], [-4,-9], [-5,-9], [-6,-9], [-7,-9]
+        ],
+        "y_-8": [
+          [1,-8], [2,-8], [3,-8], [4,-8], [5,-8], [6,-8], [7,-8],
+          [-1,-8], [-2,-8], [-3,-8], [-4,-8], [-5,-8], [-6,-8], [-7,-8]
+        ],
+        "y_-7": [
+          [2,-7], [3,-7], [4,-7], [5,-7], [6,-7],
+          [-2,-7], [-3,-7], [-4,-7], [-5,-7], [-6,-7]
+        ]
+      }
+    },
+    
+    "setup_sequence": {
+      "total_turns": 16,
+      "pieces_per_player": 8,
+      "piece_distribution": {
+        "each_player_places": {
+          "Ruby": 2,
+          "Pearl": 2,
+          "Amber": 2, 
+          "Jade": 2
+        }
+      },
+      "turn_order": [
+        "Turn 1: Squares places first gem",
+        "Turn 2: Circles places first gem",
+        "Turn 3: Squares places second gem",
+        "Turn 4: Circles places second gem",
+        "...continue alternating...",
+        "Turn 15: Squares places 8th gem",
+        "Turn 16: Circles places 8th gem"
+      ],
+      "post_setup": "Squares player gets first move in gameplay"
+    }
+  }
+}

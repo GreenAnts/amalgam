@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Test (Cache Bust)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Amalgam Game Test (Cache Bust)</h1>
+        
+        <div class="test-section">
+            <h3>Module Loading Test</h3>
+            <button onclick="testModuleLoading()">Test Module Loading</button>
+            <div id="module-test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Data Loading Test</h3>
+            <button onclick="testDataLoading()">Test Data Loading</button>
+            <div id="data-test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Board Generation Test</h3>
+            <button onclick="testBoardGeneration()">Test Board Generation</button>
+            <div id="board-test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Game Initialization Test</h3>
+            <button onclick="testGameInitialization()">Test Game Initialization</button>
+            <div id="game-test-result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Cache busting parameter
+        const cacheBust = Date.now();
+        
+        // Test functions
+        window.testModuleLoading = async function() {
+            const resultDiv = document.getElementById('module-test-result');
+            resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
+            
+            try {
+                // Test basic module imports with cache busting
+                const { logger } = await import(`./utils/logger.js?v=${cacheBust}`);
+                const { createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                const { drawBoard } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                
+                resultDiv.innerHTML = '<div class="test-result test-success">✅ All modules loaded successfully!</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result test-error">❌ Module loading failed: ${error.message}</div>`;
+                console.error('Module loading error:', error);
+            }
+        };
+
+        window.testDataLoading = async function() {
+            const resultDiv = document.getElementById('data-test-result');
+            resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
+            
+            try {
+                // Test data file loading with cache busting
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                
+                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceDefs = await pieceResponse.json();
+                
+                resultDiv.innerHTML = `<div class="test-result test-success">✅ Data loaded successfully! Board: ${boardData.schema}, Pieces: ${Object.keys(pieceDefs.piece_definitions.piece_types).length} types</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result test-error">❌ Data loading failed: ${error.message}</div>`;
+                console.error('Data loading error:', error);
+            }
+        };
+
+        window.testBoardGeneration = async function() {
+            const resultDiv = document.getElementById('board-test-result');
+            resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
+            
+            try {
+                const { createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                
+                const board = createBoard(boardData);
+                
+                // Verify board structure
+                if (!board.intersections || !Array.isArray(board.intersections)) {
+                    throw new Error('Board missing intersections array');
+                }
+                
+                if (!board.goldenLineConnections || !Array.isArray(board.goldenLineConnections)) {
+                    throw new Error('Board missing goldenLineConnections array');
+                }
+                
+                if (!board.width || !board.height) {
+                    throw new Error('Board missing dimensions');
+                }
+                
+                resultDiv.innerHTML = `<div class="test-result test-success">✅ Board generated successfully! Intersections: ${board.intersections.length}, Golden lines: ${board.goldenLineConnections.length}, Dimensions: ${board.width}x${board.height}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result test-error">❌ Board generation failed: ${error.message}</div>`;
+                console.error('Board generation error:', error);
+            }
+        };
+
+        window.testGameInitialization = async function() {
+            const resultDiv = document.getElementById('game-test-result');
+            resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
+            
+            try {
+                const { GameManager } = await import(`./game/gameManager.js?v=${cacheBust}`);
+                
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                
+                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceDefs = await pieceResponse.json();
+                
+                // Create a temporary SVG element for testing
+                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                tempSvg.setAttribute('width', '100');
+                tempSvg.setAttribute('height', '100');
+                
+                const gameManager = new GameManager(tempSvg, boardData, pieceDefs);
+                
+                resultDiv.innerHTML = '<div class="test-result test-success">✅ Game manager initialized successfully!</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result test-error">❌ Game initialization failed: ${error.message}</div>`;
+                console.error('Game initialization error:', error);
+            }
+        };
+    </script>
+</body>
+</html>

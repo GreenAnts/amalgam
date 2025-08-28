@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Debug Test</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+        
+        function addResult(message, isSuccess = true) {
+            const div = document.createElement('div');
+            div.className = `test ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        async function runTests() {
+            try {
+                // Test 1: Logger import
+                addResult('Testing logger import...');
+                const { logger } = await import('./utils/logger.js');
+                addResult('✅ Logger imported successfully');
+
+                // Test 2: Board creation
+                addResult('Testing board creation...');
+                const { createBoard } = await import('./core/board.js');
+                const boardResponse = await fetch('./data/board-data.json');
+                const boardData = await boardResponse.json();
+                const board = createBoard(boardData);
+                addResult(`✅ Board created: ${board.intersections.length} intersections`);
+
+                // Test 3: Initial state creation
+                addResult('Testing initial state creation...');
+                const { createInitialState } = await import('./core/board.js');
+                const state = createInitialState(board, boardData);
+                addResult(`✅ Initial state created: ${Object.keys(state.pieces).length} pieces`);
+
+                // Test 4: Piece definitions loading
+                addResult('Testing piece definitions loading...');
+                const pieceResponse = await fetch('./data/piece-definitions.json');
+                const pieceDefs = await pieceResponse.json();
+                addResult(`✅ Piece definitions loaded: ${Object.keys(pieceDefs.piece_definitions.piece_types).length} types`);
+
+                // Test 5: GameManager creation
+                addResult('Testing GameManager creation...');
+                const { GameManager } = await import('./game/gameManager.js');
+                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                tempSvg.setAttribute('width', '100');
+                tempSvg.setAttribute('height', '100');
+                const gameManager = new GameManager(tempSvg, boardData, pieceDefs);
+                addResult('✅ GameManager created successfully');
+
+                addResult('🎉 All tests passed!');
+
+            } catch (error) {
+                addResult(`❌ Test failed: ${error.message}`, false);
+                console.error('Full error:', error);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
