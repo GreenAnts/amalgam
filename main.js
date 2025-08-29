@@ -27,7 +27,8 @@ class PatchedGameManager extends GameManager {
             return null;
         }
         const coords = moveIntent.coords;
-        logger.info('PatchedGameManager convertMoveIntentToMove:', {
+        // Only log in debug mode to reduce console spam
+        logger.debug('PatchedGameManager convertMoveIntentToMove:', {
             coords: coords,
             gamePhase: this.state.gamePhase,
             currentPlayerId: this.currentPlayer.id,
@@ -42,7 +43,8 @@ class PatchedGameManager extends GameManager {
             if (!pieceId || !unplacedPieces.includes(pieceId)) {
                 pieceId = unplacedPieces[0] || null;
             }
-            logger.info('Setup move details:', {
+            // Only log in debug mode to reduce console spam
+            logger.debug('Setup move details:', {
                 unplacedPieces: unplacedPieces.slice(0, 3),
                 selectedPieceId: pieceId,
                 playerId: this.currentPlayer.id
@@ -52,7 +54,7 @@ class PatchedGameManager extends GameManager {
                     type: 'place',
                     pieceId,
                     toCoords: coords,
-                    playerId: this.currentPlayer.id
+                    playerId: this.state.currentPlayer
                 };
             }
         }
@@ -191,12 +193,8 @@ class AmalgamGame {
                 this.gameManager.undoMove();
             }
         });
-        // Canvas click events
-        if (this.gameCanvas && this.gameCanvas.canvas) {
-            this.gameCanvas.canvas.addEventListener('click', (event) => {
-                this.handleCanvasClick(event);
-            });
-        }
+        // Canvas click events handled by InteractionManager
+        logger.info('Canvas click events will be handled by InteractionManager');
         // Keyboard shortcuts
         document.addEventListener('keydown', (event) => {
             this.handleKeyboardShortcuts(event);
@@ -206,8 +204,11 @@ class AmalgamGame {
      * Handle canvas click events
      */
     handleCanvasClick(event) {
-        if (!this.gameManager || !this.gameCanvas)
+        logger.info('Canvas click event received!');
+        if (!this.gameManager || !this.gameCanvas) {
+            logger.warn('Canvas click: gameManager or gameCanvas not available');
             return;
+        }
         // Get canvas coordinates
         const rect = this.gameCanvas.canvas.getBoundingClientRect();
         const scaleX = this.gameCanvas.canvas.width / rect.width;
@@ -216,7 +217,7 @@ class AmalgamGame {
         const mouseY = (event.clientY - rect.top) * scaleY;
         // Convert to game coordinates
         const gameCoords = this.gameCanvas.getCoordinatesFromPixel(mouseX, mouseY);
-        logger.debug('Canvas clicked at game coordinates:', gameCoords);
+        logger.info('Canvas clicked at game coordinates:', gameCoords);
         // Handle the intersection click
         this.handleIntersectionClick(gameCoords);
     }
@@ -504,6 +505,47 @@ class AmalgamGame {
             const piecesData = this.convertPiecesForCanvas(state.pieces);
             this.gameCanvas.drawPieces(piecesData, null); // No selected piece highlight for now
         }
+        // Draw valid placement positions during setup
+        if (state.gamePhase === 'setup') {
+            this.drawValidPlacementPositions(state);
+        }
+    }
+    /**
+     * Draw valid placement positions for setup phase
+     */
+    drawValidPlacementPositions(state) {
+        if (!this.gameCanvas || !this.pieceDefs)
+            return;
+        const { ctx, originX, originY } = this.gameCanvas;
+        const gridSize = 25;
+        // Get valid positions for current player
+        const startingArea = state.currentPlayer === 'circles' ?
+            this.pieceDefs.board_data.starting_areas.circles_starting_area.positions :
+            this.pieceDefs.board_data.starting_areas.squares_starting_area.positions;
+        // Filter out occupied positions
+        const validPositions = startingArea.filter(pos => {
+            const intersection = state.board.intersections.find(int => int.coords[0] === pos[0] && int.coords[1] === pos[1]);
+            return !intersection || !intersection.piece;
+        });
+        // Draw highlights for valid positions
+        ctx.save();
+        ctx.strokeStyle = state.currentPlayer === 'circles' ? '#FF6B6B' : '#4ECDC4';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        logger.debug('Drawing highlights for', state.currentPlayer, 'player:', {
+            totalPositions: validPositions.length,
+            samplePositions: validPositions.slice(0, 3),
+            startingArea: state.currentPlayer === 'circles' ? 'circles' : 'squares'
+        });
+        for (const pos of validPositions) {
+            const [x, y] = pos;
+            const centerPixelX = originX + x * gridSize;
+            const centerPixelY = originY - y * gridSize;
+            ctx.beginPath();
+            ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+        ctx.restore();
     }
     /**
      * Convert pieces from game state format to canvas rendering format

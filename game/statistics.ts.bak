@@ -1,0 +1,93 @@
+/**
+ * Game Statistics TypeScript Definitions
+ * Type definitions for game performance metrics and analytics
+ * 
+ * @author LLM Implementation
+ * @version 1.0.0
+ */
+
+/**
+ * Game result types
+ */
+export type GameResult = 'win' | 'loss' | 'draw';
+
+/**
+ * Performance history entry
+ */
+export interface PerformanceEntry {
+    timestamp: string;
+    duration: number;
+    moves: number;
+    result: GameResult;
+}
+
+/**
+ * Game statistics metrics
+ */
+export interface GameMetrics {
+    gamesPlayed: number;
+    gamesWon: number;
+    gamesLost: number;
+    averageGameTime: number;
+    totalGameTime: number;
+    movesPerGame: number[];
+    winRate: number;
+    performanceHistory: PerformanceEntry[];
+    averageMovesPerGame?: number;
+}
+
+/**
+ * Export data structure
+ */
+export interface StatisticsExport {
+    exportDate: string;
+    statistics: GameMetrics;
+}
+
+/**
+ * Game Statistics Class Interface
+ * Manages game performance metrics and analytics
+ */
+export interface IGameStatistics {
+    metrics: GameMetrics;
+    startTime: number | null;
+    currentGameMoves: number;
+    
+    startGame(gameId: string, playerName: string): boolean;
+    recordMove(moveType: string, duration?: number): boolean;
+    endGame(result: GameResult): GameMetrics | null;
+    getStatistics(): GameMetrics | null;
+    resetStatistics(): boolean;
+    exportStatistics(): string | null;
+    importStatistics(jsonData: string): boolean;
+}
+
+/**
+ * Game Statistics Class
+ * Manages game performance metrics and analytics
+ */
+export class GameStatistics implements IGameStatistics {
+    public metrics: GameMetrics;
+    public startTime: number | null;
+    public currentGameMoves: number;
+
+    constructor();
+
+    startGame(gameId: string, playerName: string): boolean;
+    recordMove(moveType: string, duration?: number): boolean;
+    endGame(result: GameResult): GameMetrics | null;
+    getStatistics(): GameMetrics | null;
+    resetStatistics(): boolean;
+    exportStatistics(): string | null;
+    importStatistics(jsonData: string): boolean;
+}
+
+/**
+ * Default game statistics instance
+ */
+export declare const gameStats: GameStatistics;
+
+/**
+ * Game Statistics Class for testing
+ */
+export declare const GameStatisticsClass: typeof GameStatistics;

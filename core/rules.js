@@ -58,15 +58,25 @@ function validateSetupMove(state, move, pieceDefs) {
     const startingArea = move.playerId === 'circles' ?
         pieceDefs.board_data.starting_areas.circles_starting_area.positions :
         pieceDefs.board_data.starting_areas.squares_starting_area.positions;
+    logger.debug('Validating coordinates:', {
+        playerId: move.playerId,
+        toCoords: toCoords,
+        startingAreaType: move.playerId === 'circles' ? 'circles' : 'squares',
+        startingAreaSize: startingArea.length,
+        sampleStartingPositions: startingArea.slice(0, 5)
+    });
     const isValidStartingPosition = startingArea.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1]);
     if (!isValidStartingPosition) {
         logger.info('Invalid starting position check:', {
             playerId: move.playerId,
+            stateCurrentPlayer: state.currentPlayer,
             toCoords: toCoords,
             toCoordsString: `[${toCoords[0]}, ${toCoords[1]}]`,
             startingAreaSize: startingArea.length,
             samplePositions: startingArea.slice(0, 3),
-            sampleStrings: startingArea.slice(0, 3).map(pos => `[${pos[0]}, ${pos[1]}]`)
+            sampleStrings: startingArea.slice(0, 3).map(pos => `[${pos[0]}, ${pos[1]}]`),
+            isInCirclesArea: pieceDefs.board_data.starting_areas.circles_starting_area.positions.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1]),
+            isInSquaresArea: pieceDefs.board_data.starting_areas.squares_starting_area.positions.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1])
         });
         return { ok: false, reason: 'Invalid starting area position' };
     }
@@ -439,8 +449,11 @@ export function applyMove(state, move, pieceDefs) {
         newState.winner = winCheck.winner;
         newState.victoryType = winCheck.victoryType;
     }
-    // Find available abilities
-    const availableAbilities = findAvailableAbilities(newState, move.playerId, pieceDefs);
+    // Only find available abilities during gameplay phase
+    let availableAbilities = [];
+    if (newState.gamePhase === 'gameplay') {
+        availableAbilities = findAvailableAbilities(newState, move.playerId, pieceDefs);
+    }
     return {
         ok: true,
         nextState: newState,
@@ -662,6 +675,10 @@ function findPhasingPath(board, fromCoords, toCoords, isPortal) {
 function findAvailableAbilities(state, playerId, pieceDefs) {
     const abilities = [];
     const playerPieces = Object.values(state.pieces).filter(p => p.player === playerId);
+    // Early return if no pieces
+    if (playerPieces.length < 2) {
+        return abilities;
+    }
     // Find all possible formations
     const formations = findFormations(playerPieces, pieceDefs);
     // Convert formations to abilities

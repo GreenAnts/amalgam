@@ -190,6 +190,7 @@ export class GameManager {
         logger.info('Processing move:', {
             move: move,
             currentPlayer: this.currentPlayer.id,
+            stateCurrentPlayer: this.state.currentPlayer,
             gamePhase: this.state.gamePhase,
             setupTurn: this.state.setupTurn
         });
@@ -214,8 +215,19 @@ export class GameManager {
         this.stateHistory.push(cloneState(this.state));
         // Handle animations
         await this.handleMoveAnimations(move, result);
-        // Switch players
-        this.switchPlayer();
+        // Switch players (but not for setup moves since applyMove handles it)
+        if (this.state.gamePhase !== 'setup') {
+            this.switchPlayer();
+        }
+        else {
+            // For setup moves, just sync the currentPlayer with the state
+            if (this.state.currentPlayer === 'circles') {
+                this.currentPlayer = this.player1;
+            }
+            else {
+                this.currentPlayer = this.player2;
+            }
+        }
         // Update display
         this.updateDisplay();
         // Notify callbacks
@@ -283,7 +295,7 @@ export class GameManager {
     async handleAbilityActivation(ability) {
         logger.debug('Handling ability activation:', ability);
         // Show ability effect - placeholder for now
-        logger.info(`Activating ability: ${ability.type} with formation:`, ability.formation);
+        logger.debug(`Activating ability: ${ability.type} with formation:`, ability.formation);
         // Wait for animation
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -402,10 +414,10 @@ export class GameManager {
      * @returns Array of unplaced piece IDs
      */
     getUnplacedPieces() {
-        if (!this.currentPlayer || !this.state) {
+        if (!this.state) {
             return [];
         }
-        const playerPieceDefs = this.pieceDefs.piece_definitions[this.currentPlayer.id === 'circles' ? 'circles_pieces' : 'squares_pieces'];
+        const playerPieceDefs = this.pieceDefs.piece_definitions[this.state.currentPlayer === 'circles' ? 'circles_pieces' : 'squares_pieces'];
         const placedPieces = Object.keys(this.state.pieces);
         return Object.keys(playerPieceDefs).filter(pieceId => !placedPieces.includes(pieceId) && playerPieceDefs[pieceId].placement === 'setup_phase');
     }
@@ -708,7 +720,41 @@ export class GameManager {
         if (this.state.gamePhase === 'setup') {
             ctx.fillText(`Setup Turn: ${this.state.setupTurn}/16`, 10, 50);
             ctx.fillText(`Current Player: ${this.state.currentPlayer}`, 10, 70);
+            // Highlight valid placement positions
+            this.drawValidPlacementPositions();
         }
+    }
+    /**
+     * Draw valid placement positions for setup phase
+     */
+    drawValidPlacementPositions() {
+        if (!this.state || !this.gameCanvas || !this.pieceDefs)
+            return;
+        const { ctx, originX, originY } = this.gameCanvas;
+        const gridSize = 25;
+        // Get valid positions for current player
+        const startingArea = this.state.currentPlayer === 'circles' ?
+            this.pieceDefs.board_data.starting_areas.circles_starting_area.positions :
+            this.pieceDefs.board_data.starting_areas.squares_starting_area.positions;
+        // Filter out occupied positions
+        const validPositions = startingArea.filter(pos => {
+            const intersection = this.state.board.intersections.find(int => int.coords[0] === pos[0] && int.coords[1] === pos[1]);
+            return !intersection || !intersection.piece;
+        });
+        // Draw highlights for valid positions
+        ctx.save();
+        ctx.strokeStyle = this.state.currentPlayer === 'circles' ? '#FF6B6B' : '#4ECDC4';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        for (const pos of validPositions) {
+            const [x, y] = pos;
+            const centerPixelX = originX + x * gridSize;
+            const centerPixelY = originY - y * gridSize;
+            ctx.beginPath();
+            ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+        ctx.restore();
     }
     /**
      * Update highlights based on current state

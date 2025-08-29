@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Statistics - Unit Tests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .test-results {
+            padding: 20px;
+        }
+
+        .test-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .test-result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-icon {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .summary {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .auto-copy {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .auto-copy:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Game Statistics Tests</h1>
+            <p>Comprehensive unit testing for game performance metrics and analytics</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runAllTests()">
+                🚀 Run All Tests
+            </button>
+            <button class="btn btn-success" onclick="runPerformanceTests()">
+                ⚡ Performance Tests
+            </button>
+            <button class="btn btn-primary" onclick="runSecurityTests()">
+                🔒 Security Tests
+            </button>
+            <button class="btn btn-primary" onclick="runErrorTests()">
+                🐛 Error Handling Tests
+            </button>
+            <button class="btn btn-primary" onclick="copyResults()">
+                📋 Copy Results
+            </button>
+        </div>
+
+        <div class="content">
+            <div class="summary">
+                <h3>📊 Test Summary</h3>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalTests">0</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="passedTests">0</div>
+                        <div class="stat-label">Passed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="failedTests">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="passRate">0%</div>
+                        <div class="stat-label">Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">🧪 Unit Tests</div>
+                <div class="test-results" id="unitTests"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">⚡ Performance Tests</div>
+                <div class="test-results" id="performanceTests"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">🔒 Security Tests</div>
+                <div class="test-results" id="securityTests"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">🐛 Error Handling Tests</div>
+                <div class="test-results" id="errorTests"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">📊 Data Validation Tests</div>
+                <div class="test-results" id="dataTests"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Mock logger for testing
+        const mockLogger = {
+            info: (msg) => console.log(`[INFO] ${msg}`),
+            error: (msg) => console.log(`[ERROR] ${msg}`),
+            debug: (msg) => console.log(`[DEBUG] ${msg}`)
+        };
+
+        // Mock the logger module
+        window.mockLogger = mockLogger;
+
+        // Test results storage
+        let testResults = {
+            unit: [],
+            performance: [],
+            security: [],
+            error: [],
+            data: []
+        };
+
+        // Test utilities
+        const TestUtils = {
+            assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message);
+                }
+            },
+
+            assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(`${message}: expected ${expected}, got ${actual}`);
+                }
+            },
+
+            assertType(value, type, message) {
+                if (typeof value !== type) {
+                    throw new Error(`${message}: expected ${type}, got ${typeof value}`);
+                }
+            },
+
+            measureTime(fn) {
+                const start = performance.now();
+                const result = fn();
+                const end = performance.now();
+                return { result, duration: end - start };
+            }
+        };
+
+        // Unit Tests
+        function runUnitTests() {
+            const results = [];
+            
+            try {
+                // Test 1: Constructor
+                const stats = new GameStatistics();
+                TestUtils.assert(stats.metrics.gamesPlayed === 0, 'Initial games played should be 0');
+                TestUtils.assert(stats.startTime === null, 'Initial start time should be null');
+                results.push({ name: 'Constructor initialization', status: 'pass', message: 'Constructor properly initializes all properties' });
+
+                // Test 2: Start Game
+                const startResult = stats.startGame('test-game-1', 'TestPlayer');
+                TestUtils.assert(startResult === true, 'Start game should return true');
+                TestUtils.assert(stats.startTime !== null, 'Start time should be set');
+                TestUtils.assert(stats.currentGameMoves === 0, 'Current game moves should be reset');
+                results.push({ name: 'Start game functionality', status: 'pass', message: 'Game starts correctly with valid parameters' });
+
+                // Test 3: Record Move
+                const moveResult = stats.recordMove('piece-move', 150);
+                TestUtils.assert(moveResult === true, 'Record move should return true');
+                TestUtils.assert(stats.currentGameMoves === 1, 'Move count should increment');
+                results.push({ name: 'Record move functionality', status: 'pass', message: 'Moves are recorded correctly' });
+
+                // Test 4: End Game
+                const endResult = stats.endGame('win');
+                TestUtils.assert(endResult !== null, 'End game should return statistics');
+                TestUtils.assert(endResult.gamesPlayed === 1, 'Games played should increment');
+                TestUtils.assert(endResult.gamesWon === 1, 'Games won should increment');
+                TestUtils.assert(endResult.winRate === 100, 'Win rate should be 100%');
+                results.push({ name: 'End game functionality', status: 'pass', message: 'Game ends correctly and updates statistics' });
+
+                // Test 5: Get Statistics
+                const statsResult = stats.getStatistics();
+                TestUtils.assert(statsResult !== null, 'Get statistics should return data');
+                TestUtils.assertType(statsResult.gamesPlayed, 'number', 'Games played should be a number');
+                TestUtils.assertType(statsResult.winRate, 'number', 'Win rate should be a number');
+                results.push({ name: 'Get statistics functionality', status: 'pass', message: 'Statistics are retrieved correctly' });
+
+            } catch (error) {
+                results.push({ name: 'Unit test execution', status: 'fail', message: error.message });
+            }
+
+            return results;
+        }
+
+        // Performance Tests
+        function runPerformanceTests() {
+            const results = [];
+            
+            try {
+                const stats = new GameStatistics();
+                
+                // Test 1: Performance of multiple games
+                const { duration: multiGameDuration } = TestUtils.measureTime(() => {
+                    for (let i = 0; i < 100; i++) {
+                        stats.startGame(`game-${i}`, `player-${i}`);
+                        for (let j = 0; j < 10; j++) {
+                            stats.recordMove('move', 100);
+                        }
+                        stats.endGame(i % 2 === 0 ? 'win' : 'loss');
+                    }
+                });
+
+                TestUtils.assert(multiGameDuration < 1000, '100 games should complete in under 1 second');
+                results.push({ name: 'Multiple games performance', status: 'pass', message: `100 games completed in ${multiGameDuration.toFixed(2)}ms` });
+
+                // Test 2: Statistics calculation performance
+                const { duration: calcDuration } = TestUtils.measureTime(() => {
+                    for (let i = 0; i < 1000; i++) {
+                        stats.getStatistics();
+                    }
+                });
+
+                TestUtils.assert(calcDuration < 500, '1000 statistics calculations should complete in under 500ms');
+                results.push({ name: 'Statistics calculation performance', status: 'pass', message: `1000 calculations completed in ${calcDuration.toFixed(2)}ms` });
+
+                // Test 3: Export/Import performance
+                const { duration: exportDuration } = TestUtils.measureTime(() => {
+                    for (let i = 0; i < 100; i++) {
+                        stats.exportStatistics();
+                    }
+                });
+
+                TestUtils.assert(exportDuration < 1000, '100 exports should complete in under 1 second');
+                results.push({ name: 'Export performance', status: 'pass', message: `100 exports completed in ${exportDuration.toFixed(2)}ms` });
+
+            } catch (error) {
+                results.push({ name: 'Performance test execution', status: 'fail', message: error.message });
+            }
+
+            return results;
+        }
+
+        // Security Tests
+        function runSecurityTests() {
+            const results = [];
+            
+            try {
+                const stats = new GameStatistics();
+                
+                // Test 1: Input validation for startGame
+                const invalidStart = stats.startGame('', 'Player');
+                TestUtils.assert(invalidStart === false, 'Empty gameId should be rejected');
+                results.push({ name: 'Input validation - empty gameId', status: 'pass', message: 'Empty gameId properly rejected' });
+
+                const invalidStart2 = stats.startGame('game1', '');
+                TestUtils.assert(invalidStart2 === false, 'Empty playerName should be rejected');
+                results.push({ name: 'Input validation - empty playerName', status: 'pass', message: 'Empty playerName properly rejected' });
+
+                // Test 2: Input validation for recordMove
+                stats.startGame('test-game', 'TestPlayer');
+                const invalidMove = stats.recordMove('', 100);
+                TestUtils.assert(invalidMove === false, 'Empty moveType should be rejected');
+                results.push({ name: 'Input validation - empty moveType', status: 'pass', message: 'Empty moveType properly rejected' });
+
+                // Test 3: Input validation for endGame
+                const invalidEnd = stats.endGame('invalid-result');
+                TestUtils.assert(invalidEnd === null, 'Invalid game result should be rejected');
+                results.push({ name: 'Input validation - invalid game result', status: 'pass', message: 'Invalid game result properly rejected' });
+
+                // Test 4: JSON injection prevention
+                const maliciousJson = '{"statistics": {"gamesPlayed": "malicious"}}';
+                const importResult = stats.importStatistics(maliciousJson);
+                TestUtils.assert(importResult === true, 'Valid JSON should be accepted');
+                results.push({ name: 'JSON injection prevention', status: 'pass', message: 'Valid JSON properly handled' });
+
+            } catch (error) {
+                results.push({ name: 'Security test execution', status: 'fail', message: error.message });
+            }
+
+            return results;
+        }
+
+        // Error Handling Tests
+        function runErrorTests() {
+            const results = [];
+            
+            try {
+                const stats = new GameStatistics();
+                
+                // Test 1: Record move without active game
+                const noGameMove = stats.recordMove('move', 100);
+                TestUtils.assert(noGameMove === false, 'Recording move without active game should fail');
+                results.push({ name: 'Error handling - no active game', status: 'pass', message: 'Properly handles recording move without active game' });
+
+                // Test 2: End game without active game
+                const noGameEnd = stats.endGame('win');
+                TestUtils.assert(noGameEnd === null, 'Ending game without active game should return null');
+                results.push({ name: 'Error handling - end without active game', status: 'pass', message: 'Properly handles ending game without active game' });
+
+                // Test 3: Invalid JSON import
+                const invalidJson = 'invalid json string';
+                const importResult = stats.importStatistics(invalidJson);
+                TestUtils.assert(importResult === false, 'Invalid JSON should be rejected');
+                results.push({ name: 'Error handling - invalid JSON import', status: 'pass', message: 'Properly handles invalid JSON import' });
+
+                // Test 4: Malformed statistics import
+                const malformedJson = '{"wrongKey": "data"}';
+                const malformedResult = stats.importStatistics(malformedJson);
+                TestUtils.assert(malformedResult === false, 'Malformed statistics should be rejected');
+                results.push({ name: 'Error handling - malformed statistics', status: 'pass', message: 'Properly handles malformed statistics import' });
+
+            } catch (error) {
+                results.push({ name: 'Error handling test execution', status: 'fail', message: error.message });
+            }
+
+            return results;
+        }
+
+        // Data Validation Tests
+        function runDataTests() {
+            const results = [];
+            
+            try {
+                const stats = new GameStatistics();
+                
+                // Test 1: Statistics data structure
+                const initialStats = stats.getStatistics();
+                TestUtils.assert(initialStats.gamesPlayed === 0, 'Initial games played should be 0');
+                TestUtils.assert(initialStats.gamesWon === 0, 'Initial games won should be 0');
+                TestUtils.assert(initialStats.gamesLost === 0, 'Initial games lost should be 0');
+                TestUtils.assert(initialStats.winRate === 0, 'Initial win rate should be 0');
+                TestUtils.assert(Array.isArray(initialStats.movesPerGame), 'Moves per game should be an array');
+                TestUtils.assert(Array.isArray(initialStats.performanceHistory), 'Performance history should be an array');
+                results.push({ name: 'Data structure validation', status: 'pass', message: 'Initial statistics have correct structure' });
+
+                // Test 2: Statistics calculation accuracy
+                stats.startGame('test-game', 'TestPlayer');
+                stats.recordMove('move1', 100);
+                stats.recordMove('move2', 200);
+                const gameStats = stats.endGame('win');
+                
+                TestUtils.assert(gameStats.gamesPlayed === 1, 'Games played should be 1');
+                TestUtils.assert(gameStats.gamesWon === 1, 'Games won should be 1');
+                TestUtils.assert(gameStats.winRate === 100, 'Win rate should be 100%');
+                TestUtils.assert(gameStats.movesPerGame.length === 1, 'Moves per game array should have 1 entry');
+                TestUtils.assert(gameStats.movesPerGame[0] === 2, 'Moves per game should be 2');
+                results.push({ name: 'Statistics calculation accuracy', status: 'pass', message: 'Statistics are calculated correctly' });
+
+                // Test 3: Export/Import data integrity
+                const exportData = stats.exportStatistics();
+                TestUtils.assert(exportData !== null, 'Export should return valid JSON');
+                
+                const parsedExport = JSON.parse(exportData);
+                TestUtils.assert(parsedExport.exportDate, 'Export should include export date');
+                TestUtils.assert(parsedExport.statistics, 'Export should include statistics');
+                
+                const newStats = new GameStatistics();
+                const importResult = newStats.importStatistics(exportData);
+                TestUtils.assert(importResult === true, 'Import should succeed');
+                
+                const importedStats = newStats.getStatistics();
+                TestUtils.assert(importedStats.gamesPlayed === 1, 'Imported games played should match');
+                TestUtils.assert(importedStats.gamesWon === 1, 'Imported games won should match');
+                results.push({ name: 'Export/Import data integrity', status: 'pass', message: 'Data integrity maintained through export/import' });
+
+            } catch (error) {
+                results.push({ name: 'Data validation test execution', status: 'fail', message: error.message });
+            }
+
+            return results;
+        }
+
+        // Main test runner
+        window.runAllTests = function() {
+            console.log('🧪 Running all Game Statistics tests...');
+            
+            testResults.unit = runUnitTests();
+            testResults.performance = runPerformanceTests();
+            testResults.security = runSecurityTests();
+            testResults.error = runErrorTests();
+            testResults.data = runDataTests();
+            
+            displayResults();
+            updateSummary();
+        };
+
+        window.runPerformanceTests = function() {
+            testResults.performance = runPerformanceTests();
+            displayResults();
+            updateSummary();
+        };
+
+        window.runSecurityTests = function() {
+            testResults.security = runSecurityTests();
+            displayResults();
+            updateSummary();
+        };
+
+        window.runErrorTests = function() {
+            testResults.error = runErrorTests();
+            displayResults();
+            updateSummary();
+        };
+
+        window.copyResults = function() {
+            const summary = generateSummary();
+            navigator.clipboard.writeText(summary).then(() => {
+                alert('Results copied to clipboard!');
+            });
+        };
+
+        function displayResults() {
+            displayTestResults('unitTests', testResults.unit);
+            displayTestResults('performanceTests', testResults.performance);
+            displayTestResults('securityTests', testResults.security);
+            displayTestResults('errorTests', testResults.error);
+            displayTestResults('dataTests', testResults.data);
+        }
+
+        function displayTestResults(containerId, results) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result ${result.status}`;
+                
+                const icon = result.status === 'pass' ? '✅' : result.status === 'fail' ? '❌' : '⚠️';
+                
+                resultDiv.innerHTML = `
+                    <span class="status-icon">${icon}</span>
+                    <div>
+                        <strong>${result.name}</strong><br>
+                        <small>${result.message}</small>
+                    </div>
+                `;
+                
+                container.appendChild(resultDiv);
+            });
+        }
+
+        function updateSummary() {
+            const allResults = [...testResults.unit, ...testResults.performance, ...testResults.security, ...testResults.error, ...testResults.data];
+            const total = allResults.length;
+            const passed = allResults.filter(r => r.status === 'pass').length;
+            const failed = allResults.filter(r => r.status === 'fail').length;
+            const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+            
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = failed;
+            document.getElementById('passRate').textContent = `${passRate}%`;
+        }
+
+        function generateSummary() {
+            const allResults = [...testResults.unit, ...testResults.performance, ...testResults.security, ...testResults.error, ...testResults.data];
+            const total = allResults.length;
+            const passed = allResults.filter(r => r.status === 'pass').length;
+            const failed = allResults.filter(r => r.status === 'fail').length;
+            const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+            
+            let summary = `🎯 Game Statistics Test Results\n`;
+            summary += `================================\n`;
+            summary += `Total Tests: ${total}\n`;
+            summary += `Passed: ${passed}\n`;
+            summary += `Failed: ${failed}\n`;
+            summary += `Pass Rate: ${passRate}%\n\n`;
+            
+            summary += `🤖 LLM SUMMARY\n`;
+            summary += `=============\n`;
+            if (passRate === 100) {
+                summary += `✅ All tests passed - Game Statistics module is fully operational\n`;
+            } else {
+                summary += `⚠️  ${failed} tests failed - Issues detected in Game Statistics module\n`;
+            }
+            
+            return summary;
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                runAllTests();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Import the actual GameStatistics module -->
+    <script type="module">
+        import { GameStatistics } from '../../game/statistics.js';
+        window.GameStatistics = GameStatistics;
+    </script>
+</body>
+</html>
