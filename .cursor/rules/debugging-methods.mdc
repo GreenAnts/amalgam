@@ -1,0 +1,187 @@
+---
+description: LLM debugging methods and system validation procedures for the Amalgam project
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# LLM Debugging Methods for Amalgam Project
+
+## System Validation Protocol
+
+### Primary Debugging Command
+**Always run `npm test` first** when debugging issues or before making changes to validate system integrity.
+
+### CLI Test Analysis
+- **Use the CLI test output** for structured, token-efficient system analysis
+- **Focus on the "🤖 LLM SUMMARY" section** for quick status assessment
+- **Reference test percentages** for health assessment (100% = fully operational)
+
+## Debugging Workflow
+
+### Step 1: System Health Check
+```bash
+npm test
+# or
+node tests/run-tests.js
+```
+
+### Step 2: Analyze Test Results
+- **Green indicators (✅)**: System components working correctly
+- **Red indicators (❌)**: Issues requiring immediate attention
+- **Yellow indicators (⚠️)**: Warnings that may need investigation
+- **Overall percentage**: Quick health assessment
+
+### Step 3: Follow Recommendations
+Use the "🔧 RECOMMENDATIONS" section in test output for specific fixes.
+
+## Test Categories & Issues
+
+### File System Tests
+- **Critical files**: board-data.json, piece-definitions.json, game rules
+- **Core modules**: board.js, rules.js, graphics.js, gameManager.js
+- **Common issue**: Missing ui/animations.js (only .d.ts exists)
+
+### Data Integrity Tests
+- **JSON structure validation**: Check for valid JSON syntax
+- **Required fields**: Verify all expected fields exist in data files
+- **Common issue**: Invalid JSON causing parsing errors
+
+### Module Syntax Tests
+- **Import/export validation**: Check ES6 module syntax
+- **Function/class detection**: Verify proper code structure
+- **Common issue**: Missing export statements or import errors
+
+### Path Resolution Tests
+- **Relative vs absolute paths**: Verify path resolution works
+- **File existence**: Check if files can be found
+- **Common issue**: Incorrect path references
+
+### Game Initialization Tests
+- **Class structure**: Verify GameManager class exists
+- **Constructor validation**: Check for proper initialization
+- **Canvas support**: Verify canvas handling code
+- **Event handling**: Check for user interaction code
+
+### TypeScript Compilation Tests
+- **TypeScript files**: Verify .ts files exist alongside .js
+- **tsconfig.json**: Check for proper TypeScript configuration
+- **Common issue**: Missing TypeScript setup
+
+## Common Issues & Solutions
+
+### Missing ui/animations.js
+```bash
+# Issue: Only ui/animations.d.ts exists
+# Solution: Create ui/animations.js or remove references
+```
+
+### JSON Structure Issues
+```bash
+# Issue: Invalid JSON causing parsing errors
+# Solution: Validate JSON files for syntax errors
+# Command: node -e "JSON.parse(require('fs').readFileSync('path/to/file.json'))"
+```
+
+### Path Resolution Problems
+```bash
+# Issue: Relative vs absolute path confusion
+# Solution: Check path resolution in affected modules
+# Verify: Both relative and absolute paths work correctly
+```
+
+### TypeScript Compilation Issues
+```bash
+# Issue: TypeScript files not compiled
+# Solution: Run npm run build to compile TypeScript
+# Verify: All .ts files have corresponding .js files
+```
+
+## Web Testing Protocol
+
+### Interactive Testing
+```bash
+npm run test:web
+# Opens web interface at http://localhost:8080
+```
+
+### Navigation Structure
+- **Start at**: `tests/unified-test-navigation.html` (Test Hub)
+- **Use auto-copy buttons**: For LLM-friendly result extraction
+- **Navigation**: All test pages link back to Test Hub
+
+## LLM-Optimized Output
+
+### Token-Efficient Analysis
+- **Focus on summary sections**: "🤖 LLM SUMMARY" and "🔧 RECOMMENDATIONS"
+- **Use percentage scores**: Quick health assessment
+- **Reference specific test categories**: For targeted debugging
+
+### Structured Problem Diagnosis
+- **System Status**: FULLY OPERATIONAL vs ISSUES DETECTED
+- **Specific issue identification**: File System, Data Integrity, etc.
+- **Actionable recommendations**: Step-by-step fix instructions
+
+## Pre-Change Validation
+
+### Before Making Changes
+1. **Run `npm test`** to establish baseline
+2. **Note any existing issues** in the system
+3. **Plan changes** based on current system state
+4. **Validate changes** by running tests again
+
+### After Making Changes
+1. **Run `npm test`** to verify changes didn't break anything
+2. **Check for new issues** introduced by changes
+3. **Follow recommendations** if issues are found
+4. **Document any new patterns** discovered
+
+## Emergency Debugging
+
+### Quick Health Check
+```bash
+# Fast system validation
+npm test | grep -A 10 "LLM SUMMARY"
+```
+
+### Critical Issue Detection
+```bash
+# Check for critical failures
+npm test | grep -E "(❌|FAILED|ERROR)"
+```
+
+### Web Interface Validation
+```bash
+# Start web server for interactive debugging
+npm run test:web
+# Navigate to: http://localhost:8080/tests/unified-test-navigation.html
+```
+
+## Best Practices
+
+### For LLMs
+- **Always start with `npm test`** when debugging
+- **Use structured output** for analysis
+- **Follow the recommendations** provided
+- **Validate changes** before and after modifications
+
+### For Developers
+- **Run tests regularly** to catch issues early
+- **Use web interface** for interactive debugging
+- **Keep test suite updated** as new features are added
+- **Document new debugging patterns** discovered
+
+## Integration with Cursor
+
+### Automatic Validation
+- **Run tests before major changes**
+- **Use test output for context** in code generation
+- **Reference test results** in explanations
+- **Validate generated code** against test suite
+
+### Context Awareness
+- **Understand current system state** before making changes
+- **Use test categories** to focus debugging efforts
+- **Leverage structured output** for efficient problem-solving
+- **Follow established patterns** for consistent debugging
+alwaysApply: true
+---

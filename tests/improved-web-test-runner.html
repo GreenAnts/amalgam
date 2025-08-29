@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Test Suite - Consolidated</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .results-panel {
+            padding: 25px;
+            background: white;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .summary-panel {
+            background: #f8f9fa;
+            padding: 25px;
+            border-left: 1px solid #e9ecef;
+        }
+
+        .test-result {
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #dee2e6;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .test-result:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .test-result.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left-color: #28a745;
+        }
+
+        .test-result.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-left-color: #dc3545;
+        }
+
+        .test-result.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #ffc107;
+        }
+
+        .test-result.info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left-color: #17a2b8;
+        }
+
+        .test-result h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .test-result p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .test-result pre {
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .summary-card h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stat-value.success {
+            color: #28a745;
+        }
+
+        .stat-value.error {
+            color: #dc3545;
+        }
+
+        .copy-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .copy-section h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .copy-btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .copy-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+
+        .test-category {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 600;
+            color: #495057;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-panel {
+                border-left: none;
+                border-top: 1px solid #e9ecef;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Navigation Bar Styles */
+        .nav-bar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+
+        .nav-left, .nav-right {
+            flex: 1;
+        }
+
+        .nav-center {
+            flex: 2;
+            text-align: center;
+        }
+
+        .nav-center h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .nav-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-content">
+                <div class="nav-left">
+                    <a href="unified-test-navigation.html" class="nav-link">
+                        🏠 Back to Test Hub
+                    </a>
+                </div>
+                <div class="nav-center">
+                    <h2>🧪 Amalgam Test Suite</h2>
+                </div>
+                <div class="nav-right">
+                    <a href="../index.html" class="nav-link">
+                        🎮 Back to Game
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="header">
+            <h1>🧪 Amalgam Test Suite</h1>
+            <p>Consolidated Testing Interface - LLM Optimized</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-success" onclick="runAllTests()">
+                🚀 Run All Tests
+            </button>
+            <button class="btn btn-primary" onclick="runFileSystemTests()">
+                📁 File System
+            </button>
+            <button class="btn btn-primary" onclick="runDataTests()">
+                📊 Data Integrity
+            </button>
+            <button class="btn btn-primary" onclick="runModuleTests()">
+                🔧 Modules
+            </button>
+            <button class="btn btn-warning" onclick="runGameTests()">
+                🎮 Game Logic
+            </button>
+            <button class="btn btn-secondary" onclick="clearResults()">
+                🗑️ Clear
+            </button>
+        </div>
+
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing tests...</div>
+        </div>
+
+        <div class="content">
+            <div class="results-panel" id="resultsPanel">
+                <div class="test-result info">
+                    <h3>Welcome to Amalgam Test Suite</h3>
+                    <p>Click "Run All Tests" to start comprehensive testing of the Amalgam game system.</p>
+                    <p>All test results are optimized for LLM consumption with concise, token-efficient output.</p>
+                </div>
+            </div>
+
+            <div class="summary-panel">
+                <div class="summary-card">
+                    <h3>📊 Test Summary</h3>
+                    <div class="stat">
+                        <span class="stat-label">Total Tests:</span>
+                        <span class="stat-value" id="totalTests">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Passed:</span>
+                        <span class="stat-value success" id="passedTests">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Failed:</span>
+                        <span class="stat-value error" id="failedTests">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Warnings:</span>
+                        <span class="stat-value" id="warningTests">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Success Rate:</span>
+                        <span class="stat-value" id="successRate">0%</span>
+                    </div>
+                </div>
+
+                <div class="copy-section">
+                    <h3>📋 Copy Results</h3>
+                    <button class="btn btn-secondary copy-btn" onclick="copyLLMSummary()">
+                        📄 Copy LLM Summary
+                    </button>
+                    <button class="btn btn-secondary copy-btn" onclick="copyDetailedResults()">
+                        📋 Copy Full Results
+                    </button>
+                    <button class="btn btn-secondary copy-btn" onclick="copyErrorsOnly()">
+                        ❌ Copy Errors Only
+                    </button>
+                    <textarea class="copy-textarea" id="copyArea" placeholder="Test results will appear here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        let warningTests = 0;
+
+        function addResult(test, status, message, data = null) {
+            const result = {
+                test,
+                status,
+                message,
+                data,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            testResults.push(result);
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${status} fade-in`;
+            
+            let content = `
+                <h3><span class="status-indicator status-${status}"></span>${test}</h3>
+                <p><strong>Status:</strong> ${status.toUpperCase()}</p>
+                <p><strong>Message:</strong> ${message}</p>
+            `;
+            
+            if (data && Object.keys(data).length > 0) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            document.getElementById('resultsPanel').appendChild(div);
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            totalTests = testResults.length;
+            passedTests = testResults.filter(r => r.status === 'success').length;
+            failedTests = testResults.filter(r => r.status === 'error').length;
+            warningTests = testResults.filter(r => r.status === 'warning').length;
+            
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            
+            document.getElementById('totalTests').textContent = totalTests;
+            document.getElementById('passedTests').textContent = passedTests;
+            document.getElementById('failedTests').textContent = failedTests;
+            document.getElementById('warningTests').textContent = warningTests;
+            document.getElementById('successRate').textContent = `${successRate}%`;
+        }
+
+        function updateProgress(current, total, message) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressContainer.style.display = 'block';
+            const percentage = total > 0 ? (current / total) * 100 : 0;
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = message || `Running tests... ${current}/${total}`;
+        }
+
+        function clearResults() {
+            testResults = [];
+            document.getElementById('resultsPanel').innerHTML = `
+                <div class="test-result info">
+                    <h3>Tests Cleared</h3>
+                    <p>Ready to run new tests.</p>
+                </div>
+            `;
+            document.getElementById('progressContainer').style.display = 'none';
+            updateSummary();
+        }
+
+        async function testJsonFiles() {
+            const files = [
+                { path: '/data/board-data.json', name: 'Board Data' },
+                { path: '/data/piece-definitions.json', name: 'Piece Definitions' },
+                { path: '/game-rules/amalgam_complete_rules.json', name: 'Game Rules' },
+                { path: '/game-rules/golden_lines.json', name: 'Golden Lines' },
+                { path: '/game-rules/board_positions.json', name: 'Board Positions' },
+                { path: '/game-rules/starting_positions.json', name: 'Starting Positions' }
+            ];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                updateProgress(i + 1, files.length, `Testing ${file.name}...`);
+                
+                try {
+                    const response = await fetch(file.path);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    addResult(file.name, 'success', 'Successfully loaded JSON', {
+                        size: JSON.stringify(data).length,
+                        keys: Object.keys(data).length
+                    });
+                } catch (error) {
+                    addResult(file.name, 'error', `Failed to load: ${error.message}`);
+                }
+            }
+        }
+
+        async function testModules() {
+            const modules = [
+                { path: '/utils/logger.js', name: 'Logger' },
+                { path: '/utils/helpers.js', name: 'Helpers' },
+                { path: '/core/types.js', name: 'Types' },
+                { path: '/core/rules.js', name: 'Rules' },
+                { path: '/core/board.js', name: 'Board' },
+                { path: '/ui/graphics.js', name: 'Graphics' },
+                { path: '/ui/interactions.js', name: 'Interactions' },
+                { path: '/game/gameManager.js', name: 'Game Manager' },
+                { path: '/game/player.js', name: 'Player' }
+            ];
+            
+            for (let i = 0; i < modules.length; i++) {
+                const module = modules[i];
+                updateProgress(i + 1, modules.length, `Testing ${module.name}...`);
+                
+                try {
+                    await import(module.path);
+                    addResult(module.name, 'success', 'Module loaded successfully');
+                } catch (error) {
+                    addResult(module.name, 'error', `Failed to load: ${error.message}`);
+                }
+            }
+        }
+
+        async function testGameManager() {
+            try {
+                const { GameManager } = await import('/game/gameManager.js');
+                
+                // Load required data
+                const boardResponse = await fetch('/data/board-data.json');
+                const pieceResponse = await fetch('/data/piece-definitions.json');
+                
+                if (!boardResponse.ok) throw new Error(`Board data: ${boardResponse.status}`);
+                if (!pieceResponse.ok) throw new Error(`Piece data: ${pieceResponse.status}`);
+                
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceResponse.json();
+                
+                // Create mock canvas
+                const mockCanvas = {
+                    canvas: document.createElement('canvas'),
+                    drawBoard: () => {},
+                    drawPieces: () => {},
+                    getCoordinatesFromPixel: () => [0, 0]
+                };
+                
+                const gameManager = new GameManager(mockCanvas, boardData, pieceDefs);
+                addResult('Game Manager', 'success', 'GameManager created successfully');
+                
+            } catch (error) {
+                addResult('Game Manager', 'error', `Failed: ${error.message}`);
+            }
+        }
+
+        async function testBoardCreation() {
+            try {
+                const { createBoard } = await import('/core/board.js');
+                const response = await fetch('/data/board-data.json');
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const boardData = await response.json();
+                const board = createBoard(boardData);
+                
+                addResult('Board Creation', 'success', 'Board created successfully', {
+                    intersections: board.intersections.length,
+                    goldenConnections: board.goldenLineConnections.length
+                });
+                
+            } catch (error) {
+                addResult('Board Creation', 'error', `Failed: ${error.message}`);
+            }
+        }
+
+        async function runFileSystemTests() {
+            clearResults();
+            addResult('File System Tests', 'info', 'Starting file system validation...');
+            await testJsonFiles();
+        }
+
+        async function runDataTests() {
+            clearResults();
+            addResult('Data Integrity Tests', 'info', 'Starting data integrity validation...');
+            await testJsonFiles();
+        }
+
+        async function runModuleTests() {
+            clearResults();
+            addResult('Module Tests', 'info', 'Starting module validation...');
+            await testModules();
+        }
+
+        async function runGameTests() {
+            clearResults();
+            addResult('Game Logic Tests', 'info', 'Starting game logic validation...');
+            await testGameManager();
+            await testBoardCreation();
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('Comprehensive Test Suite', 'info', 'Starting comprehensive testing...');
+            
+            const testSuites = [
+                { name: 'File System', fn: testJsonFiles },
+                { name: 'Modules', fn: testModules },
+                { name: 'Game Logic', fn: async () => {
+                    await testGameManager();
+                    await testBoardCreation();
+                }}
+            ];
+            
+            let currentTest = 0;
+            const totalTests = testSuites.length;
+            
+            for (const suite of testSuites) {
+                currentTest++;
+                updateProgress(currentTest, totalTests, `Running ${suite.name} tests...`);
+                addResult(suite.name, 'info', `Running ${suite.name} tests...`);
+                
+                try {
+                    await suite.fn();
+                } catch (error) {
+                    addResult(suite.name, 'error', `Test suite failed: ${error.message}`);
+                }
+            }
+            
+            document.getElementById('progressContainer').style.display = 'none';
+            
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            if (successRate === 100) {
+                addResult('Test Suite Complete', 'success', 'All tests passed successfully!');
+            } else {
+                addResult('Test Suite Complete', 'warning', `Tests completed with ${failedTests} failures.`);
+            }
+        }
+
+        function copyLLMSummary() {
+            const summary = generateLLMSummary();
+            document.getElementById('copyArea').value = summary;
+            copyToClipboard(summary);
+        }
+
+        function copyDetailedResults() {
+            const details = generateDetailedResults();
+            document.getElementById('copyArea').value = details;
+            copyToClipboard(details);
+        }
+
+        function copyErrorsOnly() {
+            const errors = generateErrorsOnly();
+            document.getElementById('copyArea').value = errors;
+            copyToClipboard(errors);
+        }
+
+        function generateLLMSummary() {
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            
+            let summary = `AMALGAM TEST RESULTS\n`;
+            summary += `==================\n`;
+            summary += `Total Tests: ${totalTests}\n`;
+            summary += `Passed: ${passedTests}\n`;
+            summary += `Failed: ${failedTests}\n`;
+            summary += `Warnings: ${warningTests}\n`;
+            summary += `Success Rate: ${successRate}%\n\n`;
+            
+            if (successRate === 100) {
+                summary += `✅ ALL TESTS PASSED - System is fully operational\n`;
+            } else {
+                summary += `❌ ISSUES DETECTED:\n`;
+                const errors = testResults.filter(r => r.status === 'error');
+                errors.forEach(error => {
+                    summary += `• ${error.test}: ${error.message}\n`;
+                });
+            }
+            
+            return summary;
+        }
+
+        function generateDetailedResults() {
+            let details = `AMALGAM DETAILED TEST RESULTS\n`;
+            details += `=============================\n\n`;
+            
+            testResults.forEach(result => {
+                details += `[${result.timestamp}] ${result.test}\n`;
+                details += `Status: ${result.status.toUpperCase()}\n`;
+                details += `Message: ${result.message}\n`;
+                if (result.data) {
+                    details += `Data: ${JSON.stringify(result.data)}\n`;
+                }
+                details += `\n`;
+            });
+            
+            return details;
+        }
+
+        function generateErrorsOnly() {
+            const errors = testResults.filter(r => r.status === 'error');
+            
+            let errorReport = `AMALGAM ERROR REPORT\n`;
+            errorReport += `===================\n\n`;
+            
+            if (errors.length === 0) {
+                errorReport += `✅ No errors detected\n`;
+            } else {
+                errors.forEach(error => {
+                    errorReport += `❌ ${error.test}\n`;
+                    errorReport += `   ${error.message}\n`;
+                    if (error.data) {
+                        errorReport += `   Data: ${JSON.stringify(error.data)}\n`;
+                    }
+                    errorReport += `\n`;
+                });
+            }
+            
+            return errorReport;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            addResult('Page Load', 'info', 'Test runner loaded successfully');
+        });
+    </script>
+</body>
+</html>

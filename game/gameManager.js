@@ -471,17 +471,244 @@ export class GameManager {
         });
     }
     /**
-     * Update the display
+     * Update the game display
      */
     updateDisplay() {
-        if (!this.state)
+        if (!this.state || !this.gameCanvas) {
             return;
-        // Redraw the board
-        this.gameCanvas.drawBoard();
-        // TODO: Convert pieces to proper format and draw them
-        // this.gameCanvas.drawPieces(pieces, this.getSelectedCoords());
-        // Update any highlights
-        this.updateHighlights();
+        }
+        logger.debug('Updating display');
+        // Clear canvas
+        this.gameCanvas.ctx.clearRect(0, 0, this.gameCanvas.canvas.width, this.gameCanvas.canvas.height);
+        // Draw board background
+        this.drawBoardBackground();
+        // Draw pieces
+        this.drawAllPieces();
+        // Draw UI overlays
+        this.drawUIOverlays();
+    }
+    /**
+     * Draw the board background
+     */
+    drawBoardBackground() {
+        if (!this.gameCanvas || !this.board)
+            return;
+        const { ctx, originX, originY } = this.gameCanvas;
+        const gridSize = 25; // Should match the board data
+        // Draw background polygons
+        this.drawBackgroundPolygons(ctx, originX, originY, gridSize);
+        // Draw grid lines
+        this.drawGridLines(ctx, originX, originY, gridSize);
+        // Draw intersections
+        this.drawIntersections(ctx, originX, originY, gridSize);
+    }
+    /**
+     * Draw background polygon shapes
+     */
+    drawBackgroundPolygons(ctx, originX, originY, gridSize) {
+        // Define polygon sets (simplified for now)
+        const polygons = [
+            // Central area
+            [{ x: 0, y: 6 }, { x: 6, y: 6 }, { x: 6, y: 0 }, { x: 0, y: 0 }],
+            [{ x: 0, y: 0 }, { x: -6, y: 0 }, { x: -6, y: -6 }, { x: 0, y: -6 }],
+            [{ x: 0, y: -6 }, { x: 6, y: -6 }, { x: 6, y: 0 }, { x: 0, y: 0 }],
+            [{ x: 0, y: 0 }, { x: -6, y: 0 }, { x: -6, y: 6 }, { x: 0, y: 6 }]
+        ];
+        ctx.fillStyle = '#f0f0f0';
+        polygons.forEach(polygon => {
+            ctx.beginPath();
+            ctx.moveTo(originX + polygon[0].x * gridSize, originY - polygon[0].y * gridSize);
+            for (let i = 1; i < polygon.length; i++) {
+                ctx.lineTo(originX + polygon[i].x * gridSize, originY - polygon[i].y * gridSize);
+            }
+            ctx.closePath();
+            ctx.fill();
+        });
+    }
+    /**
+     * Draw grid lines
+     */
+    drawGridLines(ctx, originX, originY, gridSize) {
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        // Draw some basic grid lines (simplified)
+        for (let i = -6; i <= 6; i++) {
+            // Vertical lines
+            ctx.beginPath();
+            ctx.moveTo(originX + i * gridSize, originY - 6 * gridSize);
+            ctx.lineTo(originX + i * gridSize, originY + 6 * gridSize);
+            ctx.stroke();
+            // Horizontal lines
+            ctx.beginPath();
+            ctx.moveTo(originX - 6 * gridSize, originY - i * gridSize);
+            ctx.lineTo(originX + 6 * gridSize, originY - i * gridSize);
+            ctx.stroke();
+        }
+    }
+    /**
+     * Draw intersections
+     */
+    drawIntersections(ctx, originX, originY, gridSize) {
+        ctx.fillStyle = '#999';
+        // Draw intersections at grid points
+        for (let x = -6; x <= 6; x++) {
+            for (let y = -6; y <= 6; y++) {
+                const pixelX = originX + x * gridSize;
+                const pixelY = originY - y * gridSize;
+                ctx.beginPath();
+                ctx.arc(pixelX, pixelY, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+    }
+    /**
+     * Draw all pieces on the board
+     */
+    drawAllPieces() {
+        if (!this.state || !this.gameCanvas)
+            return;
+        const { ctx, originX, originY } = this.gameCanvas;
+        const gridSize = 25;
+        const renderContext = {
+            ctx,
+            originX,
+            originY,
+            gridSize
+        };
+        // Draw each piece
+        for (const [pieceId, piece] of Object.entries(this.state.pieces)) {
+            // Create graphics object from piece definition
+            const graphics = this.createPieceGraphics(pieceId, piece);
+            // Create temporary piece with graphics for rendering
+            const pieceWithGraphics = {
+                ...piece,
+                graphics
+            };
+            // Render the piece
+            this.renderPiece(renderContext, pieceWithGraphics, piece.coords);
+        }
+        // Draw selection highlight
+        if (this.selectedPiece) {
+            const graphics = this.createPieceGraphics(this.selectedPiece.id, this.selectedPiece);
+            this.renderPieceHighlight(renderContext, this.selectedPiece.coords, graphics.size);
+        }
+    }
+    /**
+     * Create graphics object for a piece
+     */
+    createPieceGraphics(pieceId, piece) {
+        if (!this.pieceDefs)
+            return { shape: 'circle', size: 10 };
+        const playerPieceDefs = this.pieceDefs.piece_definitions[piece.player === 'circles' ? 'circles_pieces' : 'squares_pieces'];
+        const pieceDef = playerPieceDefs[pieceId];
+        if (pieceDef?.graphics) {
+            return pieceDef.graphics;
+        }
+        // Default graphics based on piece type
+        switch (piece.type) {
+            case 'Ruby':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    size: 10
+                };
+            case 'Pearl':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    size: 10
+                };
+            case 'Amber':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    size: 10
+                };
+            case 'Jade':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    size: 10
+                };
+            case 'Amalgam':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
+                    size: 12,
+                    rotation: piece.player === 'circles' ? Math.PI : Math.PI / 2
+                };
+            case 'Portal':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    outerColor: '#87CEEB',
+                    innerColor: '#ADD8E6',
+                    size: 8
+                };
+            case 'Void':
+                return {
+                    shape: piece.player === 'circles' ? 'circle' : 'square',
+                    outerColor: '#5B4E7A',
+                    innerColor: '#8D7EA9',
+                    size: 12
+                };
+            default:
+                return { shape: 'circle', size: 10 };
+        }
+    }
+    /**
+     * Render a piece using the graphics system
+     */
+    renderPiece(context, piece, coords) {
+        // Import and use the graphics rendering functions
+        // This would need to be properly imported from the graphics module
+        const [x, y] = coords;
+        const centerPixelX = context.originX + x * context.gridSize;
+        const centerPixelY = context.originY - y * context.gridSize;
+        // Simple piece rendering for now
+        const { ctx } = context;
+        const graphics = piece.graphics;
+        ctx.save();
+        ctx.translate(centerPixelX, centerPixelY);
+        if (graphics.shape === 'circle') {
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.color || '#666';
+            ctx.fill();
+        }
+        else {
+            ctx.rotate(45 * Math.PI / 180);
+            ctx.fillStyle = graphics.color || '#666';
+            ctx.fillRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+        }
+        ctx.restore();
+    }
+    /**
+     * Render piece highlight
+     */
+    renderPieceHighlight(context, coords, size) {
+        const [x, y] = coords;
+        const centerPixelX = context.originX + x * context.gridSize;
+        const centerPixelY = context.originY - y * context.gridSize;
+        const { ctx } = context;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, size * 1.5, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+    }
+    /**
+     * Draw UI overlays
+     */
+    drawUIOverlays() {
+        if (!this.state || !this.gameCanvas)
+            return;
+        const { ctx } = this.gameCanvas;
+        // Draw game phase indicator
+        ctx.fillStyle = '#000';
+        ctx.font = '16px Arial';
+        ctx.fillText(`Phase: ${this.state.gamePhase}`, 10, 30);
+        if (this.state.gamePhase === 'setup') {
+            ctx.fillText(`Setup Turn: ${this.state.setupTurn}/16`, 10, 50);
+            ctx.fillText(`Current Player: ${this.state.currentPlayer}`, 10, 70);
+        }
     }
     /**
      * Update highlights based on current state
@@ -601,5 +828,27 @@ export class GameManager {
         this.moveHistory = [];
         this.stateHistory = [];
         logger.debug('GameManager destroyed');
+    }
+    /**
+     * Handle intersection click
+     */
+    handleIntersectionClick(coords) {
+        if (!this.gameCanvas)
+            return;
+        const state = this.getState();
+        if (!state)
+            return;
+        // Check if it's a valid intersection
+        if (!this.gameCanvas.boardDict[`${coords[0]},${coords[1]}`]) {
+            logger.debug('Clicked on invalid intersection:', coords);
+            return;
+        }
+        // Create move intent and pass to game manager
+        const moveIntent = {
+            coords: coords,
+            type: 'click'
+        };
+        // Handle the move intent through the game manager
+        this.handleMoveIntent(moveIntent);
     }
 }

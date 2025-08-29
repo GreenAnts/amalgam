@@ -77,25 +77,117 @@ export function cloneBoard(board) {
  */
 export function createInitialState(board, boardData) {
     const pieces = {};
-    // Add pre-placed pieces if available
-    if (boardData?.pre_placed_pieces?.pieces) {
-        boardData.pre_placed_pieces.pieces.forEach((pieceData, index) => {
-            const pieceId = `pre_placed_${index}`;
-            const [x, y] = pieceData.position;
-            const coordStr = `${x},${y}`;
-            pieces[pieceId] = {
-                id: pieceId,
-                type: pieceData.type,
-                player: 'circles', // Default to circles for pre-placed pieces
-                coords: [x, y],
-                isPrePlaced: true
-            };
-        });
-    }
+    // Add pre-placed pieces according to game rules
+    // Circles pre-placed pieces
+    pieces['C_Void'] = {
+        id: 'C_Void',
+        type: 'Void',
+        player: 'circles',
+        coords: [0, 12],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'circle',
+            outerColor: '#5B4E7A',
+            innerColor: '#8D7EA9',
+            size: 12
+        }
+    };
+    pieces['C_Amalgam'] = {
+        id: 'C_Amalgam',
+        type: 'Amalgam',
+        player: 'circles',
+        coords: [0, 6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'circle',
+            colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
+            size: 12,
+            rotation: Math.PI // Face toward origin
+        }
+    };
+    pieces['C_Portal1'] = {
+        id: 'C_Portal1',
+        type: 'Portal',
+        player: 'circles',
+        coords: [6, 6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'circle',
+            outerColor: '#87CEEB',
+            innerColor: '#ADD8E6',
+            size: 8
+        }
+    };
+    pieces['C_Portal2'] = {
+        id: 'C_Portal2',
+        type: 'Portal',
+        player: 'circles',
+        coords: [-6, 6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'circle',
+            outerColor: '#87CEEB',
+            innerColor: '#ADD8E6',
+            size: 8
+        }
+    };
+    // Squares pre-placed pieces
+    pieces['S_Void'] = {
+        id: 'S_Void',
+        type: 'Void',
+        player: 'squares',
+        coords: [0, -12],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'square',
+            outerColor: '#5B4E7A',
+            innerColor: '#8D7EA9',
+            size: 12
+        }
+    };
+    pieces['S_Amalgam'] = {
+        id: 'S_Amalgam',
+        type: 'Amalgam',
+        player: 'squares',
+        coords: [0, -6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'square',
+            colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
+            size: 12,
+            rotation: Math.PI / 2 // Face toward origin
+        }
+    };
+    pieces['S_Portal1'] = {
+        id: 'S_Portal1',
+        type: 'Portal',
+        player: 'squares',
+        coords: [6, -6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'square',
+            outerColor: '#87CEEB',
+            innerColor: '#ADD8E6',
+            size: 8
+        }
+    };
+    pieces['S_Portal2'] = {
+        id: 'S_Portal2',
+        type: 'Portal',
+        player: 'squares',
+        coords: [-6, -6],
+        isPrePlaced: true,
+        graphics: {
+            shape: 'square',
+            outerColor: '#87CEEB',
+            innerColor: '#ADD8E6',
+            size: 8
+        }
+    };
     return {
         board: cloneBoard(board),
         pieces: pieces,
-        currentPlayer: 'circles',
+        currentPlayer: 'squares', // Squares goes first in setup
         gamePhase: 'setup',
         setupTurn: 1,
         moveHistory: [],

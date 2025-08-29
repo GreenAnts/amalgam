@@ -150,6 +150,7 @@ export interface PieceDefinition {
     player: PlayerId;
     placement: 'setup_phase' | 'game_phase';
     abilities?: string[];
+    graphics?: PieceGraphics;
 }
 
 export interface PieceDefinitions {

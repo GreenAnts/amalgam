@@ -32,7 +32,8 @@ import type {
     Piece,
     PlayerId,
     Vector2,
-    Board
+    Board,
+    PieceGraphics
 } from './types.js';
 
 /**
@@ -448,12 +449,22 @@ export function applyMove(state: GameState, move: Move, pieceDefs: PieceDefiniti
             }
             
             newState.board = placePiece(newState.board, move.toCoords, move.pieceId);
+            const pieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][move.pieceId];
+            
+            // Create default graphics if not provided
+            const graphics: PieceGraphics = pieceDef.graphics || {
+                shape: move.playerId === 'circles' ? 'circle' : 'square',
+                color: '#666',
+                size: 10
+            };
+            
             newState.pieces[move.pieceId] = {
                 id: move.pieceId,
-                type: pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][move.pieceId].type,
+                type: pieceDef.type,
                 player: move.playerId,
                 coords: move.toCoords,
-                isPrePlaced: false
+                isPrePlaced: false,
+                graphics: graphics
             };
             
             // Advance setup turn
@@ -634,6 +645,11 @@ function canAttack(attackerDef: any, targetDef: any): boolean {
  * @returns Win check result
  */
 export function checkWin(state: GameState, pieceDefs: PieceDefinitions): { winner: PlayerId | null; victoryType?: string } {
+    // Don't check for victory during setup phase
+    if (state.gamePhase === 'setup') {
+        return { winner: null };
+    }
+    
     // Check objective victory
     const circlesVoid = Object.values(state.pieces).find(p => p.id === 'C_Void');
     const squaresVoid = Object.values(state.pieces).find(p => p.id === 'S_Void');
@@ -647,8 +663,17 @@ export function checkWin(state: GameState, pieceDefs: PieceDefinitions): { winne
     }
     
     // Check elimination victory
-    const circlesPieces = Object.values(state.pieces).filter(p => p.player === 'circles' && p.type !== 'Portal');
-    const squaresPieces = Object.values(state.pieces).filter(p => p.player === 'squares' && p.type !== 'Portal');
+    // Only count gem pieces placed during setup, not pre-placed pieces (Void, Amalgam, Portal)
+    const circlesPieces = Object.values(state.pieces).filter(p => 
+        p.player === 'circles' && 
+        !p.isPrePlaced && 
+        ['Ruby', 'Pearl', 'Amber', 'Jade'].includes(p.type)
+    );
+    const squaresPieces = Object.values(state.pieces).filter(p => 
+        p.player === 'squares' && 
+        !p.isPrePlaced && 
+        ['Ruby', 'Pearl', 'Amber', 'Jade'].includes(p.type)
+    );
     
     if (circlesPieces.length === 0) {
         return { winner: 'squares', victoryType: 'elimination' };

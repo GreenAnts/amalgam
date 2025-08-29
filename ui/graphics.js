@@ -1,8 +1,8 @@
 /**
- * Graphics module for rendering the Amalgam game board and pieces
- * Based on the working reference implementation with Canvas 2D rendering
+ * Graphics rendering system for Amalgam game pieces
+ * Handles all piece types with proper colors, shapes, and visual properties
  */
-// Board rendering constants from reference implementation
+// Board rendering constants
 const GRID_SIZE = 25; // Spacing between intersections
 const GOLDEN_RADIUS = 4;
 const DIAMOND_SIZE = 3;
@@ -16,8 +16,8 @@ const BLACK_LINE_WIDTH = 1.5;
 const POLYGON_FILL_COLOR_1 = '#343434';
 const POLYGON_FILL_COLOR_2 = '#5A5A5A';
 const POLYGON_FILL_COLOR_3 = '#7D7D7D';
-// Amalgam piece colors from reference
-const AMALGAM_COLORS = ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F']; // Red, Green, Pale Yellow, Yellow/Orange
+// Amalgam piece colors
+const AMALGAM_COLORS = ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'];
 /**
  * Create and setup the game canvas
  * @param container - Container element for the canvas
@@ -32,7 +32,6 @@ export function createGameCanvas(container, boardData) {
     canvas.id = 'gameCanvas';
     canvas.width = 800;
     canvas.height = 800;
-    // Border styling handled by CSS
     const ctx = canvas.getContext('2d');
     if (!ctx) {
         throw new Error('Could not get 2D rendering context');
@@ -54,14 +53,14 @@ export function createGameCanvas(container, boardData) {
         boardDict,
         goldenConnections,
         drawBoard: () => drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardData),
-        drawPieces: (pieces, selectedPieceCoord) => drawPieces(ctx, originX, originY, pieces, selectedPieceCoord),
+        drawPieces: (pieces, selectedCoord) => drawPieces(ctx, originX, originY, pieces, selectedCoord),
         getCoordinatesFromPixel: (mouseX, mouseY) => getCoordinatesFromPixel(mouseX, mouseY, originX, originY)
     };
 }
 /**
  * Create board dictionary from board data (golden and standard intersections)
  */
-export function createBoardDictionary(boardData) {
+function createBoardDictionary(boardData) {
     const boardDict = {};
     // Mark golden intersections from JSON data
     if (boardData.golden_coordinates) {
@@ -82,7 +81,7 @@ export function createBoardDictionary(boardData) {
 /**
  * Create golden connections set for fast lookup
  */
-export function createGoldenConnectionsSet(goldenLinesDict) {
+function createGoldenConnectionsSet(goldenLinesDict) {
     const goldenConnections = new Set();
     for (const coordStr in goldenLinesDict) {
         const connections = goldenLinesDict[coordStr];
@@ -102,7 +101,7 @@ export function createGoldenConnectionsSet(goldenLinesDict) {
     return goldenConnections;
 }
 /**
- * Main board drawing function from reference implementation
+ * Main board drawing function
  */
 function drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardData) {
     // Clear canvas with white background
@@ -118,10 +117,10 @@ function drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardDat
     drawIntersections(ctx, originX, originY, boardDict);
 }
 /**
- * Draw background polygon shapes from reference
+ * Draw background polygon shapes
  */
 function drawBackgroundPolygons(ctx, originX, originY) {
-    // Define polygon sets from reference
+    // Define polygon sets
     const polygonsToDraw1 = [
         [{ x: 0, y: 12 }, { x: 5, y: 11 }, { x: 8, y: 9 }, { x: 6, y: 6 }, { x: 0, y: 6 }],
         [{ x: 0, y: 12 }, { x: -5, y: 11 }, { x: -8, y: 9 }, { x: -6, y: 6 }, { x: 0, y: 6 }],
@@ -270,35 +269,91 @@ function drawIntersections(ctx, originX, originY, boardDict) {
 /**
  * Draw game pieces
  */
-function drawPieces(ctx, originX, originY, pieces, selectedPieceCoord) {
+function drawPieces(ctx, originX, originY, pieces, selectedCoord) {
     for (const coordStr in pieces) {
         const piece = pieces[coordStr];
         const [x, y] = coordStr.split(',').map(Number);
-        const size = piece.size || 12;
-        switch (piece.type) {
-            case 'amalgamCircle':
-                drawAmalgamCircle(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
-                break;
-            case 'amalgamSquare':
-                drawAmalgamSquare(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
-                break;
-            case 'voidCircle':
-                drawVoidCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
-                break;
-            case 'voidSquare':
-                drawVoidSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
-                break;
-            case 'portalCircle':
-                drawPortalCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
-                break;
-            case 'portalSquare':
-                drawPortalSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
-                break;
-        }
+        // Create graphics object for the piece
+        const graphics = createPieceGraphics(piece);
+        // Render the piece
+        const renderContext = {
+            ctx,
+            originX,
+            originY,
+            gridSize: GRID_SIZE
+        };
+        const pieceWithGraphics = {
+            ...piece,
+            graphics
+        };
+        renderPiece(renderContext, pieceWithGraphics, [x, y]);
     }
-    // Draw selection highlight last
-    if (selectedPieceCoord) {
-        drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces);
+    // Draw selection highlight
+    if (selectedCoord) {
+        const [x, y] = selectedCoord;
+        const centerPixelX = originX + x * GRID_SIZE;
+        const centerPixelY = originY - y * GRID_SIZE;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#FFFF00';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+/**
+ * Create graphics object for a piece
+ */
+function createPieceGraphics(piece) {
+    switch (piece.type) {
+        case 'Ruby':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                color: '#E63960',
+                size: 10
+            };
+        case 'Pearl':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                color: '#87CEEB',
+                size: 10
+            };
+        case 'Amber':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                color: '#F6C13F',
+                size: 10
+            };
+        case 'Jade':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                color: '#A9E886',
+                size: 10
+            };
+        case 'Amalgam':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                colors: AMALGAM_COLORS,
+                size: 12,
+                rotation: piece.player === 'circles' ? Math.PI : Math.PI / 2
+            };
+        case 'Portal':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                outerColor: '#87CEEB',
+                innerColor: '#ADD8E6',
+                size: 8
+            };
+        case 'Void':
+            return {
+                shape: piece.player === 'circles' ? 'circle' : 'square',
+                outerColor: '#5B4E7A',
+                innerColor: '#8D7EA9',
+                size: 12
+            };
+        default:
+            return { shape: 'circle', size: 10, color: '#666' };
     }
 }
 /**
@@ -310,159 +365,301 @@ function getCoordinatesFromPixel(mouseX, mouseY, originX, originY) {
     return [gameX, gameY];
 }
 /**
- * Draw Amalgam Circle piece (quadrant-based)
+ * Render a piece at the given coordinates
+ * @param context - Rendering context
+ * @param piece - Piece to render
+ * @param coords - Board coordinates
  */
-function drawAmalgamCircle(ctx, originX, originY, x, y, size, colors, rotation) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
-    const radius = size;
+export function renderPiece(context, piece, coords) {
+    const [x, y] = coords;
+    const centerPixelX = context.originX + x * context.gridSize;
+    const centerPixelY = context.originY - y * context.gridSize;
+    const graphics = piece.graphics;
+    switch (piece.type) {
+        case 'Ruby':
+            renderGemPiece(context, centerPixelX, centerPixelY, graphics, '#E63960');
+            break;
+        case 'Pearl':
+            renderGemPiece(context, centerPixelX, centerPixelY, graphics, '#87CEEB');
+            break;
+        case 'Amber':
+            renderGemPiece(context, centerPixelX, centerPixelY, graphics, '#F6C13F');
+            break;
+        case 'Jade':
+            renderGemPiece(context, centerPixelX, centerPixelY, graphics, '#A9E886');
+            break;
+        case 'Amalgam':
+            renderAmalgamPiece(context, centerPixelX, centerPixelY, graphics);
+            break;
+        case 'Portal':
+            renderPortalPiece(context, centerPixelX, centerPixelY, graphics);
+            break;
+        case 'Void':
+            renderVoidPiece(context, centerPixelX, centerPixelY, graphics);
+            break;
+    }
+}
+/**
+ * Render a basic gem piece (Ruby, Pearl, Amber, Jade)
+ * @param context - Rendering context
+ * @param x - Pixel X coordinate
+ * @param y - Pixel Y coordinate
+ * @param graphics - Graphics properties
+ * @param color - Piece color
+ */
+function renderGemPiece(context, x, y, graphics, color) {
+    const { ctx } = context;
+    const size = graphics.size;
     ctx.save();
-    ctx.translate(centerPixelX, centerPixelY);
-    ctx.rotate(rotation);
-    // Draw the amalgam circle with quadrants
-    const angles = [
-        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] || AMALGAM_COLORS[2] },
-        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] || AMALGAM_COLORS[0] },
-        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] || AMALGAM_COLORS[1] },
-        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] || AMALGAM_COLORS[3] }
-    ];
-    angles.forEach(angle => {
-        ctx.fillStyle = angle.color;
+    ctx.translate(x, y);
+    if (graphics.shape === 'circle') {
+        // Draw circle gem
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius, angle.start, angle.end);
-        ctx.closePath();
+        ctx.arc(0, 0, size, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
         ctx.fill();
-    });
+        ctx.closePath();
+        // Add highlight
+        ctx.beginPath();
+        ctx.arc(-size * 0.3, -size * 0.3, size * 0.2, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+        ctx.closePath();
+    }
+    else {
+        // Draw square gem (rotated 45 degrees to form diamond)
+        ctx.rotate(45 * Math.PI / 180);
+        ctx.fillStyle = color;
+        ctx.fillRect(-size, -size, size * 2, size * 2);
+        // Add highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(-size * 0.7, -size * 0.7, size * 0.4, size * 0.4);
+    }
     ctx.restore();
 }
-function drawAmalgamSquare(ctx, originX, originY, x, y, size, colors, rotation) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
-    const outerColors = colors.map(c => darkenColor(c, 20));
-    // Size of the outer and inner squares
-    const outerSize = size * 2.1;
-    const innerSize = size * 1.5;
+/**
+ * Render an Amalgam piece with four-color quadrants
+ * @param context - Rendering context
+ * @param x - Pixel X coordinate
+ * @param y - Pixel Y coordinate
+ * @param graphics - Graphics properties
+ */
+function renderAmalgamPiece(context, x, y, graphics) {
+    const { ctx } = context;
+    const size = graphics.size;
+    const colors = graphics.colors || AMALGAM_COLORS;
+    const rotation = graphics.rotation || 0;
     ctx.save();
-    ctx.translate(centerPixelX, centerPixelY);
-    // The square is a diamond (rotated 45 degrees), so we add this to the orientation angle
-    ctx.rotate(rotation + (45 * Math.PI / 180));
-    // Draw the four quadrants of the outer diamond (a rotated square)
-    const halfOuter = outerSize / 2;
-    const outerRects = [
-        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] || AMALGAM_COLORS[0] }, // Red
-        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
-        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
-        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] || AMALGAM_COLORS[1] } // Green
-    ];
-    outerRects.forEach(rect => {
-        ctx.fillStyle = rect.color;
-        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    });
-    // Draw the four inner squares, forming the inner diamond
-    const halfInner = innerSize / 2;
-    const innerRects = [
-        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] || AMALGAM_COLORS[0] }, // Red
-        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
-        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
-        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] || AMALGAM_COLORS[1] } // Green
-    ];
-    innerRects.forEach(rect => {
-        ctx.fillStyle = rect.color;
-        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    });
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    if (graphics.shape === 'circle') {
+        // Draw four quadrants
+        const angles = [
+            { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] }, // Right (Pale Yellow)
+            { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top (Red)
+            { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] }, // Left (Green)
+            { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] } // Bottom (Yellow/Orange)
+        ];
+        angles.forEach((quadrant) => {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, size, quadrant.start, quadrant.end);
+            ctx.lineTo(0, 0);
+            ctx.fillStyle = quadrant.color;
+            ctx.fill();
+            ctx.closePath();
+        });
+        // Add outer ring
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.2, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.closePath();
+    }
+    else {
+        // Draw square Amalgam (diamond shape)
+        ctx.rotate(45 * Math.PI / 180);
+        const halfSize = size;
+        const quadrants = [
+            { x: -halfSize, y: 0, w: halfSize, h: halfSize, color: colors[0] }, // Red
+            { x: 0, y: 0, w: halfSize, h: halfSize, color: colors[2] }, // Pale Yellow
+            { x: 0, y: -halfSize, w: halfSize, h: halfSize, color: colors[3] }, // Yellow/Orange
+            { x: -halfSize, y: -halfSize, w: halfSize, h: halfSize, color: colors[1] } // Green
+        ];
+        quadrants.forEach(rect => {
+            ctx.fillStyle = rect.color;
+            ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+        });
+        // Add outer border
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-size, -size, size * 2, size * 2);
+    }
     ctx.restore();
 }
-function drawVoidCircle(ctx, originX, originY, x, y, size, outerColor, innerColor) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
-    const radius = size;
-    // Draw outer circle
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, radius * 1.2, 0, 2 * Math.PI);
-    ctx.fillStyle = outerColor;
-    ctx.fill();
-    ctx.closePath();
-    // Draw inner circle
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = innerColor;
-    ctx.fill();
-    ctx.closePath();
-}
-function drawVoidSquare(ctx, originX, originY, x, y, size, outerColor, innerColor) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
+/**
+ * Render a Portal piece with special visual effects
+ * @param context - Rendering context
+ * @param x - Pixel X coordinate
+ * @param y - Pixel Y coordinate
+ * @param graphics - Graphics properties
+ */
+function renderPortalPiece(context, x, y, graphics) {
+    const { ctx } = context;
+    const size = graphics.size;
+    const outerColor = graphics.outerColor || '#87CEEB';
+    const innerColor = graphics.innerColor || '#ADD8E6';
     ctx.save();
-    ctx.translate(centerPixelX, centerPixelY);
-    ctx.rotate(45 * Math.PI / 180);
-    // Outer square dimensions
-    const outerSize = size * 2.1;
-    const halfOuter = outerSize / 2;
-    // Inner square dimensions
-    const innerSize = size * 1.5;
-    const halfInner = innerSize / 2;
-    // Draw outer diamond (rotated square)
-    ctx.fillStyle = outerColor;
-    ctx.fillRect(-halfOuter, -halfOuter, outerSize, outerSize);
-    // Draw inner diamond (rotated square)
-    ctx.fillStyle = innerColor;
-    ctx.fillRect(-halfInner, -halfInner, innerSize, innerSize);
+    ctx.translate(x, y);
+    if (graphics.shape === 'circle') {
+        // Draw outer circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.2, 0, 2 * Math.PI);
+        ctx.fillStyle = outerColor;
+        ctx.fill();
+        ctx.closePath();
+        // Draw inner circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, 2 * Math.PI);
+        ctx.fillStyle = innerColor;
+        ctx.fill();
+        ctx.closePath();
+        // Add portal effect lines
+        ctx.strokeStyle = '#4A90E2';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(-size * 1.5, 0);
+            ctx.lineTo(size * 1.5, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+    else {
+        // Draw square portal (diamond shape)
+        ctx.rotate(45 * Math.PI / 180);
+        // Outer square
+        ctx.fillStyle = outerColor;
+        ctx.fillRect(-size * 1.2, -size * 1.2, size * 2.4, size * 2.4);
+        // Inner square
+        ctx.fillStyle = innerColor;
+        ctx.fillRect(-size, -size, size * 2, size * 2);
+        // Add portal effect lines
+        ctx.strokeStyle = '#4A90E2';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(-size * 1.5, 0);
+            ctx.lineTo(size * 1.5, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
     ctx.restore();
 }
-function drawPortalCircle(ctx, originX, originY, x, y, size, outerColor, innerColor) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
-    // Draw outer circle
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size * 1.3, 0, 2 * Math.PI);
-    ctx.fillStyle = outerColor;
-    ctx.fill();
-    ctx.closePath();
-    // Draw inner portal effect
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size * 0.8, 0, 2 * Math.PI);
-    ctx.fillStyle = innerColor;
-    ctx.fill();
-    ctx.closePath();
-}
-function drawPortalSquare(ctx, originX, originY, x, y, size, outerColor, innerColor) {
-    const centerPixelX = originX + x * GRID_SIZE;
-    const centerPixelY = originY - y * GRID_SIZE;
-    // Rotate the square for portal effect
+/**
+ * Render a Void piece with dark, mysterious appearance
+ * @param context - Rendering context
+ * @param x - Pixel X coordinate
+ * @param y - Pixel Y coordinate
+ * @param graphics - Graphics properties
+ */
+function renderVoidPiece(context, x, y, graphics) {
+    const { ctx } = context;
+    const size = graphics.size;
+    const outerColor = graphics.outerColor || '#5B4E7A';
+    const innerColor = graphics.innerColor || '#8D7EA9';
     ctx.save();
-    ctx.translate(centerPixelX, centerPixelY);
-    ctx.rotate(Math.PI / 4);
-    // Outer square
-    ctx.fillStyle = outerColor;
-    ctx.fillRect(-size * 0.9, -size * 0.9, size * 1.8, size * 1.8);
-    // Inner square
-    ctx.fillStyle = innerColor;
-    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, size * 1.2);
+    ctx.translate(x, y);
+    if (graphics.shape === 'circle') {
+        // Draw outer circle with glow effect
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.3, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(91, 78, 122, 0.3)';
+        ctx.fill();
+        ctx.closePath();
+        // Draw main outer circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 1.2, 0, 2 * Math.PI);
+        ctx.fillStyle = outerColor;
+        ctx.fill();
+        ctx.closePath();
+        // Draw inner circle
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, 2 * Math.PI);
+        ctx.fillStyle = innerColor;
+        ctx.fill();
+        ctx.closePath();
+        // Add void effect (spiral pattern)
+        ctx.strokeStyle = '#2A1B3D';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 8; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 4);
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.8, 0, Math.PI);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+    else {
+        // Draw square void (diamond shape)
+        ctx.rotate(45 * Math.PI / 180);
+        // Outer glow
+        ctx.fillStyle = 'rgba(91, 78, 122, 0.3)';
+        ctx.fillRect(-size * 1.3, -size * 1.3, size * 2.6, size * 2.6);
+        // Outer square
+        ctx.fillStyle = outerColor;
+        ctx.fillRect(-size * 1.2, -size * 1.2, size * 2.4, size * 2.4);
+        // Inner square
+        ctx.fillStyle = innerColor;
+        ctx.fillRect(-size, -size, size * 2, size * 2);
+        // Add void effect lines
+        ctx.strokeStyle = '#2A1B3D';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            ctx.save();
+            ctx.rotate(i * Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(-size * 1.5, 0);
+            ctx.lineTo(size * 1.5, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
     ctx.restore();
 }
-function drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces) {
-    const coordStr = `${selectedPieceCoord[0]},${selectedPieceCoord[1]}`;
-    if (!pieces[coordStr])
-        return;
-    const centerPixelX = originX + selectedPieceCoord[0] * GRID_SIZE;
-    const centerPixelY = originY - selectedPieceCoord[1] * GRID_SIZE;
-    // Draw highlight ring
-    ctx.strokeStyle = '#FFFF00';
-    ctx.lineWidth = 3;
+/**
+ * Render a piece highlight for selection
+ * @param context - Rendering context
+ * @param coords - Board coordinates
+ * @param size - Highlight size
+ */
+export function renderPieceHighlight(context, coords, size) {
+    const { ctx } = context;
+    const [x, y] = coords;
+    const centerPixelX = context.originX + x * context.gridSize;
+    const centerPixelY = context.originY - y * context.gridSize;
+    ctx.save();
+    // Draw yellow highlight circle
     ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
+    ctx.arc(centerPixelX, centerPixelY, size * 1.5, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#ffff00';
+    ctx.lineWidth = 4;
     ctx.stroke();
-}
-// Helper function to darken colors
-function darkenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) - amt;
-    const G = (num >> 8 & 0x00FF) - amt;
-    const B = (num & 0x0000FF) - amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+    ctx.closePath();
+    // Add pulsing effect
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, size * 1.8, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
 }
 export { AMALGAM_COLORS, GRID_SIZE };

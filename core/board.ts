@@ -106,7 +106,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     // Circles pre-placed pieces
     pieces['C_Void'] = {
         id: 'C_Void',
-        type: 'void',
+        type: 'Void',
         player: 'circles' as PlayerId,
         coords: [0, 12],
         isPrePlaced: true,
@@ -120,7 +120,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['C_Amalgam'] = {
         id: 'C_Amalgam',
-        type: 'amalgam',
+        type: 'Amalgam',
         player: 'circles' as PlayerId,
         coords: [0, 6],
         isPrePlaced: true,
@@ -134,7 +134,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['C_Portal1'] = {
         id: 'C_Portal1',
-        type: 'portal',
+        type: 'Portal',
         player: 'circles' as PlayerId,
         coords: [6, 6],
         isPrePlaced: true,
@@ -148,7 +148,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['C_Portal2'] = {
         id: 'C_Portal2',
-        type: 'portal',
+        type: 'Portal',
         player: 'circles' as PlayerId,
         coords: [-6, 6],
         isPrePlaced: true,
@@ -163,7 +163,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     // Squares pre-placed pieces
     pieces['S_Void'] = {
         id: 'S_Void',
-        type: 'void',
+        type: 'Void',
         player: 'squares' as PlayerId,
         coords: [0, -12],
         isPrePlaced: true,
@@ -177,7 +177,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['S_Amalgam'] = {
         id: 'S_Amalgam',
-        type: 'amalgam',
+        type: 'Amalgam',
         player: 'squares' as PlayerId,
         coords: [0, -6],
         isPrePlaced: true,
@@ -191,7 +191,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['S_Portal1'] = {
         id: 'S_Portal1',
-        type: 'portal',
+        type: 'Portal',
         player: 'squares' as PlayerId,
         coords: [6, -6],
         isPrePlaced: true,
@@ -205,7 +205,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
     
     pieces['S_Portal2'] = {
         id: 'S_Portal2',
-        type: 'portal',
+        type: 'Portal',
         player: 'squares' as PlayerId,
         coords: [-6, -6],
         isPrePlaced: true,

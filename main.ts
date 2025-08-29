@@ -306,8 +306,17 @@ class AmalgamGame {
      * Handle setup phase clicks
      */
     private handleSetupClick(coords: Vector2): void {
-        // The GameManager will handle placement using the selected piece ID
-        // through the convertMoveIntentToMove override
+        if (!this.gameManager) return;
+        
+        // Create move intent and send to game manager
+        const moveIntent = {
+            coords: coords,
+            type: 'click'
+        };
+        
+        // Call the game manager's handleMoveIntent method
+        (this.gameManager as any).handleMoveIntent(moveIntent);
+        
         logger.debug('Setup click at:', coords);
     }
 
@@ -603,12 +612,12 @@ class AmalgamGame {
             
             // Determine piece visual properties based on type and player
             const pieceData: CanvasPieceData = {
-                type: this.getCanvasPieceType(piece),
-                size: 12, // Default size
-                colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'], // Amalgam colors
+                type: piece.type, // Use the actual piece type
+                size: this.getPieceSize(piece.type),
+                colors: this.getPieceColors(piece.type),
                 rotation: 0,
-                outerColor: piece.player === 'circles' ? '#0066CC' : '#CC0066',
-                innerColor: '#FFFFFF'
+                outerColor: this.getPieceOuterColor(piece.type, piece.player),
+                innerColor: this.getPieceInnerColor(piece.type)
             };
             
             canvasPieces[coordStr] = pieceData;
@@ -618,20 +627,56 @@ class AmalgamGame {
     }
     
     /**
-     * Map game piece types to canvas piece types
+     * Get piece size based on type
      */
-    private getCanvasPieceType(piece: Piece): string {
-        const typeMap: Record<string, string> = {
-            'Amalgam': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare',
-            'Void': piece.player === 'circles' ? 'voidCircle' : 'voidSquare',
-            'Portal': piece.player === 'circles' ? 'portalCircle' : 'portalSquare',
-            'Ruby': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare',
-            'Amber': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare',
-            'Pearl': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare'
+    private getPieceSize(type: string): number {
+        const sizeMap: Record<string, number> = {
+            'Ruby': 10,
+            'Pearl': 10,
+            'Amber': 10,
+            'Jade': 10,
+            'Amalgam': 12,
+            'Portal': 8,
+            'Void': 12
         };
-        
-        return typeMap[piece.type] || 'amalgamCircle';
+        return sizeMap[type] || 10;
     }
+    
+    /**
+     * Get piece colors based on type
+     */
+    private getPieceColors(type: string): string[] {
+        const colorMap: Record<string, string[]> = {
+            'Ruby': ['#E63960'],
+            'Pearl': ['#87CEEB'],
+            'Amber': ['#F6C13F'],
+            'Jade': ['#A9E886'],
+            'Amalgam': ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
+            'Portal': ['#87CEEB'],
+            'Void': ['#5B4E7A']
+        };
+        return colorMap[type] || ['#666'];
+    }
+    
+    /**
+     * Get piece outer color based on type and player
+     */
+    private getPieceOuterColor(type: string, player: string): string {
+        if (type === 'Portal') return '#87CEEB';
+        if (type === 'Void') return '#5B4E7A';
+        return player === 'circles' ? '#0066CC' : '#CC0066';
+    }
+    
+    /**
+     * Get piece inner color based on type
+     */
+    private getPieceInnerColor(type: string): string {
+        if (type === 'Portal') return '#ADD8E6';
+        if (type === 'Void') return '#8D7EA9';
+        return '#FFFFFF';
+    }
+    
+
 
     private renderPieceSelectionPanel(state: GameState): void {
         if (!this.pieceSelectionPanel || !this.gameManager || !this.pieceDefs) return;

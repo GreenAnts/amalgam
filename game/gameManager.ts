@@ -1028,4 +1028,29 @@ export class GameManager {
         
         logger.debug('GameManager destroyed');
     }
+
+    /**
+     * Handle intersection click
+     */
+    private handleIntersectionClick(coords: Vector2): void {
+        if (!this.gameCanvas) return;
+        
+        const state = this.getState();
+        if (!state) return;
+        
+        // Check if it's a valid intersection
+        if (!this.gameCanvas.boardDict[`${coords[0]},${coords[1]}`]) {
+            logger.debug('Clicked on invalid intersection:', coords);
+            return;
+        }
+        
+        // Create move intent and pass to game manager
+        const moveIntent = {
+            coords: coords,
+            type: 'click' as const
+        };
+        
+        // Handle the move intent through the game manager
+        this.handleMoveIntent(moveIntent);
+    }
 }

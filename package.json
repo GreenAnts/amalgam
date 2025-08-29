@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
     "clean": "rm -rf dist && rm -f *.js core/*.js ui/*.js game/*.js utils/*.js",
-    "serve": "python3 -m http.server 8080"
+    "serve": "python3 -m http.server 8080",
+    "test": "node tests/run-tests.js",
+    "test:web": "python3 -m http.server 8080 && open http://localhost:8080/tests/unified-test-navigation.html",
+    "test:cli": "node tests/consolidated-test-runner.js"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

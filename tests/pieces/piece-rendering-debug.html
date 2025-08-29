@@ -65,9 +65,80 @@
             max-height: 200px;
             overflow-y: auto;
         }
+
+        /* Navigation Bar Styles */
+        .nav-bar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+
+        .nav-left, .nav-right {
+            flex: 1;
+        }
+
+        .nav-center {
+            flex: 2;
+            text-align: center;
+        }
+
+        .nav-center h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .nav-right {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-content">
+            <div class="nav-left">
+                <a href="../unified-test-navigation.html" class="nav-link">
+                    🏠 Back to Test Hub
+                </a>
+            </div>
+            <div class="nav-center">
+                <h2>♟️ Piece Debug Tests</h2>
+            </div>
+            <div class="nav-right">
+                <a href="../../index.html" class="nav-link">
+                    🎮 Back to Game
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <h1>🎯 Piece Rendering Debug Tool</h1>
         <p>This tool tests all piece rendering functionality to ensure pieces display correctly on the board.</p>
