@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Working JSON Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ccc;
+        }
+        .test-result.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Working JSON Test</h1>
+        <p>This tool tests only the JSON files that are known to work with absolute paths.</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="runTests()">Run Working JSON Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div class="summary" id="summary" style="display: none;"></div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        const summary = document.getElementById('summary');
+        
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        
+        function addResult(test, status, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            
+            let content = `<h3>${test}</h3><p><strong>Status:</strong> ${status.toUpperCase()}</p><p><strong>Message:</strong> ${message}</p>`;
+            
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+            
+            if (status === 'success') passedTests++;
+            if (status === 'error') failedTests++;
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+            summary.style.display = 'none';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+        }
+        
+        function showSummary() {
+            summary.style.display = 'block';
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            summary.innerHTML = `
+                <h3>📊 Test Summary</h3>
+                <p><strong>Total Tests:</strong> ${totalTests}</p>
+                <p><strong>Passed:</strong> ${passedTests}</p>
+                <p><strong>Failed:</strong> ${failedTests}</p>
+                <p><strong>Success Rate:</strong> ${successRate}%</p>
+                <p><strong>Status:</strong> ${failedTests === 0 ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}</p>
+            `;
+        }
+        
+        async function testJsonFile(path, testName) {
+            try {
+                console.log(`Testing ${path}...`);
+                
+                const response = await fetch(path);
+                console.log(`Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                console.log(`Response text length: ${text.length}`);
+                
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response received');
+                }
+                
+                const data = JSON.parse(text);
+                
+                addResult(testName, 'success', `Successfully loaded and parsed JSON`, {
+                    path: path,
+                    responseSize: text.length,
+                    dataKeys: Object.keys(data),
+                    sampleData: Object.keys(data).slice(0, 3)
+                });
+                
+            } catch (error) {
+                console.error(`Error testing ${path}:`, error);
+                addResult(testName, 'error', `Failed to load ${path}: ${error.message}`);
+            }
+        }
+        
+        async function runTests() {
+            clearResults();
+            
+            addResult('Test Start', 'info', 'Starting working JSON tests...');
+            
+            // Only test paths that are known to work
+            const workingFiles = [
+                { path: '/data/board-data.json', name: 'Board Data' },
+                { path: '/data/piece-definitions.json', name: 'Piece Definitions' },
+                { path: '/game-rules/golden_lines.json', name: 'Golden Lines' },
+                { path: '/game-rules/board_positions.json', name: 'Board Positions' },
+                { path: '/game-rules/starting_positions.json', name: 'Starting Positions' },
+                { path: '/game-rules/piece_definitions.json', name: 'Game Rules Piece Definitions' }
+            ];
+            
+            totalTests = workingFiles.length;
+            
+            for (const file of workingFiles) {
+                await testJsonFile(file.path, file.name);
+            }
+            
+            // Test amalgam_complete_rules with cache busting
+            const cacheBust = Date.now();
+            await testJsonFile(`/game-rules/amalgam_complete_rules.json?v=${cacheBust}`, 'Game Rules (cache busted)');
+            totalTests++;
+            
+            addResult('Test Complete', 'info', 'All working JSON tests completed');
+            showSummary();
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            addResult('Page Load', 'info', 'Working JSON test tool loaded successfully');
+        });
+    </script>
+</body>
+</html>

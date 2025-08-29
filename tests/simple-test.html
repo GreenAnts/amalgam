@@ -15,11 +15,11 @@
         async function testImports() {
             try {
                 console.log('Testing logger import...');
-                const { logger } = await import('./utils/logger.js');
+                const { logger } = await import('../utils/logger.js');
                 console.log('Logger imported successfully:', logger);
                 
                 console.log('Testing helpers import...');
-                const { deepCopy } = await import('./utils/helpers.js');
+                const { deepCopy } = await import('../utils/helpers.js');
                 console.log('Helpers imported successfully:', deepCopy);
                 
                 resultDiv.innerHTML = '<p style="color: green;">✅ All imports successful!</p>';

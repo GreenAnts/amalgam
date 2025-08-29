@@ -95,20 +95,18 @@ export function createGameCanvas(container: HTMLElement, boardData: BoardData): 
 function createBoardDictionary(boardData: BoardData): Record<IntersectionId, 'golden' | 'standard'> {
     const boardDict: Record<IntersectionId, 'golden' | 'standard'> = {};
     
-    // Mark golden intersections
-    if (boardData.golden_lines && boardData.golden_lines.golden_line_intersections) {
-        boardData.golden_lines.golden_line_intersections.forEach(coords => {
-            const coordStr: IntersectionId = `${coords[0]},${coords[1]}`;
-            boardDict[coordStr] = "golden";
+    // Mark golden intersections from JSON data
+    if (boardData.golden_coordinates) {
+        boardData.golden_coordinates.forEach(coord => {
+            boardDict[coord] = "golden";
         });
     }
     
-    // Mark standard intersections
-    if (boardData.board_positions && boardData.board_positions.coordinates) {
-        boardData.board_positions.coordinates.forEach(coords => {
-            const coordStr: IntersectionId = `${coords[0]},${coords[1]}`;
-            if (!boardDict[coordStr]) {
-                boardDict[coordStr] = "standard";
+    // Mark standard intersections from JSON data
+    if (boardData.standard_coordinates) {
+        boardData.standard_coordinates.forEach(coord => {
+            if (!boardDict[coord]) {
+                boardDict[coord] = "standard";
             }
         });
     }
@@ -119,11 +117,11 @@ function createBoardDictionary(boardData: BoardData): Record<IntersectionId, 'go
 /**
  * Create golden connections set for fast lookup
  */
-function createGoldenConnectionsSet(goldenLinesDict: Record<IntersectionId, Array<{x: number, y: number}>>): Set<string> {
+function createGoldenConnectionsSet(goldenLinesDict: Record<string, Array<{x: number, y: number}>>): Set<string> {
     const goldenConnections = new Set<string>();
     
     for (const coordStr in goldenLinesDict) {
-        const connections = goldenLinesDict[coordStr as IntersectionId];
+        const connections = goldenLinesDict[coordStr];
         const parts = coordStr.split(',').map(Number);
         const x1 = parts[0];
         const y1 = parts[1];
@@ -132,7 +130,7 @@ function createGoldenConnectionsSet(goldenLinesDict: Record<IntersectionId, Arra
             connections.forEach(target => {
                 const x2 = target.x;
                 const y2 = target.y;
-                // Create canonical key for connection
+                // Create a canonical key for the connection to handle both directions
                 const key = `${Math.min(x1, x2)},${Math.min(y1, y2)}-${Math.max(x1, x2)},${Math.max(y1, y2)}`;
                 goldenConnections.add(key);
             });
@@ -149,11 +147,13 @@ function drawBoard(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    boardDict: Record<IntersectionId, 'golden' | 'standard'>, 
-    goldenConnections: Set<string>, 
+    boardDict: Record<IntersectionId, 'golden' | 'standard'>,
+    goldenConnections: Set<string>,
     boardData: BoardData
 ): void {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // Clear canvas with white background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
     // Draw background polygons (board shape)
     drawBackgroundPolygons(ctx, originX, originY);
@@ -223,13 +223,11 @@ function drawPolygonSet(
     fillColor: string
 ): void {
     ctx.fillStyle = fillColor;
-    
     polygons.forEach(polygon => {
         ctx.beginPath();
         polygon.forEach((point, index) => {
             const pixelX = originX + point.x * GRID_SIZE;
             const pixelY = originY - point.y * GRID_SIZE;
-            
             if (index === 0) {
                 ctx.moveTo(pixelX, pixelY);
             } else {
@@ -248,7 +246,7 @@ function drawStandardLines(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    boardDict: Record<IntersectionId, 'golden' | 'standard'>, 
+    boardDict: Record<IntersectionId, 'golden' | 'standard'>,
     goldenConnections: Set<string>
 ): void {
     ctx.strokeStyle = BLACK_LINE_COLOR;
@@ -261,7 +259,7 @@ function drawStandardLines(
         const startY = originY - y * GRID_SIZE;
         
         // Check horizontal neighbor
-        const neighborHStr: IntersectionId = `${x + 1},${y}`;
+        const neighborHStr = `${x + 1},${y}`;
         if (boardDict[neighborHStr] !== undefined) {
             const key = `${Math.min(x, x + 1)},${Math.min(y, y)}-${Math.max(x, x + 1)},${Math.max(y, y)}`;
             if (!goldenConnections.has(key)) {
@@ -275,7 +273,7 @@ function drawStandardLines(
         }
         
         // Check vertical neighbor
-        const neighborVStr: IntersectionId = `${x},${y + 1}`;
+        const neighborVStr = `${x},${y + 1}`;
         if (boardDict[neighborVStr] !== undefined) {
             const key = `${Math.min(x, x)},${Math.min(y, y + 1)}-${Math.max(x, x)},${Math.max(y, y + 1)}`;
             if (!goldenConnections.has(key)) {
@@ -297,14 +295,14 @@ function drawGoldenLines(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    goldenLinesDict: Record<IntersectionId, Array<{x: number, y: number}>>
+    goldenLinesDict: Record<string, Array<{x: number, y: number}>>
 ): void {
     ctx.strokeStyle = GOLDEN_LINE_COLOR;
     ctx.lineWidth = GOLDEN_LINE_WIDTH;
     ctx.lineCap = 'round';
     
     for (const coordStr in goldenLinesDict) {
-        const connections = goldenLinesDict[coordStr as IntersectionId];
+        const connections = goldenLinesDict[coordStr];
         const parts = coordStr.split(',').map(Number);
         const startX = originX + parts[0] * GRID_SIZE;
         const startY = originY - parts[1] * GRID_SIZE;
@@ -332,7 +330,7 @@ function drawIntersections(
     boardDict: Record<IntersectionId, 'golden' | 'standard'>
 ): void {
     for (const coordStr in boardDict) {
-        const intersectionType = boardDict[coordStr as IntersectionId];
+        const intersectionType = boardDict[coordStr];
         const parts = coordStr.split(',').map(Number);
         const x = parts[0];
         const y = parts[1];
@@ -341,18 +339,15 @@ function drawIntersections(
         
         ctx.fillStyle = intersectionType === "golden" ? GOLDEN_COLOR : STANDARD_COLOR;
         ctx.beginPath();
-        
         if (intersectionType === "golden") {
             ctx.arc(pixelX, pixelY, GOLDEN_RADIUS, 0, 2 * Math.PI);
-        } else {
-            // Standard intersections as diamonds
-            ctx.moveTo(pixelX, pixelY - DIAMOND_SIZE);
-            ctx.lineTo(pixelX + DIAMOND_SIZE, pixelY);
-            ctx.lineTo(pixelX, pixelY + DIAMOND_SIZE);
-            ctx.lineTo(pixelX - DIAMOND_SIZE, pixelY);
+        } else { // Standard intersections are now diamonds
+            ctx.moveTo(pixelX, pixelY - DIAMOND_SIZE); // Top point
+            ctx.lineTo(pixelX + DIAMOND_SIZE, pixelY); // Right point
+            ctx.lineTo(pixelX, pixelY + DIAMOND_SIZE); // Bottom point
+            ctx.lineTo(pixelX - DIAMOND_SIZE, pixelY); // Left point
             ctx.closePath();
         }
-        
         ctx.fill();
     }
 }
@@ -368,33 +363,36 @@ function drawPieces(
     selectedPieceCoord?: Vector2 | null
 ): void {
     for (const coordStr in pieces) {
-        const piece = pieces[coordStr as IntersectionId];
+        const piece = pieces[coordStr];
         const [x, y] = coordStr.split(',').map(Number);
+        const size = piece.size || 12;
         
         switch (piece.type) {
             case 'amalgamCircle':
-                drawAmalgamCircle(ctx, originX, originY, x, y, piece.size, piece.colors!, piece.rotation || 0);
+                drawAmalgamCircle(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
                 break;
             case 'amalgamSquare':
-                drawAmalgamSquare(ctx, originX, originY, x, y, piece.size, piece.colors!, piece.rotation || 0);
+                drawAmalgamSquare(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
                 break;
             case 'voidCircle':
-                drawVoidCircle(ctx, originX, originY, x, y, piece.size, piece.outerColor!, piece.innerColor!);
+                drawVoidCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'voidSquare':
-                drawVoidSquare(ctx, originX, originY, x, y, piece.size, piece.outerColor!, piece.innerColor!);
+                drawVoidSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'portalCircle':
-                drawPortalCircle(ctx, originX, originY, x, y, piece.size, piece.outerColor!, piece.innerColor!);
+                drawPortalCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'portalSquare':
-                drawPortalSquare(ctx, originX, originY, x, y, piece.size, piece.outerColor!, piece.innerColor!);
+                drawPortalSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
         }
     }
     
     // Draw selection highlight last
-    drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces);
+    if (selectedPieceCoord) {
+        drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces);
+    }
 }
 
 /**
@@ -406,7 +404,9 @@ function getCoordinatesFromPixel(mouseX: number, mouseY: number, originX: number
     return [gameX, gameY];
 }
 
-// Piece drawing functions (will be implemented based on reference)
+/**
+ * Draw Amalgam Circle piece (quadrant-based)
+ */
 function drawAmalgamCircle(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
@@ -417,7 +417,6 @@ function drawAmalgamCircle(
     colors: string[], 
     rotation: number
 ): void {
-    // Implementation from reference - simplified for now
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
     const radius = size;
@@ -428,10 +427,10 @@ function drawAmalgamCircle(
     
     // Draw the amalgam circle with quadrants
     const angles = [
-        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] },
-        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] },
-        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] },
-        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }
+        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] || AMALGAM_COLORS[2] },
+        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] || AMALGAM_COLORS[0] },
+        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] || AMALGAM_COLORS[1] },
+        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] || AMALGAM_COLORS[3] }
     ];
     
     angles.forEach(angle => {
@@ -456,18 +455,49 @@ function drawAmalgamSquare(
     colors: string[], 
     rotation: number
 ): void {
-    // Similar to circle but with square shape
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
     
+    const outerColors = colors.map(c => darkenColor(c, 20));
+
+    // Size of the outer and inner squares
+    const outerSize = size * 2.1;
+    const innerSize = size * 1.5;
+
     ctx.save();
     ctx.translate(centerPixelX, centerPixelY);
-    ctx.rotate(rotation);
+
+    // The square is a diamond (rotated 45 degrees), so we add this to the orientation angle
+    ctx.rotate(rotation + (45 * Math.PI / 180));
+
+    // Draw the four quadrants of the outer diamond (a rotated square)
+    const halfOuter = outerSize / 2;
+    const outerRects = [
+        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] || AMALGAM_COLORS[0] }, // Red
+        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
+        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
+        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] || AMALGAM_COLORS[1] } // Green
+    ];
+
+    outerRects.forEach(rect => {
+        ctx.fillStyle = rect.color;
+        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    });
+
+    // Draw the four inner squares, forming the inner diamond
+    const halfInner = innerSize / 2;
+    const innerRects = [
+        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] || AMALGAM_COLORS[0] }, // Red
+        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
+        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
+        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] || AMALGAM_COLORS[1] } // Green
+    ];
     
-    // Draw square with colored triangular sections
-    ctx.fillStyle = colors[0];
-    ctx.fillRect(-size/2, -size/2, size, size);
-    
+    innerRects.forEach(rect => {
+        ctx.fillStyle = rect.color;
+        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    });
+
     ctx.restore();
 }
 
@@ -483,18 +513,21 @@ function drawVoidCircle(
 ): void {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
+    const radius = size;
     
-    // Outer circle
+    // Draw outer circle
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, radius * 1.2, 0, 2 * Math.PI);
     ctx.fillStyle = outerColor;
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size, 0, 2 * Math.PI);
     ctx.fill();
-    
-    // Inner circle
+    ctx.closePath();
+
+    // Draw inner circle
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, radius, 0, 2 * Math.PI);
     ctx.fillStyle = innerColor;
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size * 0.6, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.closePath();
 }
 
 function drawVoidSquare(
@@ -509,15 +542,28 @@ function drawVoidSquare(
 ): void {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
-    
-    // Outer square
+
+    ctx.save();
+    ctx.translate(centerPixelX, centerPixelY);
+    ctx.rotate(45 * Math.PI / 180);
+
+    // Outer square dimensions
+    const outerSize = size * 2.1;
+    const halfOuter = outerSize / 2;
+
+    // Inner square dimensions
+    const innerSize = size * 1.5;
+    const halfInner = innerSize / 2;
+
+    // Draw outer diamond (rotated square)
     ctx.fillStyle = outerColor;
-    ctx.fillRect(centerPixelX - size/2, centerPixelY - size/2, size, size);
-    
-    // Inner square
+    ctx.fillRect(-halfOuter, -halfOuter, outerSize, outerSize);
+
+    // Draw inner diamond (rotated square)
     ctx.fillStyle = innerColor;
-    const innerSize = size * 0.6;
-    ctx.fillRect(centerPixelX - innerSize/2, centerPixelY - innerSize/2, innerSize, innerSize);
+    ctx.fillRect(-halfInner, -halfInner, innerSize, innerSize);
+
+    ctx.restore();
 }
 
 function drawPortalCircle(
@@ -533,17 +579,19 @@ function drawPortalCircle(
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
     
-    // Portal circle with gradient effect
+    // Draw outer circle
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, size * 1.3, 0, 2 * Math.PI);
     ctx.fillStyle = outerColor;
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size, 0, 2 * Math.PI);
     ctx.fill();
-    
-    // Inner portal effect
+    ctx.closePath();
+
+    // Draw inner portal effect
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, size * 0.8, 0, 2 * Math.PI);
     ctx.fillStyle = innerColor;
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, size * 0.7, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.closePath();
 }
 
 function drawPortalSquare(
@@ -564,12 +612,13 @@ function drawPortalSquare(
     ctx.translate(centerPixelX, centerPixelY);
     ctx.rotate(Math.PI / 4);
     
+    // Outer square
     ctx.fillStyle = outerColor;
-    ctx.fillRect(-size/2, -size/2, size, size);
+    ctx.fillRect(-size * 0.9, -size * 0.9, size * 1.8, size * 1.8);
     
+    // Inner square
     ctx.fillStyle = innerColor;
-    const innerSize = size * 0.7;
-    ctx.fillRect(-innerSize/2, -innerSize/2, innerSize, innerSize);
+    ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, size * 1.2);
     
     ctx.restore();
 }
@@ -578,12 +627,10 @@ function drawSelectedPieceHighlight(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    selectedPieceCoord: Vector2 | null | undefined, 
+    selectedPieceCoord: Vector2, 
     pieces: Record<IntersectionId, PieceData>
 ): void {
-    if (!selectedPieceCoord) return;
-    
-    const coordStr: IntersectionId = `${selectedPieceCoord[0]},${selectedPieceCoord[1]}`;
+    const coordStr = `${selectedPieceCoord[0]},${selectedPieceCoord[1]}`;
     if (!pieces[coordStr]) return;
     
     const centerPixelX = originX + selectedPieceCoord[0] * GRID_SIZE;
@@ -595,6 +642,18 @@ function drawSelectedPieceHighlight(
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
     ctx.stroke();
+}
+
+// Helper function to darken colors
+function darkenColor(color: string, percent: number): string {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) - amt;
+    const G = (num >> 8 & 0x00FF) - amt;
+    const B = (num & 0x0000FF) - amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
 }
 
 export { AMALGAM_COLORS, GRID_SIZE };

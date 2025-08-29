@@ -542,9 +542,6 @@
     "terminology_reference": {
       "spatial_terms": {
         "board_intersection": "Any valid position on the game board where pieces can be placed",
-    "terminology_reference": {
-      "spatial_terms": {
-        "board_intersection": "Any valid position on the game board where pieces can be placed",
         "8_directional_adjacent": "Positions that are exactly one intersection away horizontally, vertically, or diagonally",
         "straight_line": "Horizontal alignment (same Y), vertical alignment (same X), or diagonal alignment (equal X and Y differences)",
         "golden_line_intersection": "Board intersection that lies on one of the golden line paths",

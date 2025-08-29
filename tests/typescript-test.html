@@ -12,13 +12,13 @@
     <script type="module">
         try {
             // Test importing and creating basic components
-            const { logger } = await import('./utils/logger.js');
-            const { createBoard } = await import('./core/board.js');
+            const { logger } = await import('../utils/logger.js');
+            const { createBoard } = await import('../core/board.js');
             
             logger.info('TypeScript modules loaded successfully');
             
             // Test loading board data
-            const response = await fetch('./data/board-data.json');
+            const response = await fetch('../data/board-data.json');
             const boardData = await response.json();
             
             // Test creating board

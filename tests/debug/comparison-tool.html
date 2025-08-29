@@ -124,12 +124,12 @@
                 log('main-debug', '🎮 Simulating main page canvas creation...');
                 
                 // Step 1: Load data exactly like main page
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 log('main-debug', 'Board data loaded', { schema: boardData.schema });
                 
                 // Step 2: Create canvas exactly like main page initializeUI()
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`/ui/graphics.js?v=${cacheBust}`);
                 const container = document.getElementById('main-canvas-container');
                 
                 const gameCanvas = createGameCanvas(container, boardData);
@@ -178,11 +178,11 @@
                 log('debug-debug', '🔍 Simulating debug page canvas creation...');
                 
                 // Debug page approach
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 log('debug-debug', 'Board data loaded', { schema: boardData.schema });
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`/ui/graphics.js?v=${cacheBust}`);
                 const container = document.getElementById('debug-canvas-container');
                 
                 const gameCanvas = createGameCanvas(container, boardData);

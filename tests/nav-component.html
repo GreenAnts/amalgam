@@ -1,0 +1,144 @@
+<!-- Navigation Component for Test Suite -->
+<style>
+    .test-nav {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 15px 0;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .nav-brand {
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .nav-brand:hover {
+        color: #f0f0f0;
+    }
+    .nav-links {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    .nav-link {
+        color: white;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background 0.3s;
+        font-size: 14px;
+    }
+    .nav-link:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    .nav-link.active {
+        background: rgba(255,255,255,0.3);
+        font-weight: bold;
+    }
+    .nav-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .nav-dropdown-content {
+        display: none;
+        position: absolute;
+        background: white;
+        min-width: 200px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        border-radius: 4px;
+        z-index: 1001;
+        top: 100%;
+        right: 0;
+    }
+    .nav-dropdown:hover .nav-dropdown-content {
+        display: block;
+    }
+    .nav-dropdown-content a {
+        color: #333;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        border-bottom: 1px solid #eee;
+    }
+    .nav-dropdown-content a:hover {
+        background: #f5f5f5;
+    }
+    .nav-dropdown-content a:last-child {
+        border-bottom: none;
+    }
+    @media (max-width: 768px) {
+        .nav-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .nav-links {
+            justify-content: center;
+        }
+    }
+</style>
+
+<nav class="test-nav">
+    <div class="nav-container">
+        <a href="../index.html" class="nav-brand">🏠 Amalgam</a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link" id="nav-home">🧪 Test Suite</a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link">📊 JSON Tests</a>
+                <div class="nav-dropdown-content">
+                    <a href="json/simple-json-test.html">Simple JSON Test</a>
+                    <a href="json/json-test.html">Comprehensive JSON Test</a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link">🎯 Board Tests</a>
+                <div class="nav-dropdown-content">
+                    <a href="board/board-debug.html">Board Debug Tool</a>
+                    <a href="pieces/piece-rendering-debug.html">Piece Rendering Debug</a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link">🔍 Debug Tools</a>
+                <div class="nav-dropdown-content">
+                    <a href="debug/data-inspector.html">Data Inspector</a>
+                    <a href="debug/comparison-tool.html">Comparison Tool</a>
+                    <a href="debug/debug-test.html">Debug Test</a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link">🎮 Game Tests</a>
+                <div class="nav-dropdown-content">
+                    <a href="unified-test-runner.html">🚀 Unified Test Runner</a>
+                    <a href="comprehensive-suite.html">Comprehensive Suite</a>
+                    <a href="cache-test.html">Cache Test</a>
+                    <a href="unified-suite.html">Unified Suite</a>
+                </div>
+            </div>
+            <a href="../debug/index.html" class="nav-link">🔧 Legacy Debug</a>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Set active nav link based on current page
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        navLinks.forEach(link => {
+            if (link.href && currentPath.includes(link.getAttribute('href'))) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>

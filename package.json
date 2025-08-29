@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
     "clean": "rm -rf dist && rm -f *.js core/*.js ui/*.js game/*.js utils/*.js",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8080"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

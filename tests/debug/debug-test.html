@@ -30,36 +30,43 @@
             try {
                 // Test 1: Logger import
                 addResult('Testing logger import...');
-                const { logger } = await import('./utils/logger.js');
+                const { logger } = await import('/utils/logger.js');
                 addResult('✅ Logger imported successfully');
 
                 // Test 2: Board creation
                 addResult('Testing board creation...');
-                const { createBoard } = await import('./core/board.js');
-                const boardResponse = await fetch('./data/board-data.json');
+                const { createBoard } = await import('/core/board.js');
+                const boardResponse = await fetch('/data/board-data.json');
                 const boardData = await boardResponse.json();
                 const board = createBoard(boardData);
                 addResult(`✅ Board created: ${board.intersections.length} intersections`);
 
                 // Test 3: Initial state creation
                 addResult('Testing initial state creation...');
-                const { createInitialState } = await import('./core/board.js');
+                const { createInitialState } = await import('/core/board.js');
                 const state = createInitialState(board, boardData);
                 addResult(`✅ Initial state created: ${Object.keys(state.pieces).length} pieces`);
 
                 // Test 4: Piece definitions loading
                 addResult('Testing piece definitions loading...');
-                const pieceResponse = await fetch('./data/piece-definitions.json');
+                const pieceResponse = await fetch('/data/piece-definitions.json');
                 const pieceDefs = await pieceResponse.json();
                 addResult(`✅ Piece definitions loaded: ${Object.keys(pieceDefs.piece_definitions.piece_types).length} types`);
 
                 // Test 5: GameManager creation
                 addResult('Testing GameManager creation...');
-                const { GameManager } = await import('./game/gameManager.js');
-                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                tempSvg.setAttribute('width', '100');
-                tempSvg.setAttribute('height', '100');
-                const gameManager = new GameManager(tempSvg, boardData, pieceDefs);
+                const { GameManager } = await import('/game/gameManager.js');
+                // Create a proper canvas object that GameManager expects
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800;
+                tempCanvas.height = 800;
+                const gameCanvas = {
+                    canvas: tempCanvas,
+                    drawBoard: () => {},
+                    drawPieces: () => {},
+                    getCoordinatesFromPixel: () => [0, 0]
+                };
+                const gameManager = new GameManager(gameCanvas, boardData, pieceDefs);
                 addResult('✅ GameManager created successfully');
 
                 addResult('🎉 All tests passed!');

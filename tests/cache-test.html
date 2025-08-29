@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
             background: #f0f0f0;
         }
         .test-container {
@@ -54,6 +54,9 @@
     </style>
 </head>
 <body>
+    <!-- Include Navigation -->
+    <div id="nav-placeholder"></div>
+    
     <div class="test-container">
         <h1>Amalgam Game Test (Cache Bust)</h1>
         
@@ -93,9 +96,9 @@
             
             try {
                 // Test basic module imports with cache busting
-                const { logger } = await import(`./utils/logger.js?v=${cacheBust}`);
-                const { createBoard } = await import(`./core/board.js?v=${cacheBust}`);
-                const { drawBoard } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { logger } = await import(`../utils/logger.js?v=${cacheBust}`);
+                const { createBoard } = await import(`../core/board.js?v=${cacheBust}`);
+                const { drawBoard } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 resultDiv.innerHTML = '<div class="test-result test-success">✅ All modules loaded successfully!</div>';
             } catch (error) {
@@ -110,10 +113,10 @@
             
             try {
                 // Test data file loading with cache busting
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`../data/piece-definitions.json?v=${cacheBust}`);
                 const pieceDefs = await pieceResponse.json();
                 
                 resultDiv.innerHTML = `<div class="test-result test-success">✅ Data loaded successfully! Board: ${boardData.schema}, Pieces: ${Object.keys(pieceDefs.piece_definitions.piece_types).length} types</div>`;
@@ -128,8 +131,8 @@
             resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
             
             try {
-                const { createBoard } = await import(`./core/board.js?v=${cacheBust}`);
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const { createBoard } = await import(`../core/board.js?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 const board = createBoard(boardData);
@@ -159,20 +162,28 @@
             resultDiv.innerHTML = '<div class="test-result">Testing...</div>';
             
             try {
-                const { GameManager } = await import(`./game/gameManager.js?v=${cacheBust}`);
+                const { GameManager } = await import(`../game/gameManager.js?v=${cacheBust}`);
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`../data/piece-definitions.json?v=${cacheBust}`);
                 const pieceDefs = await pieceResponse.json();
                 
-                // Create a temporary SVG element for testing
-                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                tempSvg.setAttribute('width', '100');
-                tempSvg.setAttribute('height', '100');
+                // Create a temporary canvas element for testing
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 400;
+                tempCanvas.height = 400;
                 
-                const gameManager = new GameManager(tempSvg, boardData, pieceDefs);
+                // Create a mock gameCanvas object
+                const mockGameCanvas = {
+                    canvas: tempCanvas,
+                    drawBoard: () => {},
+                    drawPieces: () => {},
+                    getCoordinatesFromPixel: () => [0, 0]
+                };
+                
+                const gameManager = new GameManager(mockGameCanvas, boardData, pieceDefs);
                 
                 resultDiv.innerHTML = '<div class="test-result test-success">✅ Game manager initialized successfully!</div>';
             } catch (error) {
@@ -180,6 +191,18 @@
                 console.error('Game initialization error:', error);
             }
         };
+    </script>
+    
+    <script>
+        // Load navigation component
+        fetch('nav-component.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('nav-placeholder').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Failed to load navigation:', error);
+            });
     </script>
 </body>
 </html>

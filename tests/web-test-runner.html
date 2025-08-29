@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Web Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ccc;
+        }
+        .test-result.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        .test-result.warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .run-all { background: #007bff; color: white; }
+        .clear { background: #6c757d; color: white; }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Comprehensive Web Test Runner</h1>
+        <p>This tool tests all critical functionality to identify any remaining issues.</p>
+        
+        <div class="controls">
+            <button class="run-all" onclick="runAllTests()">Run All Tests</button>
+            <button class="clear" onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="results"></div>
+        <div class="summary" id="summary" style="display: none;"></div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progressBar');
+        const summary = document.getElementById('summary');
+        
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        
+        function addResult(test, status, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            
+            let content = `<h3>${test}</h3><p><strong>Status:</strong> ${status.toUpperCase()}</p><p><strong>Message:</strong> ${message}</p>`;
+            
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+            
+            if (status === 'success') passedTests++;
+            if (status === 'error') failedTests++;
+            
+            updateProgress();
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+            summary.style.display = 'none';
+            progress.style.display = 'none';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+        }
+        
+        function updateProgress() {
+            if (totalTests > 0) {
+                const percentage = ((passedTests + failedTests) / totalTests) * 100;
+                progressBar.style.width = percentage + '%';
+            }
+        }
+        
+        function showSummary() {
+            summary.style.display = 'block';
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            summary.innerHTML = `
+                <h3>📊 Test Summary</h3>
+                <p><strong>Total Tests:</strong> ${totalTests}</p>
+                <p><strong>Passed:</strong> ${passedTests}</p>
+                <p><strong>Failed:</strong> ${failedTests}</p>
+                <p><strong>Success Rate:</strong> ${successRate}%</p>
+                <p><strong>Status:</strong> ${failedTests === 0 ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}</p>
+            `;
+        }
+        
+        async function testJsonFiles() {
+            const cacheBust = Date.now();
+            const files = [
+                { path: `/data/board-data.json?v=${cacheBust}`, name: 'Board Data' },
+                { path: `/data/piece-definitions.json?v=${cacheBust}`, name: 'Piece Definitions' },
+                { path: `/game-rules/amalgam_complete_rules.json?v=${cacheBust}`, name: 'Game Rules' },
+                { path: `/game-rules/golden_lines.json?v=${cacheBust}`, name: 'Golden Lines' },
+                { path: `/game-rules/board_positions.json?v=${cacheBust}`, name: 'Board Positions' },
+                { path: `/game-rules/starting_positions.json?v=${cacheBust}`, name: 'Starting Positions' }
+            ];
+            
+            for (const file of files) {
+                try {
+                    const response = await fetch(file.path);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    addResult(file.name, 'success', `Successfully loaded JSON`, {
+                        size: JSON.stringify(data).length,
+                        keys: Object.keys(data).length
+                    });
+                } catch (error) {
+                    addResult(file.name, 'error', `Failed to load: ${error.message}`);
+                }
+            }
+        }
+        
+        async function testModules() {
+            const modules = [
+                { path: '/utils/logger.js', name: 'Logger' },
+                { path: '/utils/helpers.js', name: 'Helpers' },
+                { path: '/core/types.js', name: 'Types' },
+                { path: '/core/rules.js', name: 'Rules' },
+                { path: '/core/board.js', name: 'Board' },
+                { path: '/ui/graphics.js', name: 'Graphics' },
+                { path: '/ui/animations.js', name: 'Animations' },
+                { path: '/ui/interactions.js', name: 'Interactions' },
+                { path: '/game/gameManager.js', name: 'Game Manager' },
+                { path: '/game/player.js', name: 'Player' }
+            ];
+            
+            for (const module of modules) {
+                try {
+                    await import(module.path);
+                    addResult(module.name, 'success', 'Module loaded successfully');
+                } catch (error) {
+                    addResult(module.name, 'error', `Failed to load: ${error.message}`);
+                }
+            }
+        }
+        
+        async function testGameManager() {
+            try {
+                const { GameManager } = await import('/game/gameManager.js');
+                const cacheBust = Date.now();
+                
+                // Load required data
+                const boardResponse = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`/data/piece-definitions.json?v=${cacheBust}`);
+                
+                if (!boardResponse.ok) throw new Error(`Board data: ${boardResponse.status}`);
+                if (!pieceResponse.ok) throw new Error(`Piece data: ${pieceResponse.status}`);
+                
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceResponse.json();
+                
+                // Create proper canvas object
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800;
+                tempCanvas.height = 800;
+                const gameCanvas = {
+                    canvas: tempCanvas,
+                    drawBoard: () => {},
+                    drawPieces: () => {},
+                    getCoordinatesFromPixel: () => [0, 0]
+                };
+                
+                const gameManager = new GameManager(gameCanvas, boardData, pieceDefs);
+                addResult('Game Manager', 'success', 'GameManager created successfully');
+                
+            } catch (error) {
+                addResult('Game Manager', 'error', `Failed: ${error.message}`);
+            }
+        }
+        
+        async function testBoardCreation() {
+            try {
+                const { createBoard } = await import('/core/board.js');
+                const cacheBust = Date.now();
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const boardData = await response.json();
+                const board = createBoard(boardData);
+                
+                addResult('Board Creation', 'success', 'Board created successfully', {
+                    intersections: board.intersections.length,
+                    goldenConnections: board.goldenLineConnections.length
+                });
+                
+            } catch (error) {
+                addResult('Board Creation', 'error', `Failed: ${error.message}`);
+            }
+        }
+        
+        async function testCanvasCreation() {
+            try {
+                const { createGameCanvas } = await import('/ui/graphics.js');
+                const cacheBust = Date.now();
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const boardData = await response.json();
+                const container = document.createElement('div');
+                const canvas = createGameCanvas(container, boardData);
+                
+                addResult('Canvas Creation', 'success', 'Canvas created successfully', {
+                    width: canvas.canvas.width,
+                    height: canvas.canvas.height
+                });
+                
+            } catch (error) {
+                addResult('Canvas Creation', 'error', `Failed: ${error.message}`);
+            }
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            progress.style.display = 'block';
+            
+            const allTests = [
+                { name: 'JSON Files', fn: testJsonFiles },
+                { name: 'Modules', fn: testModules },
+                { name: 'Board Creation', fn: testBoardCreation },
+                { name: 'Canvas Creation', fn: testCanvasCreation },
+                { name: 'Game Manager', fn: testGameManager }
+            ];
+            
+            totalTests = allTests.length;
+            
+            addResult('Test Suite', 'info', 'Starting comprehensive web tests...');
+            
+            for (const test of allTests) {
+                addResult(test.name, 'info', `Running ${test.name}...`);
+                try {
+                    await test.fn();
+                } catch (error) {
+                    addResult(test.name, 'error', `Test failed: ${error.message}`);
+                }
+            }
+            
+            showSummary();
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            addResult('Page Load', 'info', 'Web test runner loaded successfully');
+        });
+    </script>
+</body>
+</html>

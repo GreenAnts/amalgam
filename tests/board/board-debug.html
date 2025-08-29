@@ -100,8 +100,17 @@
             const debugDiv = document.getElementById('debug-output');
             const timestamp = new Date().toLocaleTimeString();
             let logEntry = `[${timestamp}] ${message}`;
-            if (data) {
-                logEntry += '\n' + JSON.stringify(data, null, 2);
+            if (data && Object.keys(data).length > 0) {
+                // Only include essential data for token conservation
+                const essentialData = {};
+                Object.keys(data).slice(0, 2).forEach(key => {
+                    if (typeof data[key] === 'number' || typeof data[key] === 'string') {
+                        essentialData[key] = data[key];
+                    }
+                });
+                if (Object.keys(essentialData).length > 0) {
+                    logEntry += ` | ${JSON.stringify(essentialData)}`;
+                }
             }
             debugDiv.innerHTML += logEntry + '\n\n';
             debugDiv.scrollTop = debugDiv.scrollHeight;
@@ -122,7 +131,7 @@
             try {
                 log('🔍 Loading and analyzing board data...');
                 
-                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await response.json();
                 
                 log('Board data loaded:', {
@@ -132,19 +141,35 @@
                     hasGoldenLines: !!boardData.golden_lines
                 });
 
-                if (boardData.board_positions?.coordinates) {
-                    const coords = boardData.board_positions.coordinates;
-                    log(`Board positions: ${coords.length} total coordinates`);
-                    log('Sample coordinates:', coords.slice(0, 10));
+                // Check board positions from separate file
+                try {
+                    const positionsResponse = await fetch(`/game-rules/board_positions.json?v=${cacheBust}`);
+                    const positionsData = await positionsResponse.json();
                     
-                    // Check for coordinates we expect to see
-                    const expectedCoords = [[2, 4], [1, -8], [0, 0], [-1, 1], [3, -2]];
-                    const found = expectedCoords.filter(expected => 
-                        coords.some(coord => coord[0] === expected[0] && coord[1] === expected[1])
-                    );
-                    log(`Expected coordinates found: ${found.length}/${expectedCoords.length}`, found);
-                } else {
-                    showError('board_positions.coordinates missing or invalid');
+                    if (positionsData.board_positions?.center_positions && positionsData.board_positions?.quadrant_positions) {
+                        const centerPositions = positionsData.board_positions.center_positions;
+                        const quadrantPositions = positionsData.board_positions.quadrant_positions;
+                        
+                        // Count total positions
+                        let totalPositions = 0;
+                        if (centerPositions.center) totalPositions += centerPositions.center.length;
+                        if (centerPositions.cross_lines) totalPositions += centerPositions.cross_lines.length;
+                        
+                        Object.values(quadrantPositions).forEach(quadrant => {
+                            if (Array.isArray(quadrant)) totalPositions += quadrant.length;
+                        });
+                        
+                        log(`Board positions loaded: ${totalPositions} total positions`);
+                        log('Board positions structure:', {
+                            hasCenter: !!centerPositions.center,
+                            hasCrossLines: !!centerPositions.cross_lines,
+                            quadrants: Object.keys(quadrantPositions)
+                        });
+                    } else {
+                        showError('board_positions structure missing or invalid');
+                    }
+                } catch (error) {
+                    showError(`Failed to load board positions: ${error.message}`);
                 }
 
                 if (boardData.golden_lines?.golden_line_intersections) {
@@ -172,11 +197,11 @@
             try {
                 log('🔍 Testing board dictionary creation...');
                 
-                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await response.json();
                 
                 // Import the graphics functions
-                const { createBoardDictionary } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createBoardDictionary } = await import(`/ui/graphics.js?v=${cacheBust}`);
                 
                 const boardDict = createBoardDictionary(boardData);
                 
@@ -219,10 +244,10 @@
             try {
                 log('🔍 Testing golden connections...');
                 
-                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await response.json();
                 
-                const { createGoldenConnectionsSet } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGoldenConnectionsSet } = await import(`/ui/graphics.js?v=${cacheBust}`);
                 
                 const goldenConnections = createGoldenConnectionsSet(boardData.golden_lines.golden_lines_dict);
                 
@@ -250,10 +275,10 @@
             try {
                 log('🔍 Testing canvas rendering...');
                 
-                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await response.json();
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`/ui/graphics.js?v=${cacheBust}`);
                 
                 // Clear previous canvases
                 const container = document.getElementById('canvas-container');
@@ -326,13 +351,13 @@
             try {
                 log('🔍 Testing game state and pieces...');
                 
-                const { createInitialState, createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                const { createInitialState, createBoard } = await import(`/core/board.js?v=${cacheBust}`);
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`/data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 const board = createBoard(boardData);
-                const state = createInitialState(board);
+                const state = createInitialState(board, boardData);
                 
                 log('Game state created:', {
                     gamePhase: state.gamePhase,

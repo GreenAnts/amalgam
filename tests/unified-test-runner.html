@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Unified Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .test-section {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-result {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .run-all { background: #28a745; font-weight: bold; }
+        .run-all:hover { background: #218838; }
+        .copy-btn {
+            background: #6c757d;
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+        .copy-btn:hover { background: #545b62; }
+        .summary {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .progress {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            background: #007bff;
+            height: 20px;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Include Navigation -->
+    <div id="nav-placeholder"></div>
+    
+    <div class="container">
+        <h1>🧪 Amalgam Unified Test Runner</h1>
+        <p><strong>LLM-Optimized Test Suite</strong> - Runs all tests with concise, token-efficient output</p>
+        
+        <div class="controls">
+            <button onclick="runAllTests()" class="run-all">🚀 Run All Tests</button>
+            <button onclick="runJsonTests()">📊 JSON Tests</button>
+            <button onclick="runBoardTests()">🎯 Board Tests</button>
+            <button onclick="runGameTests()">🎮 Game Tests</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+            <button onclick="copyResults()" class="copy-btn">📋 Copy Results</button>
+        </div>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div>Running tests... <span id="progress-text">0/0</span></div>
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+        </div>
+        
+        <div class="summary" id="summary" style="display: none;">
+            <h3>📈 Test Summary</h3>
+            <div id="summary-content"></div>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+        const summary = document.getElementById('summary');
+        const summaryContent = document.getElementById('summary-content');
+        const progress = document.getElementById('progress');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        
+        let testResults = [];
+        let currentTest = 0;
+        let totalTests = 0;
+        
+        // Concise logging for LLM token conservation
+        function log(message, type = 'info', data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            
+            let content = `[${timestamp}] ${message}`;
+            if (data && Object.keys(data).length > 0) {
+                // Only include essential data for token conservation
+                const essentialData = {};
+                Object.keys(data).slice(0, 3).forEach(key => {
+                    if (typeof data[key] === 'number' || typeof data[key] === 'string') {
+                        essentialData[key] = data[key];
+                    }
+                });
+                if (Object.keys(essentialData).length > 0) {
+                    content += ` | ${JSON.stringify(essentialData)}`;
+                }
+            }
+            
+            div.textContent = content;
+            results.appendChild(div);
+            
+            // Store for summary
+            testResults.push({ message, type, timestamp, data });
+            
+            // Update progress
+            currentTest++;
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            if (totalTests > 0) {
+                const percent = (currentTest / totalTests) * 100;
+                progressText.textContent = `${currentTest}/${totalTests}`;
+                progressBar.style.width = `${percent}%`;
+            }
+        }
+        
+        function showSummary() {
+            const passed = testResults.filter(r => r.type === 'success').length;
+            const failed = testResults.filter(r => r.type === 'error').length;
+            const warnings = testResults.filter(r => r.type === 'warning').length;
+            
+            summaryContent.innerHTML = `
+                <strong>Total Tests:</strong> ${testResults.length} | 
+                <strong>Passed:</strong> ${passed} | 
+                <strong>Failed:</strong> ${failed} | 
+                <strong>Warnings:</strong> ${warnings}
+                <br><br>
+                <strong>Status:</strong> ${failed === 0 ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED'}
+            `;
+            summary.style.display = 'block';
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+            summary.style.display = 'none';
+            progress.style.display = 'none';
+            testResults = [];
+            currentTest = 0;
+            totalTests = 0;
+        }
+        
+        function copyResults() {
+            const text = testResults.map(r => `[${r.timestamp}] ${r.message}`).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                log('Results copied to clipboard', 'success');
+            }).catch(err => {
+                log('Failed to copy results', 'error');
+            });
+        }
+        
+        // JSON Tests
+        async function testJsonFiles() {
+            const cacheBust = Date.now();
+            const files = [
+                        { path: `/data/board-data.json?v=${cacheBust}`, name: 'Board Data' },
+        { path: `/data/piece-definitions.json?v=${cacheBust}`, name: 'Piece Definitions' },
+                { path: `/game-rules/amalgam_complete_rules.json?v=${cacheBust}`, name: 'Game Rules' },
+                { path: `/game-rules/golden_lines.json?v=${cacheBust}`, name: 'Golden Lines' },
+                { path: `/game-rules/board_positions.json?v=${cacheBust}`, name: 'Board Positions' },
+                { path: `/game-rules/starting_positions.json?v=${cacheBust}`, name: 'Starting Positions' },
+                { path: `/game-rules/piece_definitions.json?v=${cacheBust}`, name: 'Game Rules Piece Definitions' }
+            ];
+            
+            for (const file of files) {
+                try {
+                    const response = await fetch(file.path);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const text = await response.text();
+                    if (!text || text.trim() === '') throw new Error('Empty response');
+                    
+                    const data = JSON.parse(text);
+                    log(`${file.name}: OK`, 'success', { size: text.length, keys: Object.keys(data).length });
+                } catch (error) {
+                    log(`${file.name}: FAILED`, 'error', { error: error.message });
+                }
+            }
+        }
+        
+        // Board Tests
+        async function testBoardCreation() {
+            try {
+                const { createBoard } = await import('/core/board.js');
+                const cacheBust = Date.now();
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                const board = createBoard(boardData);
+                log('Board Creation: OK', 'success', { 
+                    intersections: board.intersections.length,
+                    goldenConnections: board.goldenLineConnections.length 
+                });
+            } catch (error) {
+                log('Board Creation: FAILED', 'error', { error: error.message });
+            }
+        }
+        
+        async function testCanvasCreation() {
+            try {
+                const { createGameCanvas } = await import('/ui/graphics.js');
+                const cacheBust = Date.now();
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                const container = document.createElement('div');
+                const canvas = createGameCanvas(container, boardData);
+                
+                log('Canvas Creation: OK', 'success', { 
+                    width: canvas.canvas.width,
+                    height: canvas.canvas.height,
+                    boardDictSize: Object.keys(canvas.boardDict).length 
+                });
+            } catch (error) {
+                log('Canvas Creation: FAILED', 'error', { error: error.message });
+            }
+        }
+        
+        // Game Tests
+        async function testGameState() {
+            try {
+                const { createBoard, createInitialState } = await import('/core/board.js');
+                const cacheBust = Date.now();
+                const response = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                const board = createBoard(boardData);
+                const state = createInitialState(board, boardData);
+                
+                log('Game State: OK', 'success', { 
+                    pieces: Object.keys(state.pieces).length,
+                    phase: state.gamePhase 
+                });
+            } catch (error) {
+                log('Game State: FAILED', 'error', { error: error.message });
+            }
+        }
+        
+        async function testGameManager() {
+            try {
+                const { GameManager } = await import('/game/gameManager.js');
+                const cacheBust = Date.now();
+                const boardResponse = await fetch(`/data/board-data.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`/data/piece-definitions.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceResponse.json();
+                
+                // Create a proper canvas object that GameManager expects
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800;
+                tempCanvas.height = 800;
+                const gameCanvas = {
+                    canvas: tempCanvas,
+                    drawBoard: () => {},
+                    drawPieces: () => {},
+                    getCoordinatesFromPixel: () => [0, 0]
+                };
+                const gameManager = new GameManager(gameCanvas, boardData, pieceDefs);
+                
+                log('Game Manager: OK', 'success');
+            } catch (error) {
+                log('Game Manager: FAILED', 'error', { error: error.message });
+            }
+        }
+        
+        // Module Tests
+        async function testModules() {
+            const modules = [
+                { path: '/utils/logger.js', name: 'Logger' },
+                { path: '/utils/helpers.js', name: 'Helpers' },
+                { path: '/core/types.js', name: 'Types' },
+                { path: '/core/rules.js', name: 'Rules' },
+                { path: '/ui/animations.js', name: 'Animations' },
+                { path: '/ui/interactions.js', name: 'Interactions' },
+                { path: '/game/player.js', name: 'Player' }
+            ];
+            
+            for (const module of modules) {
+                try {
+                    await import(module.path);
+                    log(`${module.name} Module: OK`, 'success');
+                } catch (error) {
+                    log(`${module.name} Module: FAILED`, 'error', { error: error.message });
+                }
+            }
+        }
+        
+        // Test runners
+        async function runJsonTests() {
+            clearResults();
+            log('Starting JSON Tests...', 'info');
+            await testJsonFiles();
+            showSummary();
+        }
+        
+        async function runBoardTests() {
+            clearResults();
+            log('Starting Board Tests...', 'info');
+            await testBoardCreation();
+            await testCanvasCreation();
+            showSummary();
+        }
+        
+        async function runGameTests() {
+            clearResults();
+            log('Starting Game Tests...', 'info');
+            await testGameState();
+            await testGameManager();
+            await testModules();
+            showSummary();
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            progress.style.display = 'block';
+            
+            const allTests = [
+                { name: 'JSON Tests', fn: testJsonFiles },
+                { name: 'Board Tests', fn: testBoardCreation },
+                { name: 'Canvas Tests', fn: testCanvasCreation },
+                { name: 'Game State Tests', fn: testGameState },
+                { name: 'Game Manager Tests', fn: testGameManager },
+                { name: 'Module Tests', fn: testModules }
+            ];
+            
+            totalTests = allTests.length;
+            currentTest = 0;
+            
+            log('🚀 Starting Unified Test Suite...', 'info');
+            
+            for (const test of allTests) {
+                log(`Running ${test.name}...`, 'info');
+                try {
+                    await test.fn();
+                    log(`${test.name}: COMPLETED`, 'success');
+                } catch (error) {
+                    log(`${test.name}: FAILED`, 'error', { error: error.message });
+                }
+                currentTest++;
+                updateProgress();
+            }
+            
+            progress.style.display = 'none';
+            showSummary();
+            log('🏁 All tests completed', 'info');
+        }
+        
+        // Make functions globally available
+        window.runAllTests = runAllTests;
+        window.runJsonTests = runJsonTests;
+        window.runBoardTests = runBoardTests;
+        window.runGameTests = runGameTests;
+        window.clearResults = clearResults;
+        window.copyResults = copyResults;
+        
+        // Auto-run basic test on load
+        window.addEventListener('load', () => {
+            log('Unified Test Runner loaded', 'success');
+        });
+    </script>
+    
+    <script>
+        // Load navigation component
+        fetch('nav-component.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('nav-placeholder').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Failed to load navigation:', error);
+            });
+    </script>
+</body>
+</html>

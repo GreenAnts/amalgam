@@ -1,0 +1,3 @@
+AddType text/javascript .ts
+AddType application/javascript .js
+AddType application/json .json

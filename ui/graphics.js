@@ -63,19 +63,17 @@ export function createGameCanvas(container, boardData) {
  */
 export function createBoardDictionary(boardData) {
     const boardDict = {};
-    // Mark golden intersections
-    if (boardData.golden_lines && boardData.golden_lines.golden_line_intersections) {
-        boardData.golden_lines.golden_line_intersections.forEach(coords => {
-            const coordStr = `${coords[0]},${coords[1]}`;
-            boardDict[coordStr] = "golden";
+    // Mark golden intersections from JSON data
+    if (boardData.golden_coordinates) {
+        boardData.golden_coordinates.forEach(coord => {
+            boardDict[coord] = "golden";
         });
     }
-    // Mark standard intersections
-    if (boardData.board_positions && boardData.board_positions.coordinates) {
-        boardData.board_positions.coordinates.forEach(coords => {
-            const coordStr = `${coords[0]},${coords[1]}`;
-            if (!boardDict[coordStr]) {
-                boardDict[coordStr] = "standard";
+    // Mark standard intersections from JSON data
+    if (boardData.standard_coordinates) {
+        boardData.standard_coordinates.forEach(coord => {
+            if (!boardDict[coord]) {
+                boardDict[coord] = "standard";
             }
         });
     }
@@ -95,7 +93,7 @@ export function createGoldenConnectionsSet(goldenLinesDict) {
             connections.forEach(target => {
                 const x2 = target.x;
                 const y2 = target.y;
-                // Create canonical key for connection
+                // Create a canonical key for the connection to handle both directions
                 const key = `${Math.min(x1, x2)},${Math.min(y1, y2)}-${Math.max(x1, x2)},${Math.max(y1, y2)}`;
                 goldenConnections.add(key);
             });
@@ -107,7 +105,9 @@ export function createGoldenConnectionsSet(goldenLinesDict) {
  * Main board drawing function from reference implementation
  */
 function drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardData) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // Clear canvas with white background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     // Draw background polygons (board shape)
     drawBackgroundPolygons(ctx, originX, originY);
     // Draw black lines first, behind golden lines
@@ -257,12 +257,11 @@ function drawIntersections(ctx, originX, originY, boardDict) {
         if (intersectionType === "golden") {
             ctx.arc(pixelX, pixelY, GOLDEN_RADIUS, 0, 2 * Math.PI);
         }
-        else {
-            // Standard intersections as diamonds
-            ctx.moveTo(pixelX, pixelY - DIAMOND_SIZE);
-            ctx.lineTo(pixelX + DIAMOND_SIZE, pixelY);
-            ctx.lineTo(pixelX, pixelY + DIAMOND_SIZE);
-            ctx.lineTo(pixelX - DIAMOND_SIZE, pixelY);
+        else { // Standard intersections are now diamonds
+            ctx.moveTo(pixelX, pixelY - DIAMOND_SIZE); // Top point
+            ctx.lineTo(pixelX + DIAMOND_SIZE, pixelY); // Right point
+            ctx.lineTo(pixelX, pixelY + DIAMOND_SIZE); // Bottom point
+            ctx.lineTo(pixelX - DIAMOND_SIZE, pixelY); // Left point
             ctx.closePath();
         }
         ctx.fill();
@@ -275,29 +274,32 @@ function drawPieces(ctx, originX, originY, pieces, selectedPieceCoord) {
     for (const coordStr in pieces) {
         const piece = pieces[coordStr];
         const [x, y] = coordStr.split(',').map(Number);
+        const size = piece.size || 12;
         switch (piece.type) {
             case 'amalgamCircle':
-                drawAmalgamCircle(ctx, originX, originY, x, y, piece.size, piece.colors, piece.rotation || 0);
+                drawAmalgamCircle(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
                 break;
             case 'amalgamSquare':
-                drawAmalgamSquare(ctx, originX, originY, x, y, piece.size, piece.colors, piece.rotation || 0);
+                drawAmalgamSquare(ctx, originX, originY, x, y, size, piece.colors || [], piece.rotation || 0);
                 break;
             case 'voidCircle':
-                drawVoidCircle(ctx, originX, originY, x, y, piece.size, piece.outerColor, piece.innerColor);
+                drawVoidCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'voidSquare':
-                drawVoidSquare(ctx, originX, originY, x, y, piece.size, piece.outerColor, piece.innerColor);
+                drawVoidSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'portalCircle':
-                drawPortalCircle(ctx, originX, originY, x, y, piece.size, piece.outerColor, piece.innerColor);
+                drawPortalCircle(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
             case 'portalSquare':
-                drawPortalSquare(ctx, originX, originY, x, y, piece.size, piece.outerColor, piece.innerColor);
+                drawPortalSquare(ctx, originX, originY, x, y, size, piece.outerColor || '#000000', piece.innerColor || '#FFFFFF');
                 break;
         }
     }
     // Draw selection highlight last
-    drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces);
+    if (selectedPieceCoord) {
+        drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces);
+    }
 }
 /**
  * Convert pixel coordinates to game coordinates
@@ -307,9 +309,10 @@ function getCoordinatesFromPixel(mouseX, mouseY, originX, originY) {
     const gameY = Math.round((originY - mouseY) / GRID_SIZE);
     return [gameX, gameY];
 }
-// Piece drawing functions (will be implemented based on reference)
+/**
+ * Draw Amalgam Circle piece (quadrant-based)
+ */
 function drawAmalgamCircle(ctx, originX, originY, x, y, size, colors, rotation) {
-    // Implementation from reference - simplified for now
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
     const radius = size;
@@ -318,10 +321,10 @@ function drawAmalgamCircle(ctx, originX, originY, x, y, size, colors, rotation) 
     ctx.rotate(rotation);
     // Draw the amalgam circle with quadrants
     const angles = [
-        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] },
-        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] },
-        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] },
-        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }
+        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] || AMALGAM_COLORS[2] },
+        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] || AMALGAM_COLORS[0] },
+        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] || AMALGAM_COLORS[1] },
+        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] || AMALGAM_COLORS[3] }
     ];
     angles.forEach(angle => {
         ctx.fillStyle = angle.color;
@@ -336,62 +339,50 @@ function drawAmalgamCircle(ctx, originX, originY, x, y, size, colors, rotation) 
 function drawAmalgamSquare(ctx, originX, originY, x, y, size, colors, rotation) {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
-    
     const outerColors = colors.map(c => darkenColor(c, 20));
-
     // Size of the outer and inner squares
     const outerSize = size * 2.1;
     const innerSize = size * 1.5;
-
     ctx.save();
     ctx.translate(centerPixelX, centerPixelY);
-
     // The square is a diamond (rotated 45 degrees), so we add this to the orientation angle
     ctx.rotate(rotation + (45 * Math.PI / 180));
-
     // Draw the four quadrants of the outer diamond (a rotated square)
     const halfOuter = outerSize / 2;
     const outerRects = [
-        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Red
-        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] }, // Pale Yellow
-        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Yellow/Orange
-        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] } // Green
+        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] || AMALGAM_COLORS[0] }, // Red
+        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
+        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
+        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] || AMALGAM_COLORS[1] } // Green
     ];
-
     outerRects.forEach(rect => {
         ctx.fillStyle = rect.color;
         ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     });
-
     // Draw the four inner squares, forming the inner diamond
     const halfInner = innerSize / 2;
     const innerRects = [
-        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Red
-        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] }, // Pale Yellow
-        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Yellow/Orange
-        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] } // Green
+        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] || AMALGAM_COLORS[0] }, // Red
+        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] || AMALGAM_COLORS[2] }, // Pale Yellow
+        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] || AMALGAM_COLORS[3] }, // Yellow/Orange
+        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] || AMALGAM_COLORS[1] } // Green
     ];
-    
     innerRects.forEach(rect => {
         ctx.fillStyle = rect.color;
         ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     });
-
     ctx.restore();
 }
-
 function drawVoidCircle(ctx, originX, originY, x, y, size, outerColor, innerColor) {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
     const radius = size;
-    
     // Draw outer circle
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, radius * 1.2, 0, 2 * Math.PI);
     ctx.fillStyle = outerColor;
     ctx.fill();
     ctx.closePath();
-
     // Draw inner circle
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, radius, 0, 2 * Math.PI);
@@ -399,45 +390,35 @@ function drawVoidCircle(ctx, originX, originY, x, y, size, outerColor, innerColo
     ctx.fill();
     ctx.closePath();
 }
-
 function drawVoidSquare(ctx, originX, originY, x, y, size, outerColor, innerColor) {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
-
     ctx.save();
     ctx.translate(centerPixelX, centerPixelY);
     ctx.rotate(45 * Math.PI / 180);
-
     // Outer square dimensions
     const outerSize = size * 2.1;
     const halfOuter = outerSize / 2;
-
     // Inner square dimensions
     const innerSize = size * 1.5;
     const halfInner = innerSize / 2;
-
     // Draw outer diamond (rotated square)
     ctx.fillStyle = outerColor;
     ctx.fillRect(-halfOuter, -halfOuter, outerSize, outerSize);
-
     // Draw inner diamond (rotated square)
     ctx.fillStyle = innerColor;
     ctx.fillRect(-halfInner, -halfInner, innerSize, innerSize);
-
     ctx.restore();
 }
-
 function drawPortalCircle(ctx, originX, originY, x, y, size, outerColor, innerColor) {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
-    
     // Draw outer circle
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, size * 1.3, 0, 2 * Math.PI);
     ctx.fillStyle = outerColor;
     ctx.fill();
     ctx.closePath();
-
     // Draw inner portal effect
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, size * 0.8, 0, 2 * Math.PI);
@@ -445,41 +426,22 @@ function drawPortalCircle(ctx, originX, originY, x, y, size, outerColor, innerCo
     ctx.fill();
     ctx.closePath();
 }
-
 function drawPortalSquare(ctx, originX, originY, x, y, size, outerColor, innerColor) {
     const centerPixelX = originX + x * GRID_SIZE;
     const centerPixelY = originY - y * GRID_SIZE;
-    
     // Rotate the square for portal effect
     ctx.save();
     ctx.translate(centerPixelX, centerPixelY);
     ctx.rotate(Math.PI / 4);
-    
     // Outer square
     ctx.fillStyle = outerColor;
     ctx.fillRect(-size * 0.9, -size * 0.9, size * 1.8, size * 1.8);
-    
     // Inner square
     ctx.fillStyle = innerColor;
     ctx.fillRect(-size * 0.6, -size * 0.6, size * 1.2, size * 1.2);
-    
     ctx.restore();
 }
-
-// Helper function to darken colors
-function darkenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) - amt;
-    const G = (num >> 8 & 0x00FF) - amt;
-    const B = (num & 0x0000FF) - amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-}
 function drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, pieces) {
-    if (!selectedPieceCoord)
-        return;
     const coordStr = `${selectedPieceCoord[0]},${selectedPieceCoord[1]}`;
     if (!pieces[coordStr])
         return;
@@ -491,5 +453,16 @@ function drawSelectedPieceHighlight(ctx, originX, originY, selectedPieceCoord, p
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
     ctx.stroke();
+}
+// Helper function to darken colors
+function darkenColor(color, percent) {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) - amt;
+    const G = (num >> 8 & 0x00FF) - amt;
+    const B = (num & 0x0000FF) - amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
 }
 export { AMALGAM_COLORS, GRID_SIZE };

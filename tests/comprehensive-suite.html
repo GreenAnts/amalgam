@@ -217,12 +217,12 @@
                 debugLog('Testing data loading...');
                 
                 // Test board data
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 if (!boardResponse.ok) throw new Error(`Board data fetch failed: ${boardResponse.status}`);
                 const boardData = await boardResponse.json();
                 
                 // Test piece definitions 
-                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`../data/piece-definitions.json?v=${cacheBust}`);
                 if (!pieceResponse.ok) throw new Error(`Piece definitions fetch failed: ${pieceResponse.status}`);
                 const pieceDefs = await pieceResponse.json();
                 
@@ -239,20 +239,15 @@
             try {
                 debugLog('Testing board data structure...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 // Check required sections
-                const requiredSections = ['board_positions', 'golden_lines', 'board'];
+                const requiredSections = ['golden_lines', 'board', 'golden_coordinates', 'standard_coordinates'];
                 const missingSections = requiredSections.filter(section => !boardData[section]);
                 
                 if (missingSections.length > 0) {
                     throw new Error(`Missing required sections: ${missingSections.join(', ')}`);
-                }
-                
-                // Check board positions
-                if (!boardData.board_positions.coordinates || !Array.isArray(boardData.board_positions.coordinates)) {
-                    throw new Error('board_positions.coordinates is missing or not an array');
                 }
                 
                 // Check golden lines
@@ -260,17 +255,22 @@
                     throw new Error('golden_lines.golden_lines_dict is missing or not an object');
                 }
                 
-                if (!boardData.golden_lines.golden_line_intersections || !Array.isArray(boardData.golden_lines.golden_line_intersections)) {
-                    throw new Error('golden_lines.golden_line_intersections is missing or not an array');
+                // Check coordinates
+                if (!boardData.golden_coordinates || !Array.isArray(boardData.golden_coordinates)) {
+                    throw new Error('golden_coordinates is missing or not an array');
                 }
                 
-                const positionCount = boardData.board_positions.coordinates.length;
-                const goldenIntersectionCount = boardData.golden_lines.golden_line_intersections.length;
+                if (!boardData.standard_coordinates || !Array.isArray(boardData.standard_coordinates)) {
+                    throw new Error('standard_coordinates is missing or not an array');
+                }
+                
+                const goldenCoordCount = boardData.golden_coordinates.length;
+                const standardCoordCount = boardData.standard_coordinates.length;
                 const goldenDictCount = Object.keys(boardData.golden_lines.golden_lines_dict).length;
                 
                 addTestResult('board-test-results', 'Board Data Structure', true, 
-                    `Structure valid. Positions: ${positionCount}, Golden intersections: ${goldenIntersectionCount}, Golden dict entries: ${goldenDictCount}`, 
-                    { positionCount, goldenIntersectionCount, goldenDictCount });
+                    `Structure valid. Golden coords: ${goldenCoordCount}, Standard coords: ${standardCoordCount}, Golden dict entries: ${goldenDictCount}`, 
+                    { goldenCoordCount, standardCoordCount, goldenDictCount });
                     
             } catch (error) {
                 addTestResult('board-test-results', 'Board Data Structure', false, error.message);
@@ -281,8 +281,8 @@
             try {
                 debugLog('Testing board generation...');
                 
-                const { createBoard } = await import(`./core/board.js?v=${cacheBust}`);
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const { createBoard } = await import(`../core/board.js?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 const board = createBoard(boardData);
@@ -313,11 +313,11 @@
             try {
                 debugLog('Testing board dictionary creation...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 // Import graphics module to test createBoardDictionary (we need to expose it)
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 // Create a temporary div to test canvas creation
                 const tempDiv = document.createElement('div');
@@ -353,10 +353,10 @@
             try {
                 debugLog('Testing golden connections set...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.style.display = 'none';
@@ -386,10 +386,10 @@
             try {
                 debugLog('Testing canvas creation...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.style.display = 'none';
@@ -420,10 +420,10 @@
             try {
                 debugLog('Testing board rendering...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.style.display = 'none';
@@ -464,13 +464,13 @@
             try {
                 debugLog('Testing intersection counts...');
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 // Expected counts based on board data
-                const totalPositions = boardData.board_positions.coordinates.length;
-                const goldenPositions = boardData.golden_lines.golden_line_intersections.length;
-                const expectedStandard = totalPositions - goldenPositions;
+                const totalPositions = boardData.golden_coordinates.length + boardData.standard_coordinates.length;
+                const goldenPositions = boardData.golden_coordinates.length;
+                const expectedStandard = boardData.standard_coordinates.length;
                 
                 debugLog('Expected intersection breakdown', {
                     totalPositions,
@@ -491,19 +491,23 @@
             try {
                 debugLog('Testing game initialization...');
                 
-                const { GameManager } = await import(`./game/gameManager.js?v=${cacheBust}`);
+                const { GameManager } = await import(`../game/gameManager.js?v=${cacheBust}`);
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const pieceResponse = await fetch(`./data/piece-definitions.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`../data/piece-definitions.json?v=${cacheBust}`);
                 const pieceDefs = await pieceResponse.json();
                 
-                const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                tempSvg.setAttribute('width', '100');
-                tempSvg.setAttribute('height', '100');
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
-                const gameManager = new GameManager(tempSvg, boardData, pieceDefs);
+                const tempDiv = document.createElement('div');
+                tempDiv.style.display = 'none';
+                document.body.appendChild(tempDiv);
+                
+                const gameCanvas = createGameCanvas(tempDiv, boardData);
+                
+                const gameManager = new GameManager(gameCanvas, boardData, pieceDefs);
                 const state = gameManager.getState();
                 
                 if (!state) {
@@ -525,13 +529,13 @@
             try {
                 debugLog('Testing piece visibility...');
                 
-                const { createInitialState, createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                const { createInitialState, createBoard } = await import(`../core/board.js?v=${cacheBust}`);
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 const board = createBoard(boardData);
-                const state = createInitialState(board);
+                const state = createInitialState(board, boardData);
                 
                 const pieces = state.pieces;
                 const pieceCount = Object.keys(pieces).length;
@@ -570,13 +574,13 @@
             try {
                 debugLog('Testing setup phase...');
                 
-                const { createInitialState, createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                const { createInitialState, createBoard } = await import(`../core/board.js?v=${cacheBust}`);
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
                 const board = createBoard(boardData);
-                const state = createInitialState(board);
+                const state = createInitialState(board, boardData);
                 
                 if (state.gamePhase !== 'setup') {
                     throw new Error(`Expected game phase 'setup', got '${state.gamePhase}'`);
@@ -605,10 +609,10 @@
                 const container = document.getElementById('visual-test-container');
                 container.innerHTML = '<div class="test-controls"><h4>Visual Debug Controls</h4><button onclick="redrawVisualTest()">Redraw Board</button><button onclick="toggleDebugInfo()">Toggle Debug Info</button></div>';
                 
-                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
                 
                 const canvasDiv = document.createElement('div');
                 canvasDiv.className = 'canvas-container';

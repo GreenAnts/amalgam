@@ -228,10 +228,10 @@
 
         async function testDataLoading() {
             try {
-                const boardResponse = await fetch(`../data/board-data.json?v=${cacheBust}`);
+                const boardResponse = await fetch(`.../data/board-data.json?v=${cacheBust}`);
                 const boardData = await boardResponse.json();
                 
-                const pieceResponse = await fetch(`../data/piece-definitions.json?v=${cacheBust}`);
+                const pieceResponse = await fetch(`.../data/piece-definitions.json?v=${cacheBust}`);
                 const pieceDefs = await pieceResponse.json();
                 
                 addResult('Data Loading', true, `Board schema: ${boardData.schema}, Pieces loaded`, {
@@ -249,7 +249,7 @@
 
         async function testBoardGeneration(boardData) {
             try {
-                const { createBoard } = await import(`../core/board.js?v=${cacheBust}`);
+                const { createBoard } = await import(`.../core/board.js?v=${cacheBust}`);
                 const board = createBoard(boardData);
                 
                 if (!board.intersections || !Array.isArray(board.intersections)) {
@@ -277,7 +277,7 @@
 
         async function testGameState(board) {
             try {
-                const { createInitialState } = await import(`../core/board.js?v=${cacheBust}`);
+                const { createInitialState } = await import(`.../core/board.js?v=${cacheBust}`);
                 const state = createInitialState(board);
                 
                 const pieceCount = Object.keys(state.pieces).length;
@@ -298,7 +298,7 @@
 
         async function testCanvasCreation(boardData) {
             try {
-                const { createGameCanvas } = await import(`../ui/graphics.js?v=${cacheBust}`);
+                const { createGameCanvas } = await import(`.../ui/graphics.js?v=${cacheBust}`);
                 
                 // Clear and setup canvas container
                 const container = document.getElementById('canvas-container');

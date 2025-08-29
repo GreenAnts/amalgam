@@ -34,10 +34,12 @@ export interface BoardData {
     board_positions?: {
         coordinates: Vector2[];
     };
+    golden_coordinates?: string[];
+    standard_coordinates?: string[];
     golden_lines: {
-        golden_line_intersections: Vector2[];
-        golden_lines_dict: Record<IntersectionId, Array<{x: number, y: number}>>;
-        connections: Array<{
+        golden_line_intersections?: Vector2[];
+        golden_lines_dict: Record<string, Array<{x: number, y: number}>>;
+        connections?: Array<{
             from: Vector2;
             to: Vector2;
         }>;

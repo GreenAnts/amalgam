@@ -13,10 +13,38 @@ import { logger } from '../utils/logger.js';
 export function createBoard(boardData) {
     logger.debug('Creating new Amalgam board from data', boardData);
     const intersections = generateIntersections(boardData);
+    // Generate golden line connections from the dictionary
+    const goldenLineConnections = [];
+    const goldenLineIntersections = [];
+    if (boardData.golden_lines.golden_lines_dict) {
+        // Extract all unique coordinates from golden lines
+        const goldenCoords = new Set();
+        Object.entries(boardData.golden_lines.golden_lines_dict).forEach(([coordStr, connections]) => {
+            const [x, y] = coordStr.split(',').map(Number);
+            goldenCoords.add(coordStr);
+            connections.forEach((connection) => {
+                const toCoordStr = `${connection.x},${connection.y}`;
+                goldenCoords.add(toCoordStr);
+                // Add connection (avoid duplicates)
+                const connectionKey = [coordStr, toCoordStr].sort().join('|');
+                if (!goldenLineConnections.some(conn => [conn.from.join(','), conn.to.join(',')].sort().join('|') === connectionKey)) {
+                    goldenLineConnections.push({
+                        from: [x, y],
+                        to: [connection.x, connection.y]
+                    });
+                }
+            });
+        });
+        // Convert golden coordinates to Vector2 array
+        goldenCoords.forEach(coordStr => {
+            const [x, y] = coordStr.split(',').map(Number);
+            goldenLineIntersections.push([x, y]);
+        });
+    }
     return {
         intersections: intersections,
-        goldenLineConnections: deepCopy(boardData.golden_lines.connections),
-        goldenLineIntersections: deepCopy(boardData.golden_lines.golden_line_intersections),
+        goldenLineConnections: goldenLineConnections,
+        goldenLineIntersections: goldenLineIntersections,
         goldenLinesDict: deepCopy(boardData.golden_lines.golden_lines_dict || {}),
         width: boardData.board.width,
         height: boardData.board.height,
@@ -44,12 +72,29 @@ export function cloneBoard(board) {
 /**
  * Create initial game state
  * @param board - Board instance
+ * @param boardData - Board data for pre-placed pieces
  * @returns Initial GameState
  */
-export function createInitialState(board) {
+export function createInitialState(board, boardData) {
+    const pieces = {};
+    // Add pre-placed pieces if available
+    if (boardData?.pre_placed_pieces?.pieces) {
+        boardData.pre_placed_pieces.pieces.forEach((pieceData, index) => {
+            const pieceId = `pre_placed_${index}`;
+            const [x, y] = pieceData.position;
+            const coordStr = `${x},${y}`;
+            pieces[pieceId] = {
+                id: pieceId,
+                type: pieceData.type,
+                player: 'circles', // Default to circles for pre-placed pieces
+                coords: [x, y],
+                isPrePlaced: true
+            };
+        });
+    }
     return {
         board: cloneBoard(board),
-        pieces: {},
+        pieces: pieces,
         currentPlayer: 'circles',
         gamePhase: 'setup',
         setupTurn: 1,
@@ -87,6 +132,39 @@ function generateIntersections(boardData) {
             intersections.push({
                 id: `${gameX},${gameY}`,
                 coords: coords,
+                x: pixelX,
+                y: pixelY,
+                piece: null
+            });
+        });
+    }
+    else if (boardData.golden_coordinates && boardData.standard_coordinates) {
+        // Use golden and standard coordinates from board data
+        logger.debug('Using golden and standard coordinates', {
+            golden: boardData.golden_coordinates.length,
+            standard: boardData.standard_coordinates.length
+        });
+        // Process golden coordinates
+        boardData.golden_coordinates.forEach((coordStr) => {
+            const [gameX, gameY] = coordStr.split(',').map(Number);
+            const pixelX = boardData.board.center_offset[0] + (gameX * boardData.board.coordinate_scale);
+            const pixelY = boardData.board.center_offset[1] - (gameY * boardData.board.coordinate_scale);
+            intersections.push({
+                id: coordStr,
+                coords: [gameX, gameY],
+                x: pixelX,
+                y: pixelY,
+                piece: null
+            });
+        });
+        // Process standard coordinates
+        boardData.standard_coordinates.forEach((coordStr) => {
+            const [gameX, gameY] = coordStr.split(',').map(Number);
+            const pixelX = boardData.board.center_offset[0] + (gameX * boardData.board.coordinate_scale);
+            const pixelY = boardData.board.center_offset[1] - (gameY * boardData.board.coordinate_scale);
+            intersections.push({
+                id: coordStr,
+                coords: [gameX, gameY],
                 x: pixelX,
                 y: pixelY,
                 piece: null

@@ -15,7 +15,7 @@
             try {
                 output.textContent += '🚀 Loading board data...\n\n';
                 
-                const response = await fetch('./data/board-data.json');
+                const response = await fetch('/data/board-data.json');
                 const boardData = await response.json();
                 
                 output.textContent += '✅ Board data loaded successfully!\n\n';

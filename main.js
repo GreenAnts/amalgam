@@ -120,10 +120,7 @@ class AmalgamGame {
             if (positionsResponse.ok) {
                 const positionsData = await positionsResponse.json();
                 if (positionsData && positionsData.board_positions) {
-                    // Only merge if board_positions doesn't already exist in boardData
-                    if (!this.boardData.board_positions) {
-                        this.boardData.board_positions = positionsData.board_positions;
-                    }
+                    this.boardData.board_positions = positionsData.board_positions;
                 }
             }
             else {
