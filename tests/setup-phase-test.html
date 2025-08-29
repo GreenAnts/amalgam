@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Setup Phase Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .game-board {
+            border: 2px solid #333;
+            margin: 20px auto;
+            display: block;
+            background: white;
+        }
+        .info-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .piece-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .piece-card {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .piece-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 5px;
+            display: inline-block;
+            border: 2px solid #333;
+        }
+        .piece-preview.square {
+            border-radius: 0;
+            transform: rotate(45deg);
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .setup-area {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .setup-area.squares {
+            background: #d1ecf1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Amalgam Setup Phase Test</h1>
+        <p>This test demonstrates the complete setup phase implementation with proper piece graphics and starting positions.</p>
+        
+        <div class="status" id="gameStatus">
+            Phase: Setup | Turn: 1/16 | Current Player: Squares
+        </div>
+        
+        <canvas id="gameCanvas" class="game-board" width="800" height="800"></canvas>
+        
+        <div class="controls">
+            <button onclick="resetGame()">Reset Game</button>
+            <button onclick="nextTurn()">Next Turn</button>
+            <button onclick="completeSetup()">Complete Setup</button>
+        </div>
+        
+        <div class="info-panel">
+            <div class="panel">
+                <h3>Setup Phase Rules</h3>
+                <ul>
+                    <li>16 alternating turns (8 pieces per player)</li>
+                    <li>Squares player places first</li>
+                    <li>Each player places: 2 Ruby, 2 Pearl, 2 Amber, 2 Jade</li>
+                    <li>Circles place in upper area (Y ≥ 7)</li>
+                    <li>Squares place in lower area (Y ≤ -7)</li>
+                </ul>
+                
+                <div class="setup-area">
+                    <h4>Circles Starting Area (Y ≥ 7)</h4>
+                    <p>44 valid positions in upper board region</p>
+                </div>
+                
+                <div class="setup-area squares">
+                    <h4>Squares Starting Area (Y ≤ -7)</h4>
+                    <p>44 valid positions in lower board region</p>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>Pre-Placed Pieces</h3>
+                <div class="piece-info">
+                    <div class="piece-card">
+                        <h4>Void Pieces</h4>
+                        <div class="piece-preview" style="background: linear-gradient(45deg, #5B4E7A, #8D7EA9);"></div>
+                        <p>C_Void: [0, 12] (Circle)</p>
+                        <p>S_Void: [0, -12] (Square)</p>
+                    </div>
+                    
+                    <div class="piece-card">
+                        <h4>Amalgam Pieces</h4>
+                        <div class="piece-preview" style="background: conic-gradient(from 0deg, #E63960, #A9E886, #F8F6DA, #F6C13F);"></div>
+                        <p>C_Amalgam: [0, 6] (Circle)</p>
+                        <p>S_Amalgam: [0, -6] (Square)</p>
+                    </div>
+                    
+                    <div class="piece-card">
+                        <h4>Portal Pieces</h4>
+                        <div class="piece-preview" style="background: radial-gradient(circle, #ADD8E6, #87CEEB);"></div>
+                        <p>C_Portal1: [6, 6], C_Portal2: [-6, 6]</p>
+                        <p>S_Portal1: [6, -6], S_Portal2: [-6, -6]</p>
+                    </div>
+                </div>
+                
+                <h3>Setup Phase Pieces</h3>
+                <div class="piece-info">
+                    <div class="piece-card">
+                        <h4>Ruby (Fireball)</h4>
+                        <div class="piece-preview" style="background: #E63960;"></div>
+                        <p>Red gem pieces</p>
+                    </div>
+                    
+                    <div class="piece-card">
+                        <h4>Pearl (Tidal Wave)</h4>
+                        <div class="piece-preview" style="background: #87CEEB;"></div>
+                        <p>Blue gem pieces</p>
+                    </div>
+                    
+                    <div class="piece-card">
+                        <h4>Amber (Sap)</h4>
+                        <div class="piece-preview" style="background: #F6C13F;"></div>
+                        <p>Yellow gem pieces</p>
+                    </div>
+                    
+                    <div class="piece-card">
+                        <h4>Jade (Launch)</h4>
+                        <div class="piece-preview" style="background: #A9E886;"></div>
+                        <p>Green gem pieces</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h3>Piece Graphics Implementation</h3>
+            <p><strong>Circles Player:</strong> All pieces use circular shapes</p>
+            <p><strong>Squares Player:</strong> All pieces use square shapes (rotated 45° to form diamonds)</p>
+            <p><strong>Colors:</strong> Each piece type has distinct colors for easy identification</p>
+            <p><strong>Special Effects:</strong> Amalgam pieces have four-color quadrants, Portal pieces have inner/outer rings, Void pieces have dark mysterious appearance</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the game modules
+        import { createBoard, createInitialState } from '../core/board.js';
+        import { renderPiece, renderPieceHighlight } from '../ui/graphics.js';
+        
+        // Game state
+        let gameState = null;
+        let board = null;
+        let currentTurn = 1;
+        let currentPlayer = 'squares';
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 25;
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 2;
+        
+        // Mock board data for testing
+        const boardData = {
+            board: {
+                width: 800,
+                height: 800,
+                coordinate_scale: 25,
+                center_offset: [400, 400],
+                intersectionRadius: 12,
+                pieceRadius: 10
+            },
+            golden_coordinates: [],
+            standard_coordinates: [],
+            golden_lines: {
+                golden_lines_dict: {}
+            },
+            starting_areas: {
+                circles_starting_area: {
+                    positions: [
+                        [1,11], [2,11], [3,11], [4,11], [-1,11], [-2,11], [-3,11], [-4,11],
+                        [1,10], [2,10], [3,10], [5,10], [6,10], [-1,10], [-2,10], [-3,10], [-5,10], [-6,10],
+                        [1,9], [2,9], [4,9], [5,9], [6,9], [7,9], [-1,9], [-2,9], [-4,9], [-5,9], [-6,9], [-7,9],
+                        [1,8], [3,8], [4,8], [5,8], [6,8], [7,8], [-1,8], [-3,8], [-4,8], [-5,8], [-6,8], [-7,8],
+                        [2,7], [3,7], [4,7], [5,7], [6,7], [-2,7], [-3,7], [-4,7], [-5,7], [-6,7]
+                    ]
+                },
+                squares_starting_area: {
+                    positions: [
+                        [1,-11], [2,-11], [3,-11], [4,-11], [-1,-11], [-2,-11], [-3,-11], [-4,-11],
+                        [1,-10], [2,-10], [3,-10], [5,-10], [6,-10], [-1,-10], [-2,-10], [-3,-10], [-5,-10], [-6,-10],
+                        [1,-9], [2,-9], [4,-9], [5,-9], [6,-9], [7,-9], [-1,-9], [-2,-9], [-4,-9], [-5,-9], [-6,-9], [-7,-9],
+                        [1,-8], [3,-8], [4,-8], [5,-8], [6,-8], [7,-8], [-1,-8], [-3,-8], [-4,-8], [-5,-8], [-6,-8], [-7,-8],
+                        [2,-7], [3,-7], [4,-7], [5,-7], [6,-7], [-2,-7], [-3,-7], [-4,-7], [-5,-7], [-6,-7]
+                    ]
+                }
+            }
+        };
+        
+        // Initialize game
+        function initGame() {
+            board = createBoard(boardData);
+            gameState = createInitialState(board);
+            currentTurn = 1;
+            currentPlayer = 'squares';
+            updateStatus();
+            drawBoard();
+        }
+        
+        // Draw the game board
+        function drawBoard() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            drawGrid();
+            
+            // Draw starting areas
+            drawStartingAreas();
+            
+            // Draw pieces
+            drawPieces();
+        }
+        
+        // Draw grid
+        function drawGrid() {
+            ctx.strokeStyle = '#dee2e6';
+            ctx.lineWidth = 1;
+            
+            // Draw grid lines
+            for (let i = -12; i <= 12; i++) {
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(originX + i * gridSize, originY - 12 * gridSize);
+                ctx.lineTo(originX + i * gridSize, originY + 12 * gridSize);
+                ctx.stroke();
+                
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(originX - 12 * gridSize, originY - i * gridSize);
+                ctx.lineTo(originX + 12 * gridSize, originY - i * gridSize);
+                ctx.stroke();
+            }
+            
+            // Draw intersection points
+            ctx.fillStyle = '#adb5bd';
+            for (let x = -12; x <= 12; x++) {
+                for (let y = -12; y <= 12; y++) {
+                    const pixelX = originX + x * gridSize;
+                    const pixelY = originY - y * gridSize;
+                    ctx.beginPath();
+                    ctx.arc(pixelX, pixelY, 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // Draw starting areas
+        function drawStartingAreas() {
+            // Circles starting area (upper)
+            ctx.fillStyle = 'rgba(40, 167, 69, 0.1)';
+            boardData.starting_areas.circles_starting_area.positions.forEach(pos => {
+                const [x, y] = pos;
+                const pixelX = originX + x * gridSize;
+                const pixelY = originY - y * gridSize;
+                ctx.beginPath();
+                ctx.arc(pixelX, pixelY, 8, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            // Squares starting area (lower)
+            ctx.fillStyle = 'rgba(23, 162, 184, 0.1)';
+            boardData.starting_areas.squares_starting_area.positions.forEach(pos => {
+                const [x, y] = pos;
+                const pixelX = originX + x * gridSize;
+                const pixelY = originY - y * gridSize;
+                ctx.beginPath();
+                ctx.arc(pixelX, pixelY, 8, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+        
+        // Draw pieces
+        function drawPieces() {
+            if (!gameState) return;
+            
+            const renderContext = {
+                ctx,
+                originX,
+                originY,
+                gridSize
+            };
+            
+            // Draw each piece
+            for (const [pieceId, piece] of Object.entries(gameState.pieces)) {
+                const graphics = createPieceGraphics(pieceId, piece);
+                const pieceWithGraphics = { ...piece, graphics };
+                
+                // Simple piece rendering
+                const [x, y] = piece.coords;
+                const centerPixelX = originX + x * gridSize;
+                const centerPixelY = originY - y * gridSize;
+                
+                ctx.save();
+                ctx.translate(centerPixelX, centerPixelY);
+                
+                if (graphics.shape === 'circle') {
+                    // Draw circle piece
+                    if (piece.type === 'Amalgam') {
+                        drawAmalgamCircle(graphics);
+                    } else if (piece.type === 'Portal') {
+                        drawPortalCircle(graphics);
+                    } else if (piece.type === 'Void') {
+                        drawVoidCircle(graphics);
+                    } else {
+                        drawGemCircle(graphics);
+                    }
+                } else {
+                    // Draw square piece (diamond)
+                    ctx.rotate(45 * Math.PI / 180);
+                    if (piece.type === 'Amalgam') {
+                        drawAmalgamSquare(graphics);
+                    } else if (piece.type === 'Portal') {
+                        drawPortalSquare(graphics);
+                    } else if (piece.type === 'Void') {
+                        drawVoidSquare(graphics);
+                    } else {
+                        drawGemSquare(graphics);
+                    }
+                }
+                
+                ctx.restore();
+                
+                // Draw piece label
+                ctx.fillStyle = '#000';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(pieceId, centerPixelX, centerPixelY + 20);
+            }
+        }
+        
+        // Create graphics for a piece
+        function createPieceGraphics(pieceId, piece) {
+            switch (piece.type) {
+                case 'Ruby':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        color: '#E63960',
+                        size: 10
+                    };
+                case 'Pearl':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        color: '#87CEEB',
+                        size: 10
+                    };
+                case 'Amber':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        color: '#F6C13F',
+                        size: 10
+                    };
+                case 'Jade':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        color: '#A9E886',
+                        size: 10
+                    };
+                case 'Amalgam':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
+                        size: 12,
+                        rotation: piece.player === 'circles' ? Math.PI : Math.PI / 2
+                    };
+                case 'Portal':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        outerColor: '#87CEEB',
+                        innerColor: '#ADD8E6',
+                        size: 8
+                    };
+                case 'Void':
+                    return {
+                        shape: piece.player === 'circles' ? 'circle' : 'square',
+                        outerColor: '#5B4E7A',
+                        innerColor: '#8D7EA9',
+                        size: 12
+                    };
+                default:
+                    return { shape: 'circle', size: 10, color: '#666' };
+            }
+        }
+        
+        // Draw gem circle
+        function drawGemCircle(graphics) {
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Draw gem square
+        function drawGemSquare(graphics) {
+            ctx.fillStyle = graphics.color;
+            ctx.fillRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+        }
+        
+        // Draw Amalgam circle
+        function drawAmalgamCircle(graphics) {
+            const colors = graphics.colors;
+            const angles = [
+                { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] },
+                { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] },
+                { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] },
+                { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }
+            ];
+            
+            angles.forEach(quadrant => {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, graphics.size, quadrant.start, quadrant.end);
+                ctx.lineTo(0, 0);
+                ctx.fillStyle = quadrant.color;
+                ctx.fill();
+            });
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Draw Amalgam square
+        function drawAmalgamSquare(graphics) {
+            const colors = graphics.colors;
+            const quadrants = [
+                { x: -graphics.size, y: 0, w: graphics.size, h: graphics.size, color: colors[0] },
+                { x: 0, y: 0, w: graphics.size, h: graphics.size, color: colors[2] },
+                { x: 0, y: -graphics.size, w: graphics.size, h: graphics.size, color: colors[3] },
+                { x: -graphics.size, y: -graphics.size, w: graphics.size, h: graphics.size, color: colors[1] }
+            ];
+            
+            quadrants.forEach(rect => {
+                ctx.fillStyle = rect.color;
+                ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+            });
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+        }
+        
+        // Draw Portal circle
+        function drawPortalCircle(graphics) {
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size * 1.2, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.outerColor;
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.innerColor;
+            ctx.fill();
+        }
+        
+        // Draw Portal square
+        function drawPortalSquare(graphics) {
+            ctx.fillStyle = graphics.outerColor;
+            ctx.fillRect(-graphics.size * 1.2, -graphics.size * 1.2, graphics.size * 2.4, graphics.size * 2.4);
+            
+            ctx.fillStyle = graphics.innerColor;
+            ctx.fillRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+        }
+        
+        // Draw Void circle
+        function drawVoidCircle(graphics) {
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size * 1.2, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.outerColor;
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, graphics.size, 0, 2 * Math.PI);
+            ctx.fillStyle = graphics.innerColor;
+            ctx.fill();
+        }
+        
+        // Draw Void square
+        function drawVoidSquare(graphics) {
+            ctx.fillStyle = graphics.outerColor;
+            ctx.fillRect(-graphics.size * 1.2, -graphics.size * 1.2, graphics.size * 2.4, graphics.size * 2.4);
+            
+            ctx.fillStyle = graphics.innerColor;
+            ctx.fillRect(-graphics.size, -graphics.size, graphics.size * 2, graphics.size * 2);
+        }
+        
+        // Update status display
+        function updateStatus() {
+            const statusElement = document.getElementById('gameStatus');
+            statusElement.textContent = `Phase: Setup | Turn: ${currentTurn}/16 | Current Player: ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}`;
+        }
+        
+        // Game control functions
+        window.resetGame = function() {
+            initGame();
+        };
+        
+        window.nextTurn = function() {
+            if (currentTurn < 16) {
+                currentTurn++;
+                currentPlayer = currentPlayer === 'squares' ? 'circles' : 'squares';
+                updateStatus();
+            }
+        };
+        
+        window.completeSetup = function() {
+            currentTurn = 16;
+            currentPlayer = 'squares';
+            updateStatus();
+            alert('Setup phase complete! Gameplay would begin now.');
+        };
+        
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>

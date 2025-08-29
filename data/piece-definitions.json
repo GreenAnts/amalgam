@@ -92,70 +92,128 @@
         "type": "Ruby",
         "player": "circles",
         "ability": "Fireball",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#E63960",
+          "size": 10
+        }
       },
       "C_Ruby2": {
         "type": "Ruby",
         "player": "circles",
         "ability": "Fireball",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#E63960",
+          "size": 10
+        }
       },
       "C_Pearl1": {
         "type": "Pearl",
         "player": "circles",
         "ability": "Tidal Wave",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#87CEEB",
+          "size": 10
+        }
       },
       "C_Pearl2": {
         "type": "Pearl",
         "player": "circles",
         "ability": "Tidal Wave",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#87CEEB",
+          "size": 10
+        }
       },
       "C_Amber1": {
         "type": "Amber",
         "player": "circles",
         "ability": "Sap",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#F6C13F",
+          "size": 10
+        }
       },
       "C_Amber2": {
         "type": "Amber",
         "player": "circles",
         "ability": "Sap",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#F6C13F",
+          "size": 10
+        }
       },
       "C_Jade1": {
         "type": "Jade",
         "player": "circles",
         "ability": "Launch",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#A9E886",
+          "size": 10
+        }
       },
       "C_Jade2": {
         "type": "Jade",
         "player": "circles",
         "ability": "Launch",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "circle",
+          "color": "#A9E886",
+          "size": 10
+        }
       },
       "C_Amalgam": {
         "type": "Amalgam",
         "player": "circles",
         "ability": "All four abilities",
         "placement": "pre_placed",
-        "coords": [0, 6]
+        "coords": [0, 6],
+        "graphics": {
+          "shape": "circle",
+          "colors": ["#E63960", "#A9E886", "#F8F6DA", "#F6C13F"],
+          "size": 12,
+          "rotation": 3.14159
+        }
       },
       "C_Portal1": {
         "type": "Portal",
         "player": "circles",
         "ability": "Portal Swap",
         "placement": "pre_placed",
-        "coords": [6, 6]
+        "coords": [6, 6],
+        "graphics": {
+          "shape": "circle",
+          "outerColor": "#87CEEB",
+          "innerColor": "#ADD8E6",
+          "size": 8
+        }
       },
       "C_Portal2": {
         "type": "Portal",
         "player": "circles",
         "ability": "Portal Swap",
         "placement": "pre_placed",
-        "coords": [-6, 6]
+        "coords": [-6, 6],
+        "graphics": {
+          "shape": "circle",
+          "outerColor": "#87CEEB",
+          "innerColor": "#ADD8E6",
+          "size": 8
+        }
       },
       "C_Void": {
         "type": "Void",
@@ -163,7 +221,13 @@
         "ability": "Universal attack, amplification",
         "placement": "pre_placed",
         "coords": [0, 12],
-        "victory_piece": true
+        "victory_piece": true,
+        "graphics": {
+          "shape": "circle",
+          "outerColor": "#5B4E7A",
+          "innerColor": "#8D7EA9",
+          "size": 12
+        }
       }
     },
     
@@ -172,70 +236,128 @@
         "type": "Ruby",
         "player": "squares",
         "ability": "Fireball",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#E63960",
+          "size": 10
+        }
       },
       "S_Ruby2": {
         "type": "Ruby",
         "player": "squares",
         "ability": "Fireball",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#E63960",
+          "size": 10
+        }
       },
       "S_Pearl1": {
         "type": "Pearl",
         "player": "squares",
         "ability": "Tidal Wave",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#87CEEB",
+          "size": 10
+        }
       },
       "S_Pearl2": {
         "type": "Pearl",
         "player": "squares",
         "ability": "Tidal Wave",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#87CEEB",
+          "size": 10
+        }
       },
       "S_Amber1": {
         "type": "Amber",
         "player": "squares",
         "ability": "Sap",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#F6C13F",
+          "size": 10
+        }
       },
       "S_Amber2": {
         "type": "Amber",
         "player": "squares",
         "ability": "Sap",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#F6C13F",
+          "size": 10
+        }
       },
       "S_Jade1": {
         "type": "Jade",
         "player": "squares",
         "ability": "Launch",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#A9E886",
+          "size": 10
+        }
       },
       "S_Jade2": {
         "type": "Jade",
         "player": "squares",
         "ability": "Launch",
-        "placement": "setup_phase"
+        "placement": "setup_phase",
+        "graphics": {
+          "shape": "square",
+          "color": "#A9E886",
+          "size": 10
+        }
       },
       "S_Amalgam": {
         "type": "Amalgam",
         "player": "squares",
         "ability": "All four abilities",
         "placement": "pre_placed",
-        "coords": [0, -6]
+        "coords": [0, -6],
+        "graphics": {
+          "shape": "square",
+          "colors": ["#E63960", "#A9E886", "#F8F6DA", "#F6C13F"],
+          "size": 12,
+          "rotation": 1.5708
+        }
       },
       "S_Portal1": {
         "type": "Portal",
         "player": "squares",
         "ability": "Portal Swap",
         "placement": "pre_placed",
-        "coords": [6, -6]
+        "coords": [6, -6],
+        "graphics": {
+          "shape": "square",
+          "outerColor": "#87CEEB",
+          "innerColor": "#ADD8E6",
+          "size": 8
+        }
       },
       "S_Portal2": {
         "type": "Portal",
         "player": "squares",
         "ability": "Portal Swap",
         "placement": "pre_placed",
-        "coords": [-6, -6]
+        "coords": [-6, -6],
+        "graphics": {
+          "shape": "square",
+          "outerColor": "#87CEEB",
+          "innerColor": "#ADD8E6",
+          "size": 8
+        }
       },
       "S_Void": {
         "type": "Void",
@@ -243,7 +365,13 @@
         "ability": "Universal attack, amplification",
         "placement": "pre_placed",
         "coords": [0, -12],
-        "victory_piece": true
+        "victory_piece": true,
+        "graphics": {
+          "shape": "square",
+          "outerColor": "#5B4E7A",
+          "innerColor": "#8D7EA9",
+          "size": 12
+        }
       }
     },
     

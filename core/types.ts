@@ -70,12 +70,26 @@ export interface Board {
 }
 
 // Game piece types
+export interface PieceGraphics {
+    shape: 'circle' | 'square';
+    size: number;
+    // For Void and Portal pieces
+    outerColor?: string;
+    innerColor?: string;
+    // For Amalgam pieces
+    colors?: string[];
+    rotation?: number;
+    // For gem pieces
+    color?: string;
+}
+
 export interface Piece {
     id: string;
     type: PieceType;
     player: PlayerId;
     coords: Vector2;
     isPrePlaced: boolean;
+    graphics: PieceGraphics;
 }
 
 // Move system
