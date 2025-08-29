@@ -24,12 +24,16 @@ interface GameOption {
 }
 
 interface CanvasPieceData {
+    id?: string;
     type: string;
+    player?: string;
     size: number;
     colors?: string[];
     rotation?: number;
     outerColor?: string;
     innerColor?: string;
+    color?: string;
+    graphics?: any;
 }
 
 /**
@@ -665,15 +669,36 @@ class AmalgamGame {
         for (const [pieceId, piece] of Object.entries(pieces)) {
             const coordStr = `${piece.coords[0]},${piece.coords[1]}`;
             
-            // Determine piece visual properties based on type and player
-            const pieceData: CanvasPieceData = {
-                type: piece.type, // Use the actual piece type
-                size: this.getPieceSize(piece.type),
-                colors: this.getPieceColors(piece.type),
-                rotation: 0,
-                outerColor: this.getPieceOuterColor(piece.type, piece.player),
-                innerColor: this.getPieceInnerColor(piece.type)
-            };
+            // Use the graphics from the piece definition if available, otherwise fall back to defaults
+            let pieceData: CanvasPieceData;
+            
+            if (piece.graphics) {
+                // Use the graphics that were set when the piece was created
+                pieceData = {
+                    id: piece.id,
+                    type: piece.type,
+                    player: piece.player,
+                    size: piece.graphics.size || this.getPieceSize(piece.type),
+                    colors: piece.graphics.colors || this.getPieceColors(piece.type),
+                    rotation: piece.graphics.rotation || 0,
+                    outerColor: piece.graphics.outerColor || this.getPieceOuterColor(piece.type, piece.player),
+                    innerColor: piece.graphics.innerColor || this.getPieceInnerColor(piece.type),
+                    color: piece.graphics.color, // Add the color property for gem pieces
+                    graphics: piece.graphics // Preserve the original graphics object
+                };
+            } else {
+                // Fall back to default graphics
+                pieceData = {
+                    id: piece.id,
+                    type: piece.type,
+                    player: piece.player,
+                    size: this.getPieceSize(piece.type),
+                    colors: this.getPieceColors(piece.type),
+                    rotation: 0,
+                    outerColor: this.getPieceOuterColor(piece.type, piece.player),
+                    innerColor: this.getPieceInnerColor(piece.type)
+                };
+            }
             
             canvasPieces[coordStr] = pieceData;
         }
@@ -686,15 +711,15 @@ class AmalgamGame {
      */
     private getPieceSize(type: string): number {
         const sizeMap: Record<string, number> = {
-            'Ruby': 10,
-            'Pearl': 10,
-            'Amber': 10,
-            'Jade': 10,
-            'Amalgam': 12,
-            'Portal': 8,
-            'Void': 12
+            'Ruby': 8,
+            'Pearl': 8,
+            'Amber': 8,
+            'Jade': 8,
+            'Amalgam': 10,
+            'Portal': 6,
+            'Void': 10
         };
-        return sizeMap[type] || 10;
+        return sizeMap[type] || 8;
     }
     
     /**
@@ -703,7 +728,7 @@ class AmalgamGame {
     private getPieceColors(type: string): string[] {
         const colorMap: Record<string, string[]> = {
             'Ruby': ['#E63960'],
-            'Pearl': ['#87CEEB'],
+            'Pearl': ['#F8F6DA'],
             'Amber': ['#F6C13F'],
             'Jade': ['#A9E886'],
             'Amalgam': ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],

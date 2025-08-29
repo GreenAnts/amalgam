@@ -18,6 +18,7 @@ alwaysApply: true
 - **Plan test coverage** for the new feature before writing code
 - **Ensure existing functionality** remains intact
 - **Check for known issues** (e.g., missing ui/animations.js)
+- **Validate setup phase functionality** if changes affect game initialization
 
 #### 2. Implementation Testing Requirements
 - **Create unit tests** for all new functions and classes
@@ -36,6 +37,7 @@ alwaysApply: true
 - **Document any new debugging patterns** discovered during implementation
 - **Validate performance impact** of new features
 - **Test error recovery** and graceful degradation
+- **Validate setup phase integration** if changes affect game initialization
 
 #### 4. Debugging Tools Integration
 - **Add console logging** for complex operations with `utils/logger.js`
@@ -87,6 +89,28 @@ alwaysApply: true
 ### Primary Debugging Command
 **Always run `npm test` first** when debugging issues or before making changes to validate system integrity.
 
+**The `npm test` command now includes comprehensive setup phase testing** that validates:
+- Setup phase test files and infrastructure
+- GameManager setup phase logic
+- Event handling components (InteractionManager)
+- Visual feedback systems
+- Player switching and validation logic
+
+### Unified Testing Approach
+**All tests are now accessible from a single command** (`npm test`) which includes:
+- **File System Tests**: Critical file existence and validation
+- **Data Integrity Tests**: JSON structure and content validation
+- **Module Syntax Tests**: Import/export and syntax validation
+- **Path Resolution Tests**: File path and resolution validation
+- **Game Initialization Tests**: Game startup and component validation
+- **TypeScript Compilation Tests**: Build system validation
+- **Setup Phase Tests**: Comprehensive setup phase functionality validation
+
+**Additional testing options**:
+- **Web Interface**: `npm run test:web` for interactive testing
+- **Setup Phase Specific**: Direct access to setup phase test suite
+- **Debug Interface**: Interactive debugging tools for setup phase issues
+
 ### CLI Test Analysis
 - **Use the CLI test output** for structured, token-efficient system analysis
 - **Focus on the "🤖 LLM SUMMARY" section** for quick status assessment
@@ -94,6 +118,7 @@ alwaysApply: true
 - **Check for known issues** like missing ui/animations.js
 
 ### Advanced Test Categories
+- **Setup Phase Tests**: Comprehensive validation of setup phase functionality
 - **Performance Tests**: Measure execution time and memory usage
 - **Security Tests**: Validate input sanitization and data integrity
 - **Integration Tests**: Test component interactions and data flow
@@ -135,6 +160,12 @@ npm run test:browser
 ```
 
 ## Test Categories & Issues
+
+### Setup Phase Tests
+- **Test infrastructure**: setup-phase-test.html, setup-phase-debug.html, test-utils.js
+- **Game functionality**: GameManager setup logic, player switching, event handling
+- **Visual components**: Highlighting, rendering, canvas interactions
+- **Validation logic**: Starting area validation, move intent processing
 
 ### File System Tests
 - **Critical files**: board-data.json, piece-definitions.json, game rules
@@ -440,6 +471,7 @@ npm run test:web
 - [ ] Review directory structure and file organization
 - [ ] Plan module boundaries and responsibilities
 - [ ] Identify file naming conventions to follow
+- [ ] Validate setup phase functionality if changes affect game initialization
 
 ### During Implementation
 - [ ] Write unit tests alongside feature code
@@ -465,6 +497,7 @@ npm run test:web
 - [ ] Validate performance impact
 - [ ] Test security of new features
 - [ ] Verify cross-browser compatibility
+- [ ] Validate setup phase integration if changes affect game initialization
 
 ### Quality Assurance
 - [ ] All new functions have unit tests

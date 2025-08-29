@@ -96,7 +96,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#E63960",
-          "size": 10
+          "size": 8
         }
       },
       "C_Ruby2": {
@@ -107,7 +107,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#E63960",
-          "size": 10
+          "size": 8
         }
       },
       "C_Pearl1": {
@@ -117,8 +117,8 @@
         "placement": "setup_phase",
         "graphics": {
           "shape": "circle",
-          "color": "#87CEEB",
-          "size": 10
+          "color": "#F8F6DA",
+          "size": 8
         }
       },
       "C_Pearl2": {
@@ -128,8 +128,8 @@
         "placement": "setup_phase",
         "graphics": {
           "shape": "circle",
-          "color": "#87CEEB",
-          "size": 10
+          "color": "#F8F6DA",
+          "size": 8
         }
       },
       "C_Amber1": {
@@ -140,7 +140,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F6C13F",
-          "size": 10
+          "size": 8
         }
       },
       "C_Amber2": {
@@ -151,7 +151,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F6C13F",
-          "size": 10
+          "size": 8
         }
       },
       "C_Jade1": {
@@ -162,7 +162,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#A9E886",
-          "size": 10
+          "size": 8
         }
       },
       "C_Jade2": {
@@ -173,7 +173,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#A9E886",
-          "size": 10
+          "size": 8
         }
       },
       "C_Amalgam": {
@@ -185,7 +185,7 @@
         "graphics": {
           "shape": "circle",
           "colors": ["#E63960", "#A9E886", "#F8F6DA", "#F6C13F"],
-          "size": 12,
+          "size": 10,
           "rotation": 3.14159
         }
       },
@@ -199,7 +199,7 @@
           "shape": "circle",
           "outerColor": "#87CEEB",
           "innerColor": "#ADD8E6",
-          "size": 8
+          "size": 6
         }
       },
       "C_Portal2": {
@@ -212,7 +212,7 @@
           "shape": "circle",
           "outerColor": "#87CEEB",
           "innerColor": "#ADD8E6",
-          "size": 8
+          "size": 6
         }
       },
       "C_Void": {
@@ -226,7 +226,7 @@
           "shape": "circle",
           "outerColor": "#5B4E7A",
           "innerColor": "#8D7EA9",
-          "size": 12
+          "size": 10
         }
       }
     },
@@ -240,7 +240,7 @@
         "graphics": {
           "shape": "square",
           "color": "#E63960",
-          "size": 10
+          "size": 8
         }
       },
       "S_Ruby2": {
@@ -251,7 +251,7 @@
         "graphics": {
           "shape": "square",
           "color": "#E63960",
-          "size": 10
+          "size": 8
         }
       },
       "S_Pearl1": {
@@ -261,8 +261,8 @@
         "placement": "setup_phase",
         "graphics": {
           "shape": "square",
-          "color": "#87CEEB",
-          "size": 10
+          "color": "#F8F6DA",
+          "size": 8
         }
       },
       "S_Pearl2": {
@@ -272,8 +272,8 @@
         "placement": "setup_phase",
         "graphics": {
           "shape": "square",
-          "color": "#87CEEB",
-          "size": 10
+          "color": "#F8F6DA",
+          "size": 8
         }
       },
       "S_Amber1": {
@@ -284,7 +284,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F6C13F",
-          "size": 10
+          "size": 8
         }
       },
       "S_Amber2": {
@@ -295,7 +295,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F6C13F",
-          "size": 10
+          "size": 8
         }
       },
       "S_Jade1": {
@@ -306,7 +306,7 @@
         "graphics": {
           "shape": "square",
           "color": "#A9E886",
-          "size": 10
+          "size": 8
         }
       },
       "S_Jade2": {
@@ -317,7 +317,7 @@
         "graphics": {
           "shape": "square",
           "color": "#A9E886",
-          "size": 10
+          "size": 8
         }
       },
       "S_Amalgam": {
@@ -329,7 +329,7 @@
         "graphics": {
           "shape": "square",
           "colors": ["#E63960", "#A9E886", "#F8F6DA", "#F6C13F"],
-          "size": 12,
+          "size": 10,
           "rotation": 1.5708
         }
       },
@@ -343,7 +343,7 @@
           "shape": "square",
           "outerColor": "#87CEEB",
           "innerColor": "#ADD8E6",
-          "size": 8
+          "size": 6
         }
       },
       "S_Portal2": {
@@ -356,7 +356,7 @@
           "shape": "square",
           "outerColor": "#87CEEB",
           "innerColor": "#ADD8E6",
-          "size": 8
+          "size": 6
         }
       },
       "S_Void": {
@@ -370,7 +370,7 @@
           "shape": "square",
           "outerColor": "#5B4E7A",
           "innerColor": "#8D7EA9",
-          "size": 12
+          "size": 10
         }
       }
     },

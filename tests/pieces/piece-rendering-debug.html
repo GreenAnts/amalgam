@@ -278,7 +278,7 @@
                     const coordStr = `${piece.coords[0]},${piece.coords[1]}`;
                     piecesForCanvas[coordStr] = {
                         type: piece.type,
-                        size: 12,
+                        size: 10,
                         colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
                         rotation: 0,
                         outerColor: '#0066CC',
@@ -335,37 +335,37 @@
                 const testPieces = {
                     '0,0': {
                         type: 'amalgamCircle',
-                        size: 12,
+                        size: 10,
                         colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
                         rotation: 0
                     },
                     '1,0': {
                         type: 'amalgamSquare',
-                        size: 12,
+                        size: 10,
                         colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
                         rotation: 0
                     },
                     '0,1': {
                         type: 'voidCircle',
-                        size: 12,
+                        size: 10,
                         outerColor: '#000000',
                         innerColor: '#FFFFFF'
                     },
                     '1,1': {
                         type: 'voidSquare',
-                        size: 12,
+                        size: 10,
                         outerColor: '#000000',
                         innerColor: '#FFFFFF'
                     },
                     '0,-1': {
                         type: 'portalCircle',
-                        size: 12,
+                        size: 6,
                         outerColor: '#FFD700',
                         innerColor: '#FFFFFF'
                     },
                     '-1,0': {
                         type: 'portalSquare',
-                        size: 12,
+                        size: 6,
                         outerColor: '#FFD700',
                         innerColor: '#FFFFFF'
                     }

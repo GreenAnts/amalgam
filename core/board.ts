@@ -127,7 +127,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
         graphics: {
             shape: 'circle',
             colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
-            size: 12,
+            size: 10,
             rotation: Math.PI // Face toward origin
         }
     };
@@ -142,7 +142,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
             shape: 'circle',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 8
+            size: 6
         }
     };
     
@@ -156,7 +156,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
             shape: 'circle',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 8
+            size: 6
         }
     };
     
@@ -171,7 +171,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
             shape: 'square',
             outerColor: '#5B4E7A',
             innerColor: '#8D7EA9',
-            size: 12
+            size: 10
         }
     };
     
@@ -184,7 +184,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
         graphics: {
             shape: 'square',
             colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
-            size: 12,
+            size: 10,
             rotation: Math.PI / 2 // Face toward origin
         }
     };
@@ -199,7 +199,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
             shape: 'square',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 8
+            size: 6
         }
     };
     
@@ -213,7 +213,7 @@ export function createInitialState(board: Board, boardData?: any): GameState {
             shape: 'square',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 8
+            size: 6
         }
     };
     
