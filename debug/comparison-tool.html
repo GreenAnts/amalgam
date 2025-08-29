@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing vs Debug Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .test-section {
+            border: 2px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .canvas-container {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .debug-output {
+            background: #f8f9fa;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .primary { background: #28a745; }
+        .primary:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Landing Page vs Debug Canvas Comparison</h1>
+        <p>Direct comparison to identify why main page doesn't show intersections</p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="primary" onclick="runComparison()">🚀 Run Side-by-Side Comparison</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="comparison-grid">
+            <div class="test-section">
+                <h3>🎮 Main Page Simulation</h3>
+                <p>Exactly how the main page initializes canvas</p>
+                <div id="main-canvas-container" class="canvas-container"></div>
+                <div id="main-debug" class="debug-output"></div>
+            </div>
+            
+            <div class="test-section">
+                <h3>🔍 Debug Page Simulation</h3>
+                <p>How debug tools create canvas</p>
+                <div id="debug-canvas-container" class="canvas-container"></div>
+                <div id="debug-debug" class="debug-output"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Comparison Results</h3>
+            <div id="comparison-results" class="debug-output"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="index.html">← Back to Main Game</a> |
+            <a href="unified-test.html">🧪 Unified Test Suite</a>
+        </div>
+    </div>
+
+    <script type="module">
+        const cacheBust = Date.now();
+        
+        function log(section, message, data = null) {
+            const debugDiv = document.getElementById(section);
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            debugDiv.innerHTML += logEntry + '\n\n';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+        }
+
+        function logComparison(message, data = null) {
+            log('comparison-results', message, data);
+        }
+
+        window.clearResults = function() {
+            ['main-debug', 'debug-debug', 'comparison-results'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            ['main-canvas-container', 'debug-canvas-container'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+        };
+
+        async function simulateMainPage() {
+            try {
+                log('main-debug', '🎮 Simulating main page canvas creation...');
+                
+                // Step 1: Load data exactly like main page
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                log('main-debug', 'Board data loaded', { schema: boardData.schema });
+                
+                // Step 2: Create canvas exactly like main page initializeUI()
+                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const container = document.getElementById('main-canvas-container');
+                
+                const gameCanvas = createGameCanvas(container, boardData);
+                log('main-debug', 'Canvas created', {
+                    width: gameCanvas.canvas.width,
+                    height: gameCanvas.canvas.height,
+                    boardDictSize: Object.keys(gameCanvas.boardDict).length
+                });
+                
+                // Step 3: Draw board exactly like main page
+                gameCanvas.drawBoard();
+                log('main-debug', 'drawBoard() called');
+                
+                // Step 4: Analyze what was drawn
+                const imageData = gameCanvas.ctx.getImageData(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height);
+                let nonWhitePixels = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    if (imageData.data[i] !== 255 || imageData.data[i+1] !== 255 || imageData.data[i+2] !== 255) {
+                        nonWhitePixels++;
+                    }
+                }
+                
+                log('main-debug', 'Main page analysis:', {
+                    nonWhitePixels,
+                    boardDictTotal: Object.keys(gameCanvas.boardDict).length,
+                    standardIntersections: Object.values(gameCanvas.boardDict).filter(t => t === 'standard').length,
+                    goldenIntersections: Object.values(gameCanvas.boardDict).filter(t => t === 'golden').length,
+                    sampleStandard: Object.entries(gameCanvas.boardDict).filter(([k,v]) => v === 'standard').slice(0, 3),
+                    sampleGolden: Object.entries(gameCanvas.boardDict).filter(([k,v]) => v === 'golden').slice(0, 3)
+                });
+                
+                return {
+                    gameCanvas,
+                    nonWhitePixels,
+                    boardDict: gameCanvas.boardDict
+                };
+                
+            } catch (error) {
+                log('main-debug', 'Main page simulation failed:', error.message);
+                throw error;
+            }
+        }
+
+        async function simulateDebugPage() {
+            try {
+                log('debug-debug', '🔍 Simulating debug page canvas creation...');
+                
+                // Debug page approach
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                log('debug-debug', 'Board data loaded', { schema: boardData.schema });
+                
+                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                const container = document.getElementById('debug-canvas-container');
+                
+                const gameCanvas = createGameCanvas(container, boardData);
+                log('debug-debug', 'Canvas created', {
+                    width: gameCanvas.canvas.width,
+                    height: gameCanvas.canvas.height,
+                    boardDictSize: Object.keys(gameCanvas.boardDict).length
+                });
+                
+                gameCanvas.drawBoard();
+                log('debug-debug', 'drawBoard() called');
+                
+                const imageData = gameCanvas.ctx.getImageData(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height);
+                let nonWhitePixels = 0;
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    if (imageData.data[i] !== 255 || imageData.data[i+1] !== 255 || imageData.data[i+2] !== 255) {
+                        nonWhitePixels++;
+                    }
+                }
+                
+                log('debug-debug', 'Debug page analysis:', {
+                    nonWhitePixels,
+                    boardDictTotal: Object.keys(gameCanvas.boardDict).length,
+                    standardIntersections: Object.values(gameCanvas.boardDict).filter(t => t === 'standard').length,
+                    goldenIntersections: Object.values(gameCanvas.boardDict).filter(t => t === 'golden').length
+                });
+                
+                return {
+                    gameCanvas,
+                    nonWhitePixels,
+                    boardDict: gameCanvas.boardDict
+                };
+                
+            } catch (error) {
+                log('debug-debug', 'Debug page simulation failed:', error.message);
+                throw error;
+            }
+        }
+
+        window.runComparison = async function() {
+            clearResults();
+            logComparison('🚀 Starting side-by-side comparison...');
+            
+            try {
+                // Run both simulations
+                const mainResult = await simulateMainPage();
+                const debugResult = await simulateDebugPage();
+                
+                // Compare results
+                logComparison('📊 Comparison Results:');
+                
+                const mainStandard = Object.values(mainResult.boardDict).filter(t => t === 'standard').length;
+                const debugStandard = Object.values(debugResult.boardDict).filter(t => t === 'standard').length;
+                
+                const mainGolden = Object.values(mainResult.boardDict).filter(t => t === 'golden').length;
+                const debugGolden = Object.values(debugResult.boardDict).filter(t => t === 'golden').length;
+                
+                logComparison('Board Dictionary Comparison:', {
+                    main: { total: Object.keys(mainResult.boardDict).length, standard: mainStandard, golden: mainGolden },
+                    debug: { total: Object.keys(debugResult.boardDict).length, standard: debugStandard, golden: debugGolden },
+                    match: Object.keys(mainResult.boardDict).length === Object.keys(debugResult.boardDict).length
+                });
+                
+                logComparison('Canvas Rendering Comparison:', {
+                    main: { nonWhitePixels: mainResult.nonWhitePixels },
+                    debug: { nonWhitePixels: debugResult.nonWhitePixels },
+                    match: mainResult.nonWhitePixels === debugResult.nonWhitePixels
+                });
+                
+                // Specific intersection checks
+                const testCoords = ['0,0', '1,1', '2,4', '1,-8'];
+                const intersectionComparison = {};
+                testCoords.forEach(coord => {
+                    intersectionComparison[coord] = {
+                        main: mainResult.boardDict[coord] || 'NOT_FOUND',
+                        debug: debugResult.boardDict[coord] || 'NOT_FOUND'
+                    };
+                });
+                
+                logComparison('Sample Intersection Comparison:', intersectionComparison);
+                
+                // Diagnosis
+                if (mainResult.nonWhitePixels === 0 && debugResult.nonWhitePixels > 0) {
+                    logComparison('❌ ISSUE IDENTIFIED: Main page canvas is blank while debug canvas renders correctly!');
+                } else if (mainStandard === 0 && debugStandard > 0) {
+                    logComparison('❌ ISSUE IDENTIFIED: Main page has no standard intersections while debug page does!');
+                } else if (mainResult.nonWhitePixels === debugResult.nonWhitePixels && mainResult.nonWhitePixels > 0) {
+                    logComparison('✅ SUCCESS: Both canvases render identically!');
+                } else {
+                    logComparison('⚠️ PARTIAL ISSUE: Some difference detected between main and debug rendering.');
+                }
+                
+            } catch (error) {
+                logComparison('❌ Comparison failed:', error.message);
+            }
+        };
+
+        // Auto-ready message
+        setTimeout(() => {
+            logComparison('🔧 Comparison tool ready. Click "Run Side-by-Side Comparison" to diagnose the issue.');
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript App Test</title>
+</head>
+<body>
+    <div id="test-status">Testing TypeScript application...</div>
+    <div id="board-container" style="width: 400px; height: 400px; border: 1px solid #ccc;"></div>
+    
+    <script type="module">
+        try {
+            // Test importing and creating basic components
+            const { logger } = await import('./utils/logger.js');
+            const { createBoard } = await import('./core/board.js');
+            
+            logger.info('TypeScript modules loaded successfully');
+            
+            // Test loading board data
+            const response = await fetch('./data/board-data.json');
+            const boardData = await response.json();
+            
+            // Test creating board
+            const board = createBoard(boardData);
+            
+            console.log('Board created successfully:', board);
+            document.getElementById('test-status').textContent = 'TypeScript application test PASSED!';
+            document.getElementById('test-status').style.color = 'green';
+            
+        } catch (error) {
+            console.error('TypeScript application test failed:', error);
+            document.getElementById('test-status').textContent = 'TypeScript application test FAILED: ' + error.message;
+            document.getElementById('test-status').style.color = 'red';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "amalgam-game",
+  "version": "1.0.0",
+  "description": "Amalgam - Abstract Strategy Game",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist && rm -f *.js core/*.js ui/*.js game/*.js utils/*.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

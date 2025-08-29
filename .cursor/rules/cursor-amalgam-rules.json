@@ -1,107 +1,138 @@
 [
-    {
-      "globs": ["**/*.js", "**/*.mjs"],
-      "rule": "Use ES modules (import/export) in all JavaScript. No globals; everything flows through imports/exports. Prefer const/let over var. camelCase for variables/functions; PascalCase for classes. Keep functions small and single-responsibility; avoid long functions (>50 lines) and >5 parameters."
-    },
-    {
-      "globs": ["**/*.js", "**/*.ts"],
-      "rule": "Every file begins with a header comment explaining its role in the project. Use JSDoc for complex functions (params/returns), and define typedefs for core types (Board, Move, PlayerId, IntersectionId)."
-    },
-    {
-      "globs": ["**/*"],
-      "rule": "Follow strict modular separation: /core = logic, /ui = rendering & interaction, /game = orchestration, /utils = helpers, /data = static. Do not mix concerns across folders."
-    },
-    {
-      "globs": ["core/**/*.js"],
-      "rule": "Pure game logic only. No DOM, CSS, timers, or rendering. Functions must be deterministic and side-effect free. Do not import from /ui or manipulate the document."
-    },
-    {
-      "globs": ["core/rules.js"],
-      "rule": "Expose pure functions: isValidMove(board, move), applyMove(board, move) (returns new board/state; do not mutate inputs), checkWin(board). No randomness here (use utils/rng if needed, seeded via caller)."
-    },
-    {
-      "globs": ["core/board.js"],
-      "rule": "Define board data structures and helpers: createBoard(data), cloneBoard(board), getNeighbors(id), serialize/deserialize. Treat board/state as immutable (copy-on-write) and avoid hidden mutations."
-    },
-    {
-      "globs": ["ui/**/*.js"],
-      "rule": "Rendering & interaction only. Use SVG (<circle>, <line>, <path>) for board and pieces. No rules logic, no win checks, no state transitions beyond visual state. Style via CSS classes, not inline styles."
-    },
-    {
-      "globs": ["ui/graphics.js"],
-      "rule": "Pure drawing utilities for the <svg id='board'> element: drawBoard(data), drawPieces(board), highlight(intersectionIds), clearHighlights(). Ensure responsive SVG viewBox; do not compute game legality here."
-    },
-    {
-      "globs": ["ui/interactions.js"],
-      "rule": "Attach SVG event listeners and translate raw events into structured move intents, e.g. { type: 'place', intersectionId, playerId }. Do not validate moves here; do not modify core state; emit events/callbacks to GameManager."
-    },
-    {
-      "globs": ["ui/animations.js"],
-      "rule": "Optional visual effects (captures, highlights) using requestAnimationFrame or CSS transitions. No timing logic that influences rules; visuals only."
-    },
-    {
-      "globs": ["game/**/*.js"],
-      "rule": "Orchestrate play. GameManager owns the current state and turn order, calls core/rules for validation & application, then triggers UI updates. No direct DOM manipulation beyond calling /ui utilities."
-    },
-    {
-      "globs": ["game/gameManager.js"],
-      "rule": "Implements the move pipeline: (1) receive move intent from /ui, (2) validate via core/rules.isValidMove, (3) apply via core/rules.applyMove to produce a new state, (4) checkWin, (5) render via /ui, (6) advance turn."
-    },
-    {
-      "globs": ["game/player.js"],
-      "rule": "Define HumanPlayer and AIPlayer interfaces. AI must not access DOM; it should receive board/state and produce a move intent. HumanPlayer wiring is via callbacks from /ui/interactions provided by GameManager."
-    },
-    {
-      "globs": ["game/ai.js"],
-      "rule": "Encapsulate AI strategy (heuristics/search). Must be pure and time/iteration-bounded. No DOM, no random by default; if randomness is required, accept a seeded RNG from caller."
-    },
-    {
-      "globs": ["utils/**/*.js"],
-      "rule": "Generic helpers only: deepCopy, RNG (seedable), logger, clamp, array/set helpers. No DOM, no project-specific rules logic. Keep utilities small and reusable."
-    },
-    {
-      "globs": ["utils/logger.js"],
-      "rule": "Provide leveled logging (debug/info/warn/error). Avoid console.* directly elsewhere; route through logger to keep output consistent and easy to disable."
-    },
-    {
-      "globs": ["data/**/*.json"],
-      "rule": "Static configuration only (e.g., board geometry, intersections, edges). Include { \"schema\": \"amalgam-board@1\", \"version\": \"x.y\" } fields. Do not encode logic; keep numeric arrays compact and documented."
-    },
-    {
-      "globs": ["index.html"],
-      "rule": "Minimal markup with <svg id='board'></svg> for the game area and a right-side panel as needed. No inline event handlers; load scripts with type='module' and defer. Accessibility: set appropriate ARIA roles/labels."
-    },
-    {
-      "globs": ["style.css"],
-      "rule": "CSS handles layout and presentation only. Board left, side panel right. SVG responsive via viewBox and max-width. Use classes for piece states (e.g., .piece--p1, .piece--selected, .cell--legal)."
-    },
-    {
-      "globs": ["main.js"],
-      "rule": "Entry point: load /data, create initial board via core/board, instantiate GameManager, wire /ui/interactions callbacks to GameManager, and trigger initial render. Keep this file thin."
-    },
-    {
-      "globs": ["tests/**/*.js"],
-      "rule": "Unit-test the core logic (rules/board) with deterministic fixtures. Snapshot representative board states and verify isValidMove/applyMove/checkWin. No DOM in tests."
-    },
-    {
-      "globs": ["**/*.js"],
-      "rule": "Avoid circular dependencies. Prefer dependency direction: core → (none), ui → (utils), game → (core, ui, utils), main → (game, core, ui, utils)."
-    },
-    {
-      "globs": ["**/*.js"],
-      "rule": "Error handling: core/rules returns explicit results (e.g., { ok: true, nextBoard } | { ok: false, reason }). GameManager logs user-facing messages; UI reflects status. Do not throw for expected invalid moves."
-    },
-    {
-      "globs": ["**/*.js"],
-      "rule": "Define and reuse a canonical Move object: { type: 'place' | 'pass' | 'resign', intersectionId?: number, playerId: PlayerId, meta?: object }. Keep it consistent across ui → game → core."
-    },
-    {
-      "globs": ["**/*.json"],
-      "rule": "JSON must be valid, UTF-8, without comments. Large numeric arrays may be split across lines for readability. If schema changes, bump the version and provide a migration note."
-    },
-    {
-      "globs": ["**/*"],
-      "rule": "Prefer readability over cleverness; consistent formatting. Keep commit diffs small and messages meaningful. Document new modules with a brief rationale in the header."
-    }
-  ]
-  
+  {
+    "globs": ["**/*.ts"],
+    "rule": "Use ES modules (import/export) in all TypeScript. No globals; everything flows through imports/exports. Prefer const/let over var. camelCase for variables/functions; PascalCase for classes. Keep functions small and single-responsibility; avoid long functions (>50 lines) and >5 parameters."
+  },
+  {
+    "globs": ["**/*.ts"],
+    "rule": "Every file begins with a header comment explaining its role in the project. Use JSDoc for complex functions (params/returns), and define typedefs for core types (Board, Move, PlayerId, IntersectionId)."
+  },
+  {
+    "globs": ["**/*"],
+    "rule": "Follow strict modular separation: /core = logic, /ui = rendering & interaction, /game = orchestration, /utils = helpers, /data = static. Do not mix concerns across folders."
+  },
+  {
+    "globs": ["core/**/*.ts"],
+    "rule": "Pure game logic only. No DOM, CSS, timers, or rendering. Functions must be deterministic and side-effect free. Do not import from /ui or manipulate the document."
+  },
+  {
+    "globs": ["core/rules.ts"],
+    "rule": "Expose pure functions: isValidMove(board, move), applyMove(board, move) (returns new board/state; do not mutate inputs), checkWin(board). No randomness here (use utils/rng if needed, seeded via caller)."
+  },
+  {
+    "globs": ["core/board.ts"],
+    "rule": "Define board data structures and helpers: createBoard(data), cloneBoard(board), getNeighbors(id), serialize/deserialize. Treat board/state as immutable (copy-on-write) and avoid hidden mutations."
+  },
+  {
+    "globs": ["ui/**/*.ts"],
+    "rule": "Rendering & interaction only. Use HTML5 Canvas for all drawing. No rules logic, no win checks, no state transitions beyond visual state. Do not use DOM elements for rendering game pieces."
+  },
+  {
+    "globs": ["ui/graphics.ts"],
+    "rule": "Pure drawing utilities for a <canvas id='board'></canvas> element. This module should expose a `Context` object or a `render` function. Core functions: `init(canvasElement)`, `drawBoard(boardData)`, `drawPieces(pieces)`, `clearCanvas()`, and optional helpers like `drawCircle()`, `drawLine()`, `drawText()`. All drawing is done on the single Canvas context, not by creating individual DOM elements."
+  },
+  {
+    "globs": ["ui/interactions.ts"],
+    "rule": "Manage mouse and touch events on the single <canvas> element. Convert raw event coordinates (e.g., `event.clientX`, `event.clientY`) to game-specific coordinates (e.g., `intersectionId`). This requires a reverse lookup or coordinate transformation from canvas space to board space. Do not validate moves here; do not modify core state; emit events/callbacks to GameManager."
+  },
+  {
+    "globs": ["ui/animations.ts"],
+    "rule": "Optional visual effects (captures, highlights) using `requestAnimationFrame`. The animation loop should clear the canvas and re-render the entire scene on each frame to show changes. No timing logic that influences rules; visuals only."
+  },
+  {
+    "globs": ["game/**/*.ts"],
+    "rule": "Orchestrate play. GameManager owns the current state and turn order, calls core/rules for validation & application, then triggers UI updates. No direct DOM manipulation beyond calling /ui utilities."
+  },
+  {
+    "globs": ["game/gameManager.ts"],
+    "rule": "Implements the move pipeline: (1) receive move intent from /ui, (2) validate via core/rules.isValidMove, (3) apply via core/rules.applyMove to produce a new state, (4) checkWin, (5) render via /ui, (6) advance turn."
+  },
+  {
+    "globs": ["game/player.ts"],
+    "rule": "Define HumanPlayer and AIPlayer interfaces. AI must not access DOM; it should receive board/state and produce a move intent. HumanPlayer wiring is via callbacks from /ui/interactions provided by GameManager."
+  },
+  {
+    "globs": ["game/ai.ts"],
+    "rule": "Encapsulate AI strategy (heuristics/search). Must be pure and time/iteration-bounded. No DOM, no random by default; if randomness is required, accept a seeded RNG from caller."
+  },
+  {
+    "globs": ["utils/**/*.ts"],
+    "rule": "Generic helpers only: deepCopy, RNG (seedable), logger, clamp, array/set helpers. No DOM, no project-specific rules logic. Keep utilities small and reusable."
+  },
+  {
+    "globs": ["utils/logger.ts"],
+    "rule": "Provide leveled logging (debug/info/warn/error). Avoid console.* directly elsewhere; route through logger to keep output consistent and easy to disable."
+  },
+  {
+    "globs": ["utils/events.ts"],
+    "rule": "Implement a simple event emitter class or object with `on(eventName, handler)` and `emit(eventName, data)` methods. This module should be the single source for event-driven communication between decoupled modules like `ui` and `gameManager`."
+  },
+  {
+    "globs": ["data/**/*.json"],
+    "rule": "Static configuration only (e.g., board geometry, intersections, edges). Include { \"schema\": \"amalgam-board@1\", \"version\": \"x.y\" } fields. Do not encode logic; keep numeric arrays compact and documented."
+  },
+  {
+    "globs": ["index.html"],
+    "rule": "Minimal markup with a single <canvas id='board'></canvas> element for the game area and a right-side panel as needed. No inline event handlers; load scripts with type='module' and defer. For accessibility, provide a description of the current board state and game status in a non-visual container (e.g., a hidden `<div>` with `aria-live`). When a piece moves or a turn changes, update this text programmatically. Use `tabindex` on the canvas if interactive, and provide keyboard-based controls as an alternative to mouse clicks."
+  },
+  {
+    "globs": ["style.css"],
+    "rule": "CSS handles layout and presentation only. Board left, side panel right. The Canvas element should be sized and centered via CSS. The game's responsive behavior is handled by JavaScript, not CSS."
+  },
+  {
+    "globs": ["main.ts"],
+    "rule": "Entry point: load /data, create initial board via core/board, instantiate GameManager, wire /ui/interactions callbacks to GameManager, and trigger initial render. Keep this file thin."
+  },
+  {
+    "globs": ["tests/**/*.ts"],
+    "rule": "Unit-test the core logic (rules/board) with deterministic fixtures. Snapshot representative board states and verify isValidMove/applyMove/checkWin. No DOM in tests."
+  },
+  {
+    "globs": ["**/*.ts"],
+    "rule": "Avoid circular dependencies. Prefer dependency direction: core → (none), ui → (utils), game → (core, ui, utils), main → (game, core, ui, utils)."
+  },
+  {
+    "globs": ["**/*.ts"],
+    "rule": "Error handling: core/rules returns explicit results (e.g., { ok: true, nextBoard } | { ok: false, reason }). GameManager logs user-facing messages; UI reflects status. Do not throw for expected invalid moves."
+  },
+  {
+    "globs": ["**/*.ts"],
+    "rule": "Define and reuse a canonical Move object: { type: 'place' | 'pass' | 'resign', intersectionId?: number, playerId: PlayerId, meta?: object }. Keep it consistent across ui → game → core."
+  },
+  {
+    "globs": ["**/*.json"],
+    "rule": "JSON must be valid, UTF-8, without comments. Large numeric arrays may be split across lines for readability. If schema changes, bump the version and provide a migration note."
+  },
+  {
+    "globs": ["**/*"],
+    "rule": "Prefer readability over cleverness; consistent formatting. Keep commit diffs small and messages meaningful. Document new modules with a brief rationale in the header."
+  },
+  {
+    "globs": ["ui/graphics.ts"],
+    "rule": "Implement a `resizeCanvas()` function that handles responsive behavior. This function should adjust the canvas dimensions based on the container size and set the `devicePixelRatio` to prevent blurriness on high-DPI screens. The game's `render` function should be callable after a resize to redraw the board at the new size."
+  },
+  {
+    "globs": ["ui/interactions.ts"],
+    "rule": "When handling events, translate `event.offsetX/Y` to logical game coordinates using the current canvas size and `devicePixelRatio`. Do not use static pixel values; all coordinate calculations must be relative to the dynamic canvas dimensions."
+  },
+  {
+    "globs": ["ui/**/*.ts", "game/**/*.ts"],
+    "rule": "Include a debug mode toggle that can be enabled via a URL parameter or global variable. In debug mode, overlay key information on the canvas, such as intersection IDs, coordinates, or the state of game pieces. Use browser performance profilers (e.g., Chrome's Performance tab) to identify and fix rendering bottlenecks."
+  },
+  {
+    "globs": ["tests/**/*.html"],
+    "rule": "Testing Suite: Automated verification tools for regression testing. All test files must be in tests/ directory. Provide token-efficient error reporting with copy buttons for specific sections. Use structured error templates: { component, expected, actual, severity, context }."
+  },
+  {
+    "globs": ["debug/**/*.html"], 
+    "rule": "Debug Suite: Manual diagnostic tools for step-by-step problem isolation. All debug files must be in debug/ directory. Provide interactive exploration with copy-paste functionality for LLM assistance. Include visual inspection capabilities and real-time logging."
+  },
+  {
+    "globs": ["**/*.html"],
+    "rule": "File Organization: Never create test/debug files in project root. Use tests/ for automated testing, debug/ for manual diagnosis. Provide navigation hubs (index.html) in each directory. Consolidate similar tools to reduce duplication."
+  },
+  {
+    "globs": ["tests/**/*.html", "debug/**/*.html"],
+    "rule": "Token Optimization: All error reporting must include selective copy buttons. Provide summary reports, detailed logs, and issue templates. Filter output by severity/component. Minimize context in error reports to essential data only."
+  }
+]

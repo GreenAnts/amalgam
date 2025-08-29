@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Amalgam Testing Suite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .navigation {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 20px;
+        }
+        .navigation a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+        }
+        .navigation a:hover {
+            text-decoration: underline;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .test-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8f9fa;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+        .test-card h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .test-card p {
+            color: #666;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+        .test-card a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        .test-card a:hover {
+            background: #0056b3;
+        }
+        .test-card a.not-implemented {
+            background: #dc3545;
+        }
+        .test-card a.not-implemented:hover {
+            background: #c82333;
+        }
+        .purpose {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <a href="../index.html">← Main Game</a> |
+            <a href="../debug/index.html">🔍 Debug Suite</a> |
+            <a href="../docs/TESTING_PLAN.md" target="_blank">📚 Testing Plan</a> |
+            <a href="../README.md" target="_blank">📖 Documentation</a>
+        </div>
+        
+        <div class="header">
+            <h1>🧪 Amalgam Testing Suite</h1>
+            <p><strong>Automated verification tools for regression testing and system validation</strong></p>
+        </div>
+        
+        <div class="purpose">
+            <h3>🎯 Purpose of Testing Suite</h3>
+            <p><strong>Automated Testing</strong> provides systematic verification of game components to catch breaking changes early and ensure system reliability. Tests run without manual intervention and produce structured reports for CI/CD integration.</p>
+            <ul>
+                <li><strong>Regression Testing:</strong> Verify existing functionality continues working</li>
+                <li><strong>Integration Testing:</strong> Test component interactions</li>
+                <li><strong>Performance Validation:</strong> Monitor rendering and memory usage</li>
+                <li><strong>Token-Efficient Reporting:</strong> Structured error output for LLM assistance</li>
+            </ul>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🚀 Unified Test Suite</h3>
+                <p>Comprehensive automated testing of all game components including data loading, board generation, piece rendering, and game state management.</p>
+                <p><strong>Use for:</strong> Overall system health check, regression testing, automated CI/CD</p>
+                <a href="unified-suite.html">Run Unified Tests</a>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔗 Comprehensive Suite</h3>
+                <p>Detailed testing with step-by-step verification of each component, data structure validation, and integration checks.</p>
+                <p><strong>Use for:</strong> Detailed system analysis, debugging component issues</p>
+                <a href="comprehensive-suite.html">Run Comprehensive Tests</a>
+            </div>
+            
+            <div class="test-card">
+                <h3>⚡ Performance Tests</h3>
+                <p>Canvas rendering performance, memory usage analysis, and frame rate monitoring for optimization.</p>
+                <p><strong>Use for:</strong> Performance regression, optimization validation</p>
+                <a href="#" onclick="alert('Coming soon!')" class="not-implemented">🚧 Not Implemented</a>
+            </div>
+            
+            <div class="test-card">
+                <h3>🧩 Unit Tests</h3>
+                <p>Individual component testing for board logic, rules validation, piece movement, and utility functions.</p>
+                <p><strong>Use for:</strong> Component-specific regression testing</p>
+                <a href="#" onclick="alert('Coming soon!')" class="not-implemented">🚧 Not Implemented</a>
+            </div>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <h4>📋 Token-Efficient Error Reporting</h4>
+            <p>All tests provide structured error output with selective copy buttons for efficient LLM communication:</p>
+            <ul>
+                <li><strong>Summary Reports:</strong> High-level pass/fail status</li>
+                <li><strong>Component-Specific Logs:</strong> Copy only relevant sections</li>
+                <li><strong>Structured Issues:</strong> Standardized error templates</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

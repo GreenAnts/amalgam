@@ -2,30 +2,58 @@
  * Main entry point for the Amalgam game
  * Loads data, creates game components, and initializes the application
  */
+
 import { logger } from './utils/logger.js';
 import { GameManager } from './game/gameManager.js';
+import type { 
+    BoardData, 
+    PieceDefinitions, 
+    GameState, 
+    Move, 
+    CanvasContext,
+    Vector2,
+    Piece,
+    PlayerId
+} from './core/types.js';
+
+interface GameOption {
+    id: string;
+    label: string;
+    p1: string;
+    p2: string;
+}
+
+interface CanvasPieceData {
+    type: string;
+    size: number;
+    colors?: string[];
+    rotation?: number;
+    outerColor?: string;
+    innerColor?: string;
+}
+
 /**
  * Extended GameManager with piece selection support for main application
  */
 class PatchedGameManager extends GameManager {
-    constructor() {
-        super(...arguments);
-        this.getSelectedPieceIdForPlacement = null;
-    }
+    private getSelectedPieceIdForPlacement: (() => string | null) | null = null;
+
     /**
      * Set callback to get selected piece ID for placement
      * @param callback - Function that returns the currently selected piece ID
      */
-    setSelectedPieceIdCallback(callback) {
+    setSelectedPieceIdCallback(callback: () => string | null): void {
         this.getSelectedPieceIdForPlacement = callback;
     }
+
     /**
      * Override to use selected piece ID during setup
      */
-    convertMoveIntentToMove(moveIntent) {
+    protected convertMoveIntentToMove(moveIntent: any): Move | null {
         if (!moveIntent || !moveIntent.coords || !this.state || !this.currentPlayer) {
             return null;
         }
+        
         const coords = moveIntent.coords;
         logger.info('PatchedGameManager convertMoveIntentToMove:', {
             coords: coords,
@@ -33,20 +61,25 @@ class PatchedGameManager extends GameManager {
             currentPlayerId: this.currentPlayer.id,
             stateCurrentPlayer: this.state.currentPlayer
         });
+        
         if (this.state.gamePhase === 'setup') {
             const unplacedPieces = this.getUnplacedPieces();
-            let pieceId = null;
+            let pieceId: string | null = null;
+            
             if (this.getSelectedPieceIdForPlacement) {
                 pieceId = this.getSelectedPieceIdForPlacement();
             }
+            
             if (!pieceId || !unplacedPieces.includes(pieceId)) {
                 pieceId = unplacedPieces[0] || null;
             }
+            
             logger.info('Setup move details:', {
                 unplacedPieces: unplacedPieces.slice(0, 3),
                 selectedPieceId: pieceId,
                 playerId: this.currentPlayer.id
             });
+            
             if (pieceId) {
                 return {
                     type: 'place',
@@ -56,58 +89,66 @@ class PatchedGameManager extends GameManager {
                 };
             }
         }
+        
         // Fallback to original implementation
         return super.convertMoveIntentToMove(moveIntent);
     }
+
     /**
      * Get unplaced pieces for current player (exposed as public)
      */
-    getUnplacedPieces() {
+    getUnplacedPieces(): string[] {
         return super.getUnplacedPieces();
     }
 }
+
 /**
  * Main game application class
  */
 class AmalgamGame {
-    constructor() {
-        this.gameManager = null;
-        this.boardData = null;
-        this.pieceDefs = null;
-        this.gameCanvas = null;
-        this.statusElement = null;
-        this.scoreElement = null;
-        this.newGameButton = null;
-        this.undoButton = null;
-        this.selectedPieceId = null;
-        this.pieceSelectionPanel = null;
-    }
+    private gameManager: PatchedGameManager | null = null;
+    private boardData: BoardData | null = null;
+    private pieceDefs: PieceDefinitions | null = null;
+    private gameCanvas: CanvasContext | null = null;
+    private statusElement: HTMLElement | null = null;
+    private scoreElement: HTMLElement | null = null;
+    private newGameButton: HTMLButtonElement | null = null;
+    private undoButton: HTMLButtonElement | null = null;
+    private selectedPieceId: string | null = null;
+    private pieceSelectionPanel: HTMLElement | null = null;
+
     /**
      * Initialize the game application
      */
-    async initialize() {
+    async initialize(): Promise<void> {
         logger.info('Initializing Amalgam game');
+        
         try {
             // Load game data
             await this.loadGameData();
+            
             // Initialize UI elements
             await this.initializeUI();
+            
             // Create game manager
             this.createGameManager();
+            
             // Start default game
             this.startDefaultGame();
+            
             logger.info('Amalgam game initialized successfully');
-        }
-        catch (error) {
+        } catch (error) {
             logger.error('Failed to initialize game:', error);
-            this.showError('Failed to initialize game: ' + error.message);
+            this.showError('Failed to initialize game: ' + (error as Error).message);
         }
     }
+
     /**
      * Load all game data files
      */
-    async loadGameData() {
+    private async loadGameData(): Promise<void> {
         logger.debug('Loading game data files');
+        
         try {
             // Load board data
             const boardResponse = await fetch('./data/board-data.json');
@@ -115,26 +156,25 @@ class AmalgamGame {
                 throw new Error(`Failed to load board data: ${boardResponse.statusText}`);
             }
             this.boardData = await boardResponse.json();
+
             // Load valid board positions and merge into boardData
             const positionsResponse = await fetch('./game-rules/board_positions.json');
             if (positionsResponse.ok) {
                 const positionsData = await positionsResponse.json();
                 if (positionsData && positionsData.board_positions) {
-                    // Only merge if board_positions doesn't already exist in boardData
-                    if (!this.boardData.board_positions) {
-                        this.boardData.board_positions = positionsData.board_positions;
-                    }
+                    this.boardData!.board_positions = positionsData.board_positions;
                 }
-            }
-            else {
+            } else {
                 logger.warn('Could not load board_positions.json, falling back to range-based intersections.');
             }
+            
             // Load piece definitions
             const pieceResponse = await fetch('./data/piece-definitions.json');
             if (!pieceResponse.ok) {
                 throw new Error(`Failed to load piece definitions: ${pieceResponse.statusText}`);
             }
             this.pieceDefs = await pieceResponse.json();
+            
             // Attach board data so rules can reference starting areas via pieceDefs.board_data
             if (this.pieceDefs && !this.pieceDefs.board_data && this.boardData) {
                 this.pieceDefs.board_data = this.boardData;
@@ -144,125 +184,145 @@ class AmalgamGame {
                     squaresStartingAreaSize: this.pieceDefs.board_data.starting_areas?.squares_starting_area?.positions?.length
                 });
             }
+            
             logger.debug('Game data loaded successfully');
-        }
-        catch (error) {
+        } catch (error) {
             logger.error('Failed to load game data:', error);
             throw error;
         }
     }
+
     /**
      * Initialize UI elements
      */
-    async initializeUI() {
+    private async initializeUI(): Promise<void> {
         logger.debug('Initializing UI elements');
+        
         // Get board container
         const boardContainer = document.getElementById('board-container');
         if (!boardContainer) {
             throw new Error('Board container element not found');
         }
+        
         if (!this.boardData) {
             throw new Error('Board data not loaded');
         }
+        
         // Initialize canvas-based graphics
         const { createGameCanvas } = await import('./ui/graphics.js');
         this.gameCanvas = createGameCanvas(boardContainer, this.boardData);
+        
         // Get UI elements
         this.statusElement = document.getElementById('status');
         this.scoreElement = document.getElementById('score');
-        this.newGameButton = document.getElementById('new-game');
-        this.undoButton = document.getElementById('undo');
+        this.newGameButton = document.getElementById('new-game') as HTMLButtonElement;
+        this.undoButton = document.getElementById('undo') as HTMLButtonElement;
         this.pieceSelectionPanel = document.getElementById('piece-selection-panel');
+        
         if (!this.statusElement || !this.scoreElement || !this.newGameButton || !this.undoButton || !this.pieceSelectionPanel) {
             throw new Error('Required UI elements not found');
         }
+        
         // Set up event listeners
         this.setupEventListeners();
+        
         logger.debug('Canvas-based UI elements initialized');
     }
+
     /**
      * Set up event listeners
      */
-    setupEventListeners() {
+    private setupEventListeners(): void {
         // New game button
         this.newGameButton?.addEventListener('click', () => {
             this.showGameOptions();
         });
+        
         // Undo button
         this.undoButton?.addEventListener('click', () => {
             if (this.gameManager) {
                 this.gameManager.undoMove();
             }
         });
+        
         // Canvas click events
         if (this.gameCanvas && this.gameCanvas.canvas) {
             this.gameCanvas.canvas.addEventListener('click', (event) => {
                 this.handleCanvasClick(event);
             });
         }
+        
         // Keyboard shortcuts
         document.addEventListener('keydown', (event) => {
             this.handleKeyboardShortcuts(event);
         });
     }
+
     /**
      * Handle canvas click events
      */
-    handleCanvasClick(event) {
-        if (!this.gameManager || !this.gameCanvas)
-            return;
+    private handleCanvasClick(event: MouseEvent): void {
+        if (!this.gameManager || !this.gameCanvas) return;
+        
         // Get canvas coordinates
         const rect = this.gameCanvas.canvas.getBoundingClientRect();
         const scaleX = this.gameCanvas.canvas.width / rect.width;
         const scaleY = this.gameCanvas.canvas.height / rect.height;
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
+        
         // Convert to game coordinates
         const gameCoords = this.gameCanvas.getCoordinatesFromPixel(mouseX, mouseY);
+        
         logger.debug('Canvas clicked at game coordinates:', gameCoords);
+        
         // Handle the intersection click
         this.handleIntersectionClick(gameCoords);
     }
+
     /**
      * Handle intersection click
      */
-    handleIntersectionClick(coords) {
-        if (!this.gameManager || !this.gameCanvas)
-            return;
+    private handleIntersectionClick(coords: Vector2): void {
+        if (!this.gameManager || !this.gameCanvas) return;
+        
         const state = this.gameManager.getState();
-        if (!state)
-            return;
+        if (!state) return;
+        
         // Check if it's a valid intersection
         if (!this.gameCanvas.boardDict[`${coords[0]},${coords[1]}`]) {
             logger.debug('Clicked on invalid intersection:', coords);
             return;
         }
+        
         if (state.gamePhase === 'setup') {
             this.handleSetupClick(coords);
-        }
-        else {
+        } else {
             this.handleGameplayClick(coords);
         }
     }
+
     /**
      * Handle setup phase clicks
      */
-    handleSetupClick(coords) {
+    private handleSetupClick(coords: Vector2): void {
         // The GameManager will handle placement using the selected piece ID
         // through the convertMoveIntentToMove override
         logger.debug('Setup click at:', coords);
     }
+
     /**
      * Handle gameplay phase clicks
      */
-    handleGameplayClick(coords) {
+    private handleGameplayClick(coords: Vector2): void {
         // For now, just log the click
         logger.debug('Gameplay click at:', coords);
     }
+
     /**
      * Handle keyboard shortcuts
      */
-    handleKeyboardShortcuts(event) {
+    private handleKeyboardShortcuts(event: KeyboardEvent): void {
         switch (event.key) {
             case 'n':
             case 'N':
@@ -290,18 +350,21 @@ class AmalgamGame {
                 }
                 break;
         }
+        
         // Piece selection hotkeys (only during setup phase)
         if (this.gameManager && this.gameManager.getState() && this.pieceDefs) {
-            const state = this.gameManager.getState();
+            const state = this.gameManager.getState()!;
             if (state.gamePhase === 'setup') {
                 const player = state.currentPlayer;
                 const pieceDefs = this.pieceDefs.piece_definitions[player === 'circles' ? 'circles_pieces' : 'squares_pieces'];
                 const placedPieces = Object.keys(state.pieces);
                 const unplaced = Object.entries(pieceDefs)
                     .filter(([id, def]) => !placedPieces.includes(id) && def.placement === 'setup_phase');
+                
                 // Hotkeys: R, P, A, J, M, O, V, 1-8
                 const key = event.key.toUpperCase();
-                let found = null;
+                let found: string | null = null;
+                
                 for (let i = 0; i < unplaced.length; i++) {
                     const [id, def] = unplaced[i];
                     if (this.getPieceHotkey(def.type, i) === key || (key === String(i + 1))) {
@@ -309,6 +372,7 @@ class AmalgamGame {
                         break;
                     }
                 }
+                
                 if (found) {
                     event.preventDefault();
                     this.selectedPieceId = found;
@@ -317,52 +381,67 @@ class AmalgamGame {
             }
         }
     }
+
     /**
      * Create the game manager
      */
-    createGameManager() {
+    private createGameManager(): void {
         logger.debug('Creating game manager');
+        
         if (!this.gameCanvas || !this.boardData || !this.pieceDefs) {
             throw new Error('Required components not initialized');
         }
-        this.gameManager = new PatchedGameManager(this.gameCanvas, this.boardData, this.pieceDefs, {
-            onStateChange: (state, move) => this.handleStateChange(state, move),
-            onGameEnd: (state) => this.handleGameEnd(state),
-            onError: (error) => this.handleError(error)
-        });
+        
+        this.gameManager = new PatchedGameManager(
+            this.gameCanvas,
+            this.boardData,
+            this.pieceDefs,
+            {
+                onStateChange: (state, move) => this.handleStateChange(state, move),
+                onGameEnd: (state) => this.handleGameEnd(state),
+                onError: (error) => this.handleError(error)
+            }
+        );
+        
         // Provide callback for selected piece
         this.gameManager.setSelectedPieceIdCallback(() => this.selectedPieceId);
     }
+
     /**
      * Start a default game
      */
-    startDefaultGame() {
+    private startDefaultGame(): void {
         logger.debug('Starting default game');
+        
         if (!this.gameManager) {
             logger.error('Game manager not initialized');
             return;
         }
+        
         // Start with Human vs Human for testing
         this.gameManager.startNewGame({
             player1: { type: 'human', name: 'Circles' },
             player2: { type: 'human', name: 'Squares' }
         });
+        
         // Initial board render
         if (this.gameCanvas) {
             this.gameCanvas.drawBoard();
         }
     }
+
     /**
      * Show game options dialog
      */
-    showGameOptions() {
-        const options = [
+    private showGameOptions(): void {
+        const options: GameOption[] = [
             { id: 'human-vs-human', label: 'Human vs Human', p1: 'human', p2: 'human' },
             { id: 'human-vs-random', label: 'Human vs Random AI', p1: 'human', p2: 'random' },
             { id: 'human-vs-heuristic', label: 'Human vs Heuristic AI', p1: 'human', p2: 'heuristic' },
             { id: 'random-vs-random', label: 'Random AI vs Random AI', p1: 'random', p2: 'random' },
             { id: 'heuristic-vs-heuristic', label: 'Heuristic AI vs Heuristic AI', p1: 'heuristic', p2: 'heuristic' }
         ];
+        
         // Create modal dialog
         const modal = document.createElement('div');
         modal.className = 'modal';
@@ -379,6 +458,7 @@ class AmalgamGame {
                 <button class="modal-close">Cancel</button>
             </div>
         `;
+        
         // Add modal styles
         const style = document.createElement('style');
         style.textContent = `
@@ -440,16 +520,18 @@ class AmalgamGame {
             }
         `;
         document.head.appendChild(style);
+        
         // Add event listeners
         modal.addEventListener('click', (event) => {
-            const target = event.target;
+            const target = event.target as Element;
             if (target === modal || target.classList.contains('modal-close')) {
                 modal.remove();
                 style.remove();
             }
         });
+        
         modal.addEventListener('click', (event) => {
-            const target = event.target;
+            const target = event.target as HTMLElement;
             if (target.classList.contains('game-option')) {
                 const optionId = target.dataset.option;
                 const option = options.find(opt => opt.id === optionId);
@@ -460,40 +542,48 @@ class AmalgamGame {
                 style.remove();
             }
         });
+        
         document.body.appendChild(modal);
     }
+
     /**
      * Start game with selected option
      */
-    startGameByOption(option) {
+    private startGameByOption(option: GameOption): void {
         logger.debug('Starting game with option:', option);
+        
         if (!this.gameManager) {
             logger.error('Game manager not initialized');
             return;
         }
+        
         this.gameManager.startNewGame({
             player1: { type: option.p1, name: 'Circles' },
             player2: { type: option.p2, name: 'Squares' }
         });
     }
+
     /**
      * Handle game state changes
      */
-    handleStateChange(state, move) {
+    private handleStateChange(state: GameState, move?: Move): void {
         logger.debug('Game state changed:', state);
+        
         this.updateGameInfo(state);
         this.updateUI();
         this.updateBoardDisplay(state);
         this.renderPieceSelectionPanel(state);
     }
+    
     /**
      * Update the canvas display with current game state
      */
-    updateBoardDisplay(state) {
-        if (!this.gameCanvas || !state)
-            return;
+    private updateBoardDisplay(state: GameState): void {
+        if (!this.gameCanvas || !state) return;
+        
         // Draw the board
         this.gameCanvas.drawBoard();
+        
         // Draw pieces if any exist
         if (state.pieces && Object.keys(state.pieces).length > 0) {
             // Convert pieces to the format expected by the canvas renderer
@@ -501,15 +591,18 @@ class AmalgamGame {
             this.gameCanvas.drawPieces(piecesData, null); // No selected piece highlight for now
         }
     }
+    
     /**
      * Convert pieces from game state format to canvas rendering format
      */
-    convertPiecesForCanvas(pieces) {
-        const canvasPieces = {};
+    private convertPiecesForCanvas(pieces: Record<string, Piece>): Record<string, CanvasPieceData> {
+        const canvasPieces: Record<string, CanvasPieceData> = {};
+        
         for (const [pieceId, piece] of Object.entries(pieces)) {
             const coordStr = `${piece.coords[0]},${piece.coords[1]}`;
+            
             // Determine piece visual properties based on type and player
-            const pieceData = {
+            const pieceData: CanvasPieceData = {
                 type: this.getCanvasPieceType(piece),
                 size: 12, // Default size
                 colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'], // Amalgam colors
@@ -517,15 +610,18 @@ class AmalgamGame {
                 outerColor: piece.player === 'circles' ? '#0066CC' : '#CC0066',
                 innerColor: '#FFFFFF'
             };
+            
             canvasPieces[coordStr] = pieceData;
         }
+        
         return canvasPieces;
     }
+    
     /**
      * Map game piece types to canvas piece types
      */
-    getCanvasPieceType(piece) {
-        const typeMap = {
+    private getCanvasPieceType(piece: Piece): string {
+        const typeMap: Record<string, string> = {
             'Amalgam': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare',
             'Void': piece.player === 'circles' ? 'voidCircle' : 'voidSquare',
             'Portal': piece.player === 'circles' ? 'portalCircle' : 'portalSquare',
@@ -533,23 +629,28 @@ class AmalgamGame {
             'Amber': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare',
             'Pearl': piece.player === 'circles' ? 'amalgamCircle' : 'amalgamSquare'
         };
+        
         return typeMap[piece.type] || 'amalgamCircle';
     }
-    renderPieceSelectionPanel(state) {
-        if (!this.pieceSelectionPanel || !this.gameManager || !this.pieceDefs)
-            return;
+
+    private renderPieceSelectionPanel(state: GameState): void {
+        if (!this.pieceSelectionPanel || !this.gameManager || !this.pieceDefs) return;
+        
         // Only show during setup phase and for human player
-        if (!state || state.gamePhase !== 'setup' || this.gameManager.currentPlayer?.type !== 'human') {
+        if (!state || state.gamePhase !== 'setup' || (this.gameManager as any).currentPlayer?.type !== 'human') {
             this.pieceSelectionPanel.innerHTML = '';
             return;
         }
+        
         // Get unplaced pieces for current player
         const player = state.currentPlayer;
         const pieceDefs = this.pieceDefs.piece_definitions[player === 'circles' ? 'circles_pieces' : 'squares_pieces'];
         const placedPieces = Object.keys(state.pieces);
         const unplaced = Object.entries(pieceDefs)
             .filter(([id, def]) => !placedPieces.includes(id) && def.placement === 'setup_phase');
+        
         logger.debug('renderPieceSelectionPanel', { player, unplaced, state });
+        
         // Render buttons
         this.pieceSelectionPanel.innerHTML = unplaced.map(([id, def], idx) => {
             const symbol = this.getPieceSymbol(def.type);
@@ -560,131 +661,146 @@ class AmalgamGame {
                 <span class="piece-hotkey">${this.getPieceHotkey(def.type, idx)}</span>
             </button>`;
         }).join('');
+        
         // Add event listeners
         Array.from(this.pieceSelectionPanel.querySelectorAll('.piece-select-btn')).forEach(btn => {
             btn.addEventListener('click', () => {
-                const pieceId = btn.getAttribute('data-piece-id');
+                const pieceId = (btn as HTMLElement).getAttribute('data-piece-id');
                 this.selectedPieceId = pieceId;
                 this.renderPieceSelectionPanel(state);
             });
         });
     }
-    getPieceSymbol(type) {
-        const symbols = {
-            Ruby: 'R', Pearl: 'P', Amber: 'A', Jade: 'J', Amalgam: 'M', Portal: 'O', Void: 'V'
+
+    private getPieceSymbol(type: string): string {
+        const symbols: Record<string, string> = { 
+            Ruby: 'R', Pearl: 'P', Amber: 'A', Jade: 'J', Amalgam: 'M', Portal: 'O', Void: 'V' 
         };
         return symbols[type] || '?';
     }
-    getPieceHotkey(type, idx) {
+    
+    private getPieceHotkey(type: string, idx: number): string {
         // Assign hotkeys: R, P, A, J, 1-8 fallback
-        const map = {
-            Ruby: 'R', Pearl: 'P', Amber: 'A', Jade: 'J', Amalgam: 'M', Portal: 'O', Void: 'V'
+        const map: Record<string, string> = { 
+            Ruby: 'R', Pearl: 'P', Amber: 'A', Jade: 'J', Amalgam: 'M', Portal: 'O', Void: 'V' 
         };
         return map[type] || String(idx + 1);
     }
+
     /**
      * Handle game end
      */
-    handleGameEnd(state) {
+    private handleGameEnd(state: GameState): void {
         logger.info('Game ended:', state);
+        
         let message = '';
         if (state.winner) {
             const winnerName = state.winner === 'circles' ? 'Circles' : 'Squares';
             const victoryType = state.victoryType === 'objective' ? 'Objective Victory' : 'Elimination Victory';
             message = `${winnerName} wins by ${victoryType}!`;
-        }
-        else {
+        } else {
             message = 'Game ended in a draw.';
         }
+        
         this.showMessage(message);
         this.updateGameInfo(state);
     }
+
     /**
      * Handle errors
      */
-    handleError(error) {
+    private handleError(error: Error | string): void {
         logger.error('Game error:', error);
         this.showError(typeof error === 'string' ? error : error.message || 'An error occurred');
     }
+
     /**
      * Update game information display
      */
-    updateGameInfo(state) {
-        if (!state)
-            return;
+    private updateGameInfo(state: GameState): void {
+        if (!state) return;
+        
         // Update status
         let statusText = '';
         if (state.winner) {
             const winnerName = state.winner === 'circles' ? 'Circles' : 'Squares';
             statusText = `${winnerName} wins!`;
-        }
-        else {
+        } else {
             const currentPlayer = state.currentPlayer === 'circles' ? 'Circles' : 'Squares';
             if (state.gamePhase === 'setup') {
                 statusText = `Setup Phase - ${currentPlayer}'s turn (${state.setupTurn}/16)`;
-            }
-            else {
+            } else {
                 statusText = `${currentPlayer}'s turn`;
             }
         }
+        
         if (this.statusElement) {
             this.statusElement.textContent = statusText;
         }
+        
         // Update score
         if (this.scoreElement) {
             const circlesPieces = Object.values(state.pieces).filter(p => p.player === 'circles').length;
             const squaresPieces = Object.values(state.pieces).filter(p => p.player === 'squares').length;
+            
             const scoreCirclesElement = document.getElementById('score-circles');
             const scoreSquaresElement = document.getElementById('score-squares');
-            if (scoreCirclesElement)
-                scoreCirclesElement.textContent = String(circlesPieces);
-            if (scoreSquaresElement)
-                scoreSquaresElement.textContent = String(squaresPieces);
+            
+            if (scoreCirclesElement) scoreCirclesElement.textContent = String(circlesPieces);
+            if (scoreSquaresElement) scoreSquaresElement.textContent = String(squaresPieces);
         }
     }
+
     /**
      * Update UI elements
      */
-    updateUI() {
+    private updateUI(): void {
         // Update button states
         if (this.undoButton) {
             this.undoButton.disabled = !this.gameManager || !this.gameManager.canUndo();
         }
     }
+
     /**
      * Show a message to the user
      */
-    showMessage(message) {
+    private showMessage(message: string): void {
         // Create toast notification
         const toast = document.createElement('div');
         toast.className = 'toast toast-info';
         toast.textContent = message;
+        
         this.addToastStyles();
         document.body.appendChild(toast);
+        
         // Remove toast after 3 seconds
         setTimeout(() => {
             toast.remove();
         }, 3000);
     }
+
     /**
      * Show an error message
      */
-    showError(message) {
+    private showError(message: string): void {
         // Create error toast
         const toast = document.createElement('div');
         toast.className = 'toast toast-error';
         toast.textContent = message;
+        
         this.addToastStyles();
         document.body.appendChild(toast);
+        
         // Remove toast after 5 seconds
         setTimeout(() => {
             toast.remove();
         }, 5000);
     }
+
     /**
      * Add toast styles if not already present
      */
-    addToastStyles() {
+    private addToastStyles(): void {
         if (!document.querySelector('#toast-styles')) {
             const style = document.createElement('style');
             style.id = 'toast-styles';
@@ -714,27 +830,40 @@ class AmalgamGame {
             document.head.appendChild(style);
         }
     }
+
     /**
      * Clean up resources
      */
-    destroy() {
+    destroy(): void {
         logger.debug('Destroying game');
+        
         if (this.gameManager) {
             this.gameManager.destroy();
             this.gameManager = null;
         }
     }
 }
+
+// Make types available globally for debugging
+declare global {
+    interface Window {
+        amalgamGame?: AmalgamGame;
+    }
+}
+
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     logger.info('DOM loaded, initializing Amalgam game');
+    
     const game = new AmalgamGame();
     window.amalgamGame = game; // Make accessible for debugging
+    
     game.initialize().catch(error => {
         console.error('Failed to start game:', error);
         alert('Failed to start game: ' + error.message);
     });
 });
+
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
     if (window.amalgamGame) {

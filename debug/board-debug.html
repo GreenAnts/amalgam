@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Board Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .canvas-container {
+            border: 2px solid #333;
+            display: inline-block;
+            margin: 10px;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Amalgam Board Rendering Debug</h1>
+        
+        <div class="debug-section">
+            <h3>Debug Controls</h3>
+            <button onclick="debugBoardData()">1. Test Board Data</button>
+            <button onclick="debugBoardDictionary()">2. Test Board Dictionary</button>
+            <button onclick="debugGoldenConnections()">3. Test Golden Connections</button>
+            <button onclick="debugCanvasRendering()">4. Test Canvas Rendering</button>
+            <button onclick="debugGameState()">5. Test Game State & Pieces</button>
+            <button onclick="runFullDebug()">🚀 Run Full Debug</button>
+            <button onclick="copyDebugOutput()">📋 Copy Output to Clipboard</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>Debug Output</h3>
+            <div id="debug-output" class="debug-info"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Canvas Tests</h3>
+            <div id="canvas-container"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        const cacheBust = Date.now();
+        
+        function log(message, data = null) {
+            const debugDiv = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            debugDiv.innerHTML += logEntry + '\n\n';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(message, data);
+        }
+
+        function showError(message) {
+            const debugDiv = document.getElementById('debug-output');
+            debugDiv.innerHTML += `<div class="error">❌ ERROR: ${message}</div>\n`;
+        }
+
+        function showSuccess(message) {
+            const debugDiv = document.getElementById('debug-output');
+            debugDiv.innerHTML += `<div class="success">✅ SUCCESS: ${message}</div>\n`;
+        }
+
+        window.debugBoardData = async function() {
+            try {
+                log('🔍 Loading and analyzing board data...');
+                
+                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                log('Board data loaded:', {
+                    schema: boardData.schema,
+                    hasBoard: !!boardData.board,
+                    hasBoardPositions: !!boardData.board_positions,
+                    hasGoldenLines: !!boardData.golden_lines
+                });
+
+                if (boardData.board_positions?.coordinates) {
+                    const coords = boardData.board_positions.coordinates;
+                    log(`Board positions: ${coords.length} total coordinates`);
+                    log('Sample coordinates:', coords.slice(0, 10));
+                    
+                    // Check for coordinates we expect to see
+                    const expectedCoords = [[2, 4], [1, -8], [0, 0], [-1, 1], [3, -2]];
+                    const found = expectedCoords.filter(expected => 
+                        coords.some(coord => coord[0] === expected[0] && coord[1] === expected[1])
+                    );
+                    log(`Expected coordinates found: ${found.length}/${expectedCoords.length}`, found);
+                } else {
+                    showError('board_positions.coordinates missing or invalid');
+                }
+
+                if (boardData.golden_lines?.golden_line_intersections) {
+                    const goldenIntersections = boardData.golden_lines.golden_line_intersections;
+                    log(`Golden intersections: ${goldenIntersections.length} total`);
+                    log('Sample golden intersections:', goldenIntersections.slice(0, 5));
+                }
+
+                if (boardData.golden_lines?.golden_lines_dict) {
+                    const goldenDict = boardData.golden_lines.golden_lines_dict;
+                    const dictSize = Object.keys(goldenDict).length;
+                    log(`Golden lines dictionary: ${dictSize} entries`);
+                    log('Sample golden dict entries:', Object.keys(goldenDict).slice(0, 3));
+                }
+
+                showSuccess('Board data loaded and analyzed successfully');
+                
+            } catch (error) {
+                showError(`Board data loading failed: ${error.message}`);
+                log('Full error:', error);
+            }
+        };
+
+        window.debugBoardDictionary = async function() {
+            try {
+                log('🔍 Testing board dictionary creation...');
+                
+                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                // Import the graphics functions
+                const { createBoardDictionary } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                
+                const boardDict = createBoardDictionary(boardData);
+                
+                const totalEntries = Object.keys(boardDict).length;
+                const standardCount = Object.values(boardDict).filter(type => type === 'standard').length;
+                const goldenCount = Object.values(boardDict).filter(type => type === 'golden').length;
+                
+                log('Board dictionary created:', {
+                    totalEntries,
+                    standardCount,
+                    goldenCount
+                });
+
+                // Check specific coordinates
+                const testCoords = ['2,4', '1,-8', '0,0', '-1,1', '3,-2'];
+                const coordResults = {};
+                testCoords.forEach(coord => {
+                    coordResults[coord] = boardDict[coord] || 'NOT_FOUND';
+                });
+                
+                log('Test coordinates in board dictionary:', coordResults);
+
+                // Sample some entries
+                const sampleEntries = Object.entries(boardDict).slice(0, 10);
+                log('Sample board dictionary entries:', sampleEntries);
+
+                if (totalEntries === 0) {
+                    showError('Board dictionary is empty!');
+                } else {
+                    showSuccess(`Board dictionary created with ${totalEntries} entries (${standardCount} standard, ${goldenCount} golden)`);
+                }
+                
+            } catch (error) {
+                showError(`Board dictionary test failed: ${error.message}`);
+                log('Full error:', error);
+            }
+        };
+
+        window.debugGoldenConnections = async function() {
+            try {
+                log('🔍 Testing golden connections...');
+                
+                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                const { createGoldenConnectionsSet } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                
+                const goldenConnections = createGoldenConnectionsSet(boardData.golden_lines.golden_lines_dict);
+                
+                const connectionCount = goldenConnections.size;
+                const sampleConnections = Array.from(goldenConnections).slice(0, 10);
+                
+                log('Golden connections set:', {
+                    connectionCount,
+                    sampleConnections
+                });
+
+                if (connectionCount === 0) {
+                    showError('Golden connections set is empty!');
+                } else {
+                    showSuccess(`Golden connections created with ${connectionCount} connections`);
+                }
+                
+            } catch (error) {
+                showError(`Golden connections test failed: ${error.message}`);
+                log('Full error:', error);
+            }
+        };
+
+        window.debugCanvasRendering = async function() {
+            try {
+                log('🔍 Testing canvas rendering...');
+                
+                const response = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await response.json();
+                
+                const { createGameCanvas } = await import(`./ui/graphics.js?v=${cacheBust}`);
+                
+                // Clear previous canvases
+                const container = document.getElementById('canvas-container');
+                container.innerHTML = '<h4>Canvas Tests</h4>';
+                
+                // Create test canvas
+                const testDiv = document.createElement('div');
+                testDiv.className = 'canvas-container';
+                container.appendChild(testDiv);
+                
+                const canvasContext = createGameCanvas(testDiv, boardData);
+                
+                log('Canvas created:', {
+                    canvasWidth: canvasContext.canvas.width,
+                    canvasHeight: canvasContext.canvas.height,
+                    originX: canvasContext.originX,
+                    originY: canvasContext.originY,
+                    boardDictSize: Object.keys(canvasContext.boardDict).length,
+                    goldenConnectionsSize: canvasContext.goldenConnections.size
+                });
+
+                // Test drawing the board
+                log('Drawing board...');
+                canvasContext.drawBoard();
+                
+                // Check if anything was drawn
+                const imageData = canvasContext.ctx.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+                const pixels = imageData.data;
+                let hasNonWhitePixels = false;
+                let totalNonWhitePixels = 0;
+                
+                for (let i = 0; i < pixels.length; i += 4) {
+                    if (pixels[i] !== 255 || pixels[i+1] !== 255 || pixels[i+2] !== 255) {
+                        hasNonWhitePixels = true;
+                        totalNonWhitePixels++;
+                    }
+                }
+                
+                log('Canvas analysis after drawing:', {
+                    hasDrawnContent: hasNonWhitePixels,
+                    nonWhitePixels: totalNonWhitePixels,
+                    totalPixels: pixels.length / 4
+                });
+
+                if (!hasNonWhitePixels) {
+                    showError('Canvas appears to be blank after drawing!');
+                } else {
+                    showSuccess(`Canvas drawn successfully with ${totalNonWhitePixels} colored pixels`);
+                }
+
+                // Add click handler for debugging
+                canvasContext.canvas.addEventListener('click', (e) => {
+                    const rect = canvasContext.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const coords = canvasContext.getCoordinatesFromPixel(mouseX, mouseY);
+                    const coordStr = `${coords[0]},${coords[1]}`;
+                    const intersectionType = canvasContext.boardDict[coordStr];
+                    
+                    log(`Canvas clicked: pixel(${Math.round(mouseX)}, ${Math.round(mouseY)}) -> coords[${coords[0]}, ${coords[1]}] -> type: ${intersectionType || 'INVALID'}`);
+                });
+                
+            } catch (error) {
+                showError(`Canvas rendering test failed: ${error.message}`);
+                log('Full error:', error);
+            }
+        };
+
+        window.debugGameState = async function() {
+            try {
+                log('🔍 Testing game state and pieces...');
+                
+                const { createInitialState, createBoard } = await import(`./core/board.js?v=${cacheBust}`);
+                
+                const boardResponse = await fetch(`./data/board-data.json?v=${cacheBust}`);
+                const boardData = await boardResponse.json();
+                
+                const board = createBoard(boardData);
+                const state = createInitialState(board);
+                
+                log('Game state created:', {
+                    gamePhase: state.gamePhase,
+                    currentPlayer: state.currentPlayer,
+                    setupTurn: state.setupTurn,
+                    pieceCount: Object.keys(state.pieces).length
+                });
+
+                if (state.pieces && Object.keys(state.pieces).length > 0) {
+                    const pieces = Object.values(state.pieces);
+                    log('Pieces analysis:', {
+                        totalPieces: pieces.length,
+                        circlesPieces: pieces.filter(p => p.player === 'circles').length,
+                        squaresPieces: pieces.filter(p => p.player === 'squares').length,
+                        pieceTypes: [...new Set(pieces.map(p => p.type))],
+                        samplePieces: pieces.slice(0, 3).map(p => ({
+                            id: p.id,
+                            type: p.type,
+                            player: p.player,
+                            coords: p.coords
+                        }))
+                    });
+
+                    showSuccess(`Game state created with ${pieces.length} pieces`);
+                } else {
+                    showError('No pieces found in initial game state!');
+                }
+                
+            } catch (error) {
+                showError(`Game state test failed: ${error.message}`);
+                log('Full error:', error);
+            }
+        };
+
+        window.runFullDebug = async function() {
+            document.getElementById('debug-output').innerHTML = '';
+            log('🚀 Starting full debug sequence...');
+            
+            const tests = [
+                { name: 'Board Data', fn: debugBoardData },
+                { name: 'Board Dictionary', fn: debugBoardDictionary },
+                { name: 'Golden Connections', fn: debugGoldenConnections },
+                { name: 'Canvas Rendering', fn: debugCanvasRendering },
+                { name: 'Game State', fn: debugGameState }
+            ];
+            
+            for (const test of tests) {
+                log(`\n=== Running ${test.name} Test ===`);
+                try {
+                    await test.fn();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    showError(`${test.name} test failed: ${error.message}`);
+                }
+            }
+            
+            log('\n🏁 Full debug sequence completed!');
+        };
+
+        window.copyDebugOutput = async function() {
+            const debugDiv = document.getElementById('debug-output');
+            const text = debugDiv.innerText || debugDiv.textContent;
+            
+            try {
+                await navigator.clipboard.writeText(text);
+                showSuccess('Debug output copied to clipboard!');
+                setTimeout(() => {
+                    const successMsg = debugDiv.querySelector('.success');
+                    if (successMsg) successMsg.remove();
+                }, 3000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                textArea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    showSuccess('Debug output copied to clipboard (fallback method)!');
+                } catch (fallbackErr) {
+                    showError('Failed to copy to clipboard. Please manually select and copy the text.');
+                }
+                document.body.removeChild(textArea);
+            }
+        };
+
+        // Auto-start basic test
+        setTimeout(() => {
+            log('🔧 Debug tool ready. Click "Run Full Debug" to start analysis.');
+        }, 1000);
+    </script>
+</body>
+</html>

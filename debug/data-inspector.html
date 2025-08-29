@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Board Data Structure Test</title>
+</head>
+<body>
+    <h1>🔍 Board Data Structure Analysis</h1>
+    <div id="output" style="font-family: monospace; white-space: pre-wrap; background: #f0f0f0; padding: 20px;"></div>
+
+    <script>
+        async function testBoardData() {
+            const output = document.getElementById('output');
+            
+            try {
+                output.textContent += '🚀 Loading board data...\n\n';
+                
+                const response = await fetch('./data/board-data.json');
+                const boardData = await response.json();
+                
+                output.textContent += '✅ Board data loaded successfully!\n\n';
+                output.textContent += `📊 Board Data Structure Analysis:\n`;
+                output.textContent += `- Schema: ${boardData.schema}\n`;
+                output.textContent += `- Total intersections: ${boardData.total_intersections}\n\n`;
+                
+                output.textContent += `🎯 Board Positions Check:\n`;
+                output.textContent += `- board_positions exists: ${!!boardData.board_positions}\n`;
+                output.textContent += `- coordinates exists: ${!!boardData.board_positions?.coordinates}\n`;
+                output.textContent += `- coordinates is array: ${Array.isArray(boardData.board_positions?.coordinates)}\n`;
+                output.textContent += `- coordinates length: ${boardData.board_positions?.coordinates?.length || 'N/A'}\n`;
+                output.textContent += `- first 5 coordinates: ${JSON.stringify(boardData.board_positions?.coordinates?.slice(0, 5) || [])}\n\n`;
+                
+                output.textContent += `⭐ Golden Lines Check:\n`;
+                output.textContent += `- golden_lines exists: ${!!boardData.golden_lines}\n`;
+                output.textContent += `- golden_line_intersections exists: ${!!boardData.golden_lines?.golden_line_intersections}\n`;
+                output.textContent += `- golden_line_intersections length: ${boardData.golden_lines?.golden_line_intersections?.length || 'N/A'}\n`;
+                output.textContent += `- first 5 golden intersections: ${JSON.stringify(boardData.golden_lines?.golden_line_intersections?.slice(0, 5) || [])}\n\n`;
+                
+                // Simulate createBoardDictionary logic
+                output.textContent += `🧪 Simulating createBoardDictionary Logic:\n`;
+                const boardDict = {};
+                
+                // Mark golden intersections
+                if (boardData.golden_lines && boardData.golden_lines.golden_line_intersections) {
+                    boardData.golden_lines.golden_line_intersections.forEach(coords => {
+                        const coordStr = `${coords[0]},${coords[1]}`;
+                        boardDict[coordStr] = "golden";
+                    });
+                    output.textContent += `- Added ${boardData.golden_lines.golden_line_intersections.length} golden intersections\n`;
+                }
+                
+                // Mark standard intersections
+                if (boardData.board_positions && boardData.board_positions.coordinates) {
+                    let standardCount = 0;
+                    boardData.board_positions.coordinates.forEach(coords => {
+                        const coordStr = `${coords[0]},${coords[1]}`;
+                        if (!boardDict[coordStr]) { // Only if not already golden
+                            boardDict[coordStr] = "standard";
+                            standardCount++;
+                        }
+                    });
+                    output.textContent += `- Added ${standardCount} standard intersections\n`;
+                } else {
+                    output.textContent += `❌ ERROR: board_positions.coordinates not found!\n`;
+                    output.textContent += `   - boardData.board_positions: ${JSON.stringify(boardData.board_positions ? 'EXISTS' : 'NULL')}\n`;
+                    if (boardData.board_positions) {
+                        output.textContent += `   - Available keys: ${Object.keys(boardData.board_positions)}\n`;
+                    }
+                }
+                
+                output.textContent += `\n📈 Final Board Dictionary Stats:\n`;
+                output.textContent += `- Total intersections: ${Object.keys(boardDict).length}\n`;
+                output.textContent += `- Golden: ${Object.values(boardDict).filter(t => t === 'golden').length}\n`;
+                output.textContent += `- Standard: ${Object.values(boardDict).filter(t => t === 'standard').length}\n`;
+                
+                // Show sample intersections
+                const sampleGolden = Object.entries(boardDict).filter(([k,v]) => v === 'golden').slice(0, 5);
+                const sampleStandard = Object.entries(boardDict).filter(([k,v]) => v === 'standard').slice(0, 5);
+                
+                output.textContent += `\n🔍 Sample Intersections:\n`;
+                output.textContent += `- Golden samples: ${JSON.stringify(sampleGolden.map(([k,v]) => k))}\n`;
+                output.textContent += `- Standard samples: ${JSON.stringify(sampleStandard.map(([k,v]) => k))}\n`;
+                
+            } catch (error) {
+                output.textContent += `❌ ERROR: ${error.message}\n`;
+                console.error('Board data test error:', error);
+            }
+        }
+        
+        // Run test on page load
+        testBoardData();
+    </script>
+</body>
+</html>

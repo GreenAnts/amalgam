@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Board with Separated Logic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the canvas to ensure it is centered and has a border */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #gameCanvas {
+            background-color: #4a5568;
+            border: 4px solid #a0aec0;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-4">
+    <div class="container mx-auto p-4 md:p-8 bg-gray-800 rounded-2xl shadow-2xl flex flex-col items-center">
+        <h1 class="text-4xl font-bold mb-4 text-center">Game Board with Separated Logic</h1>
+        <p class="text-lg text-center mb-6 text-gray-400">
+            Click on a piece to select it, then click on an empty intersection to move it.
+        </p>
+        
+        <h2 class="text-2xl font-semibold mt-4 mb-2">Current Player Turn:</h2>
+        <p id="currentPlayerDisplay" class="font-mono text-xl text-yellow-300">You</p>
+
+        <h2 class="text-2xl font-semibold mt-4 mb-2">Turn:</h2>
+        <p id="turnCounterDisplay" class="font-mono text-xl text-yellow-300">1</p>
+        
+        <canvas id="gameCanvas" width="800" height="800" class="w-full max-w-2xl aspect-square"></canvas>
+        
+        <div class="mt-6 p-4 bg-gray-700 rounded-xl w-full max-w-2xl shadow-inner">
+            <h2 class="text-2xl font-semibold mb-2">Selected Coordinates:</h2>
+            <p id="selectedCoords" class="font-mono text-xl text-green-300">None</p>
+            <p id="gameMessage" class="mt-2 text-yellow-300"></p> 
+            <button id="resetButton" class="mt-4 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition duration-200">
+                Reset Game
+            </button>
+        </div>
+    </div>
+
+    <script src="playerManager.js"></script>
+    <script src="gameLogic.js"></script>
+    <script src="aiLogic.js"></script> <script src="main.js"></script>
+</body>
+</html>

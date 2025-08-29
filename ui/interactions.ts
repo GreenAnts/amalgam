@@ -3,80 +3,105 @@
  * Translates raw mouse events into structured move intents
  * Emits events/callbacks to GameManager for processing
  */
+
 import { logger } from '../utils/logger.js';
+import { pointInCircle } from '../utils/helpers.js';
+import type { Vector2, Board, MoveIntent, Intersection } from '../core/types.js';
+
 /**
  * Interaction manager for handling user input
  */
 export class InteractionManager {
-    constructor(canvasElement, board) {
-        this.enabled = false;
-        // Callbacks
-        this.moveIntentCallback = null;
-        this.hoverCallback = null;
-        this.selectCallback = null;
-        // State
-        this.selectedCoords = null;
-        this.hoveredCoords = null;
+    private canvasElement: HTMLCanvasElement;
+    private board: Board;
+    private enabled: boolean = false;
+    
+    // Callbacks
+    private moveIntentCallback: ((intent: MoveIntent) => void) | null = null;
+    private hoverCallback: ((coords: Vector2 | null) => void) | null = null;
+    private selectCallback: ((coords: Vector2 | null) => void) | null = null;
+    
+    // State
+    private selectedCoords: Vector2 | null = null;
+    private hoveredCoords: Vector2 | null = null;
+    
+    // Event listeners
+    private boundHandleClick: (event: MouseEvent) => void;
+    private boundHandleMouseMove: (event: MouseEvent) => void;
+    private boundHandleMouseLeave: (event: MouseEvent) => void;
+
+    constructor(canvasElement: HTMLCanvasElement, board: Board) {
         this.canvasElement = canvasElement;
         this.board = board;
+        
         this.boundHandleClick = this.handleClick.bind(this);
         this.boundHandleMouseMove = this.handleMouseMove.bind(this);
         this.boundHandleMouseLeave = this.handleMouseLeave.bind(this);
+        
         this.setupEventListeners();
     }
+
     /**
      * Set callback for move intents
      * @param callback - Callback function
      */
-    setMoveIntentCallback(callback) {
+    setMoveIntentCallback(callback: (intent: MoveIntent) => void): void {
         this.moveIntentCallback = callback;
     }
+
     /**
      * Set callback for hover events
      * @param callback - Callback function
      */
-    setHoverCallback(callback) {
+    setHoverCallback(callback: (coords: Vector2 | null) => void): void {
         this.hoverCallback = callback;
     }
+
     /**
      * Set callback for selection events
      * @param callback - Callback function
      */
-    setSelectCallback(callback) {
+    setSelectCallback(callback: (coords: Vector2 | null) => void): void {
         this.selectCallback = callback;
     }
+
     /**
      * Set up event listeners
      */
-    setupEventListeners() {
+    private setupEventListeners(): void {
         this.canvasElement.addEventListener('click', this.boundHandleClick);
         this.canvasElement.addEventListener('mousemove', this.boundHandleMouseMove);
         this.canvasElement.addEventListener('mouseleave', this.boundHandleMouseLeave);
+        
         logger.debug('Canvas interaction event listeners set up');
     }
+
     /**
      * Handle click events
      * @param event - Click event
      */
-    handleClick(event) {
-        if (!this.enabled)
-            return;
+    private handleClick(event: MouseEvent): void {
+        if (!this.enabled) return;
+        
         // Convert canvas coordinates to game coordinates
         const rect = this.canvasElement.getBoundingClientRect();
         const scaleX = this.canvasElement.width / rect.width;
         const scaleY = this.canvasElement.height / rect.height;
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
+        
         // Convert to game coordinates using grid system (25px grid, canvas center at 400,400)
         const originX = this.canvasElement.width / 2;
         const originY = this.canvasElement.height / 2;
         const gridSize = 25;
         const gameX = Math.round((mouseX - originX) / gridSize);
         const gameY = Math.round((originY - mouseY) / gridSize);
-        const coords = [gameX, gameY];
+        const coords: Vector2 = [gameX, gameY];
+        
         logger.debug('Canvas click converted to game coordinates:', coords, 'from pixel:', mouseX, mouseY);
+        
         // Generate move intent
-        const moveIntent = {
+        const moveIntent: MoveIntent = {
             coords: coords,
             type: 'click',
             meta: {
@@ -84,39 +109,45 @@ export class InteractionManager {
                 timestamp: Date.now()
             }
         };
+        
         // Emit move intent
         if (this.moveIntentCallback) {
             this.moveIntentCallback(moveIntent);
         }
+        
         // Handle selection
         this.handleSelection(coords);
     }
+
     /**
      * Handle mouse move events
      * @param event - Mouse move event
      */
-    handleMouseMove(event) {
-        if (!this.enabled)
-            return;
+    private handleMouseMove(event: MouseEvent): void {
+        if (!this.enabled) return;
+        
         // Convert canvas coordinates to game coordinates
         const rect = this.canvasElement.getBoundingClientRect();
         const scaleX = this.canvasElement.width / rect.width;
         const scaleY = this.canvasElement.height / rect.height;
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
+        
         // Convert to game coordinates
         const originX = this.canvasElement.width / 2;
         const originY = this.canvasElement.height / 2;
         const gridSize = 25;
         const gameX = Math.round((mouseX - originX) / gridSize);
         const gameY = Math.round((originY - mouseY) / gridSize);
-        const coords = [gameX, gameY];
+        const coords: Vector2 = [gameX, gameY];
+        
         // Check if hovered coordinates changed
         if (!this.coordsEqual(coords, this.hoveredCoords)) {
             this.hoveredCoords = coords;
+            
             if (coords) {
                 // Generate hover intent (no logging to avoid spam)
-                const hoverIntent = {
+                const hoverIntent: MoveIntent = {
                     coords: coords,
                     type: 'hover',
                     meta: {
@@ -124,12 +155,12 @@ export class InteractionManager {
                         timestamp: Date.now()
                     }
                 };
+                
                 // Emit hover callback
                 if (this.hoverCallback) {
                     this.hoverCallback(coords);
                 }
-            }
-            else {
+            } else {
                 // Clear hover
                 if (this.hoverCallback) {
                     this.hoverCallback(null);
@@ -137,159 +168,182 @@ export class InteractionManager {
             }
         }
     }
+
     /**
      * Handle mouse leave events
      * @param event - Mouse leave event
      */
-    handleMouseLeave(event) {
-        if (!this.enabled)
-            return;
+    private handleMouseLeave(event: MouseEvent): void {
+        if (!this.enabled) return;
+        
         this.hoveredCoords = null;
+        
         // Clear hover
         if (this.hoverCallback) {
             this.hoverCallback(null);
         }
+        
         logger.debug('Mouse left board area');
     }
+
     /**
      * Handle selection
      * @param coords - Selected coordinates
      */
-    handleSelection(coords) {
-        if (!this.enabled)
-            return;
+    private handleSelection(coords: Vector2): void {
+        if (!this.enabled) return;
+        
         // Update selected coordinates
         this.selectedCoords = coords;
+        
         logger.debug('Selection at coordinates:', coords);
+        
         // Emit selection callback
         if (this.selectCallback) {
             this.selectCallback(coords);
         }
     }
+
     /**
      * Convert board coordinates to SVG coordinates
      * @param boardCoords - Board coordinates [x, y]
      * @returns SVG coordinates [x, y]
      */
-    boardToSvgCoords(boardCoords) {
+    boardToSvgCoords(boardCoords: Vector2): Vector2 {
         const { coordinateScale, centerOffset } = this.board;
         const [boardX, boardY] = boardCoords;
+        
         const svgX = centerOffset[0] + (boardX * coordinateScale);
         const svgY = centerOffset[1] - (boardY * coordinateScale);
+        
         return [svgX, svgY];
     }
+
     /**
      * Check if two coordinate arrays are equal
      * @param coords1 - First coordinates
      * @param coords2 - Second coordinates
      * @returns Whether coordinates are equal
      */
-    coordsEqual(coords1, coords2) {
-        if (!coords1 && !coords2)
-            return true;
-        if (!coords1 || !coords2)
-            return false;
+    private coordsEqual(coords1: Vector2 | null, coords2: Vector2 | null): boolean {
+        if (!coords1 && !coords2) return true;
+        if (!coords1 || !coords2) return false;
         return coords1[0] === coords2[0] && coords1[1] === coords2[1];
     }
+
     /**
      * Set selected coordinates
      * @param coords - Coordinates to select
      */
-    setSelectedCoords(coords) {
+    setSelectedCoords(coords: Vector2 | null): void {
         this.selectedCoords = coords;
     }
+
     /**
      * Get selected coordinates
      * @returns Selected coordinates
      */
-    getSelectedCoords() {
+    getSelectedCoords(): Vector2 | null {
         return this.selectedCoords;
     }
+
     /**
      * Clear selection
      */
-    clearSelection() {
+    clearSelection(): void {
         this.selectedCoords = null;
         this.hoveredCoords = null;
     }
+
     /**
      * Enable or disable interactions
      * @param enabled - Whether interactions are enabled
      */
-    setEnabled(enabled) {
+    setEnabled(enabled: boolean): void {
         this.enabled = enabled;
+        
         if (enabled) {
             this.canvasElement.style.pointerEvents = 'auto';
-        }
-        else {
+        } else {
             this.canvasElement.style.pointerEvents = 'none';
             this.clearSelection();
         }
+        
         logger.debug('Interactions enabled:', enabled);
     }
+
     /**
      * Check if interactions are enabled
      * @returns Whether interactions are enabled
      */
-    isEnabled() {
+    isEnabled(): boolean {
         return this.enabled;
     }
+
     /**
      * Get intersection at coordinates
      * @param coords - Board coordinates
      * @returns Intersection data or null
      */
-    getIntersectionAtCoords(coords) {
+    getIntersectionAtCoords(coords: Vector2): Intersection | null {
         const [x, y] = coords;
+        
         // Find intersection with matching coordinates
         for (const intersection of this.board.intersections) {
             if (intersection.coords && intersection.coords[0] === x && intersection.coords[1] === y) {
                 return intersection;
             }
         }
+        
         return null;
     }
+
     /**
      * Check if coordinates are valid board positions
      * @param coords - Board coordinates
      * @returns Whether coordinates are valid
      */
-    isValidCoords(coords) {
-        if (!coords || coords.length !== 2)
-            return false;
+    isValidCoords(coords: Vector2): boolean {
+        if (!coords || coords.length !== 2) return false;
+        
         const [x, y] = coords;
         // Check if coordinates are within the board bounds
         // We'll use a simple range check based on the board size
         const maxCoord = Math.floor(this.board.width / (2 * this.board.coordinateScale));
-        return x >= -maxCoord && x <= maxCoord &&
-            y >= -maxCoord && y <= maxCoord;
+        return x >= -maxCoord && x <= maxCoord && 
+               y >= -maxCoord && y <= maxCoord;
     }
+
     /**
      * Get all valid board coordinates
      * @returns Array of valid coordinates
      */
-    getAllValidCoords() {
-        const coords = [];
+    getAllValidCoords(): Vector2[] {
+        const coords: Vector2[] = [];
         const maxCoord = Math.floor(this.board.width / (2 * this.board.coordinateScale));
+        
         for (let x = -maxCoord; x <= maxCoord; x++) {
             for (let y = -maxCoord; y <= maxCoord; y++) {
                 coords.push([x, y]);
             }
         }
+        
         return coords;
     }
+
     /**
      * Get coordinates within a certain distance
      * @param centerCoords - Center coordinates
      * @param distance - Maximum distance
      * @returns Array of coordinates within distance
      */
-    getCoordsWithinDistance(centerCoords, distance) {
-        const coords = [];
+    getCoordsWithinDistance(centerCoords: Vector2, distance: number): Vector2[] {
+        const coords: Vector2[] = [];
         const [centerX, centerY] = centerCoords;
+        
         for (let x = centerX - distance; x <= centerX + distance; x++) {
             for (let y = centerY - distance; y <= centerY + distance; y++) {
-                const testCoords = [x, y];
+                const testCoords: Vector2 = [x, y];
                 if (this.isValidCoords(testCoords)) {
                     const dist = Math.max(Math.abs(x - centerX), Math.abs(y - centerY));
                     if (dist <= distance) {
@@ -298,40 +352,49 @@ export class InteractionManager {
                 }
             }
         }
+        
         return coords;
     }
+
     /**
      * Get adjacent coordinates
      * @param coords - Center coordinates
      * @returns Array of adjacent coordinates
      */
-    getAdjacentCoords(coords) {
-        return this.getCoordsWithinDistance(coords, 1).filter(adjCoords => !this.coordsEqual(adjCoords, coords));
+    getAdjacentCoords(coords: Vector2): Vector2[] {
+        return this.getCoordsWithinDistance(coords, 1).filter(adjCoords => 
+            !this.coordsEqual(adjCoords, coords)
+        );
     }
+
     /**
      * Clean up resources
      */
-    destroy() {
+    destroy(): void {
         // Remove event listeners
         this.canvasElement.removeEventListener('click', this.boundHandleClick);
         this.canvasElement.removeEventListener('mousemove', this.boundHandleMouseMove);
         this.canvasElement.removeEventListener('mouseleave', this.boundHandleMouseLeave);
+        
         // Clear callbacks
         this.moveIntentCallback = null;
         this.hoverCallback = null;
         this.selectCallback = null;
+        
         // Clear state
         this.selectedCoords = null;
         this.hoveredCoords = null;
+        
         logger.debug('InteractionManager destroyed');
     }
 }
+
 /**
  * Create an interaction manager
  * @param canvasElement - Canvas element
  * @param board - Board object
  * @returns Interaction manager instance
  */
-export function createInteractionManager(canvasElement, board) {
+export function createInteractionManager(canvasElement: HTMLCanvasElement, board: Board): InteractionManager {
     return new InteractionManager(canvasElement, board);
 }
