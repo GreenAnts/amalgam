@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌀 Portal Movement Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #2c1810;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #f9f6f0;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+        }
+
+        /* Navigation Header */
+        .nav-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d4c4a8;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: #d2b48c;
+            color: #2c1810;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 2px solid #8B4513;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: #c19a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-header h1 {
+            color: #8B4513;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.1);
+        }
+
+        .test-header p {
+            color: #5d3a1a;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .movement-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .movement-type {
+            background: rgba(230, 215, 195, 0.3);
+            border: 2px solid #d4c4a8;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .movement-type h3 {
+            color: #8B4513;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .movement-type p {
+            color: #5d3a1a;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .test-item {
+            background: rgba(230, 215, 195, 0.3);
+            border: 2px solid #d4c4a8;
+            border-radius: 10px;
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .test-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.2);
+        }
+
+        .test-name {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #8B4513;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #d4c4a8;
+            padding-bottom: 5px;
+        }
+
+        .test-category {
+            display: inline-block;
+            background: #e6d7c3;
+            color: #8B4513;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .test-desc {
+            color: #5d3a1a;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .test-details {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            border-left: 3px solid #8B4513;
+        }
+
+        .test-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 2px solid;
+        }
+
+        .test-status.pending { 
+            background: #f4e4bc; 
+            color: #8B4513; 
+            border-color: #d4c4a8; 
+        }
+        .test-status.passed { 
+            background: #d4edda; 
+            color: #155724; 
+            border-color: #c3e6cb; 
+        }
+        .test-status.failed { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border-color: #f1c2c7; 
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(230, 215, 195, 0.3);
+            border-radius: 10px;
+            border: 2px solid #d4c4a8;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            background: #d2b48c;
+            color: #2c1810;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        .btn:hover {
+            background: #c19a6b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3);
+        }
+
+        .results {
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid #d4c4a8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .results h3 {
+            color: #8B4513;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #d4c4a8;
+        }
+
+        .summary-item.total { background: #f4e4bc; }
+        .summary-item.passed { background: #d4edda; }
+        .summary-item.failed { background: #f8d7da; }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #8B4513;
+        }
+
+        .summary-label {
+            color: #5d3a1a;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        #debug-output {
+            background: #2c1810;
+            color: #f9f6f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #8B4513;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+            <a href="nexus-movement-test.html" class="nav-btn">🔗 Nexus Tests</a>
+            <a href="movement-test.html" class="nav-btn">⚡ Movement Tests</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>🌀 Portal Movement Tests</h1>
+            <p>Testing all 4 Portal movement types: Swap, Line, Standard, and Phasing<br>
+            <strong>Portal pieces can only move on golden line intersections</strong></p>
+        </div>
+
+        <div class="movement-types">
+            <div class="movement-type">
+                <h3>🔄 Portal Swap</h3>
+                <p>Exchange positions between golden line piece and Portal piece</p>
+            </div>
+            <div class="movement-type">
+                <h3>🛤️ Portal Line</h3>
+                <p>Portal moves along connected golden line paths</p>
+            </div>
+            <div class="movement-type">
+                <h3>📍 Portal Standard</h3>
+                <p>Portal 8-directional movement (must land on golden line)</p>
+            </div>
+            <div class="movement-type">
+                <h3>👻 Portal Phasing</h3>
+                <p>Movement through pieces in straight lines</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="runAllTests()" class="btn">🚀 Run All Tests</button>
+            <button onclick="runTestsByType('portal_swap')" class="btn">🔄 Swap Tests</button>
+            <button onclick="runTestsByType('portal_line')" class="btn">🛤️ Line Tests</button>
+            <button onclick="runTestsByType('portal_standard')" class="btn">📍 Standard Tests</button>
+            <button onclick="runTestsByType('portal_phasing')" class="btn">👻 Phasing Tests</button>
+            <button onclick="clearResults()" class="btn">🧹 Clear</button>
+        </div>
+
+        <div class="test-grid" id="test-grid">
+            <!-- Test items will be populated by JavaScript -->
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <h3>📊 Test Results</h3>
+            <div class="summary">
+                <div class="summary-item total">
+                    <div class="summary-number" id="total-tests">0</div>
+                    <div class="summary-label">Total Tests</div>
+                </div>
+                <div class="summary-item passed">
+                    <div class="summary-number" id="passed-tests">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-item failed">
+                    <div class="summary-number" id="failed-tests">0</div>
+                    <div class="summary-label">Failed</div>
+                </div>
+            </div>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test data structure for portal movements
+        const portalTests = [
+            // Portal Swap Tests
+            {
+                name: "Basic Portal Swap",
+                category: "portal_swap",
+                description: "Exchange positions between golden line piece and Portal",
+                details: "Non-Portal on golden line [0,0] swaps with Portal at [6,6]",
+                testFunction: testBasicPortalSwap
+            },
+            {
+                name: "Portal Swap - Invalid Source Not Golden",
+                category: "portal_swap", 
+                description: "Test swap fails when source not on golden line",
+                details: "Should fail when non-Portal piece not on golden line",
+                testFunction: testPortalSwapInvalidSource
+            },
+            {
+                name: "Portal Swap - Invalid No Portal Target",
+                category: "portal_swap",
+                description: "Test swap fails when target is not Portal piece",
+                details: "Should fail when destination doesn't contain Portal",
+                testFunction: testPortalSwapNoPortalTarget
+            },
+
+            // Portal Line Tests
+            {
+                name: "Portal Line Movement",
+                category: "portal_line",
+                description: "Portal moves along golden line connections",
+                details: "Portal at [0,0] moves to connected golden line position",
+                testFunction: testPortalLineMovement
+            },
+            {
+                name: "Portal Line - Blocked Path",
+                category: "portal_line",
+                description: "Test line movement fails when path blocked",
+                details: "Should fail when golden line path has pieces blocking",
+                testFunction: testPortalLineBlocked
+            },
+            {
+                name: "Portal Line - No Connection",
+                category: "portal_line",
+                description: "Test line movement fails with no golden line path",
+                details: "Should fail when no golden line connects source to destination",
+                testFunction: testPortalLineNoConnection
+            },
+
+            // Portal Standard Tests
+            {
+                name: "Portal Standard Movement",
+                category: "portal_standard",
+                description: "Portal 8-directional adjacent movement to golden line",
+                details: "Portal moves 1 intersection to adjacent golden line position",
+                testFunction: testPortalStandardMovement
+            },
+            {
+                name: "Portal Standard - Not Golden Line",
+                category: "portal_standard",
+                description: "Test standard movement fails to non-golden intersection",
+                details: "Portal must land on golden line intersection",
+                testFunction: testPortalStandardNotGolden
+            },
+            {
+                name: "Portal Standard - Not Adjacent",
+                category: "portal_standard",
+                description: "Test standard movement fails when not adjacent",
+                details: "Portal can only move to adjacent intersections",
+                testFunction: testPortalStandardNotAdjacent
+            },
+
+            // Portal Phasing Tests - Non-Portal
+            {
+                name: "Non-Portal Phasing Through Portal",
+                category: "portal_phasing",
+                description: "Non-Portal piece phases through Portal pieces",
+                details: "Ruby phases through Portal pieces in straight line",
+                testFunction: testNonPortalPhasing
+            },
+            {
+                name: "Non-Portal Phasing - Blocked by Non-Portal",
+                category: "portal_phasing",
+                description: "Non-Portal phasing blocked by non-Portal pieces",
+                details: "Should stop at first non-Portal piece encountered",
+                testFunction: testNonPortalPhasingBlocked
+            },
+
+            // Portal Phasing Tests - Portal
+            {
+                name: "Portal Phasing Through Any Piece",
+                category: "portal_phasing",
+                description: "Portal piece phases through any piece type",
+                details: "Portal phases through both Portal and non-Portal pieces",
+                testFunction: testPortalPhasing
+            },
+            {
+                name: "Portal Phasing - Must Land Golden",
+                category: "portal_phasing",
+                description: "Portal phasing must land on golden line intersection",
+                details: "Final destination must be golden line for Portal pieces",
+                testFunction: testPortalPhasingMustBeGolden
+            },
+            {
+                name: "Phasing - Not Straight Line",
+                category: "portal_phasing",
+                description: "Test phasing fails when not straight line path",
+                details: "Phasing only works in straight lines (horizontal/vertical/diagonal)",
+                testFunction: testPhasingNotStraightLine
+            },
+
+            // Complex scenarios
+            {
+                name: "Multiple Portal Movement Options",
+                category: "portal_line",
+                description: "Test Portal with multiple valid golden line destinations",
+                details: "Portal at hub position with multiple connection options",
+                testFunction: testMultiplePortalOptions
+            },
+            {
+                name: "Portal Swap Formation Strategy",
+                category: "portal_swap",
+                description: "Test Portal swap to create ability formations",
+                details: "Use Portal swap to position pieces for abilities",
+                testFunction: testPortalSwapStrategy
+            }
+        ];
+
+        let testResults = {};
+
+        // Import game modules
+        let GameModules = {};
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadGameModules();
+            populateTestGrid();
+        });
+
+        async function loadGameModules() {
+            try {
+                GameModules.rules = await import('../../core/rules.js');
+                GameModules.board = await import('../../core/board.js');
+                GameModules.types = await import('../../core/types.js');
+                
+                // Load test data
+                const boardResponse = await fetch('../../data/board-data.json');
+                GameModules.boardData = await boardResponse.json();
+                
+                const pieceResponse = await fetch('../../data/piece-definitions.json');
+                GameModules.pieceDefs = await pieceResponse.json();
+
+                console.log('✅ Portal movement test modules loaded');
+                debug('Game modules and data loaded successfully');
+            } catch (error) {
+                console.error('❌ Failed to load game modules:', error);
+                debug(`Failed to load game modules: ${error.message}`);
+            }
+        }
+
+        function populateTestGrid() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '';
+
+            portalTests.forEach((test, index) => {
+                const testItem = document.createElement('div');
+                testItem.className = 'test-item';
+                testItem.innerHTML = `
+                    <div class="test-category">${test.category.replace('_', ' ').toUpperCase()}</div>
+                    <div class="test-name">${test.name}</div>
+                    <div class="test-desc">${test.description}</div>
+                    <div class="test-details">${test.details}</div>
+                    <div class="test-status pending" id="status-${index}">Pending</div>
+                    <button onclick="runSingleTest(${index})" class="btn" style="margin-top: 10px; font-size: 0.9rem; padding: 8px 16px;">Run Test</button>
+                `;
+                grid.appendChild(testItem);
+            });
+        }
+
+        async function runAllTests() {
+            debug('🚀 Starting portal movement test suite...');
+            const startTime = Date.now();
+            
+            for (let i = 0; i < portalTests.length; i++) {
+                await runSingleTest(i);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            const duration = Date.now() - startTime;
+            updateSummary();
+            showResults();
+            
+            debug(`✅ All portal movement tests completed in ${duration}ms`);
+        }
+
+        async function runTestsByType(type) {
+            debug(`🚀 Running ${type} tests...`);
+            const typeTests = portalTests.map((test, index) => ({ test, index }))
+                .filter(({ test }) => test.category === type);
+            
+            for (const { index } of typeTests) {
+                await runSingleTest(index);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            updateSummary();
+            showResults();
+            debug(`✅ ${type} tests completed`);
+        }
+
+        async function runSingleTest(index) {
+            const test = portalTests[index];
+            const statusElement = document.getElementById(`status-${index}`);
+            
+            try {
+                debug(`🧪 Running: ${test.name}`);
+                statusElement.textContent = 'Running...';
+                statusElement.className = 'test-status pending';
+                
+                const result = await test.testFunction();
+                
+                if (result.passed) {
+                    statusElement.textContent = 'Passed ✅';
+                    statusElement.className = 'test-status passed';
+                    debug(`✅ ${test.name} - PASSED`);
+                } else {
+                    statusElement.textContent = `Failed ❌`;
+                    statusElement.className = 'test-status failed';
+                    debug(`❌ ${test.name} - FAILED: ${result.error}`);
+                }
+                
+                testResults[index] = result;
+                
+            } catch (error) {
+                statusElement.textContent = `Error ⚠️`;
+                statusElement.className = 'test-status failed';
+                testResults[index] = { passed: false, error: error.message };
+                debug(`⚠️ ${test.name} - ERROR: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            testResults = {};
+            populateTestGrid();
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('debug-output').innerHTML = '';
+            debug('🧹 Results cleared');
+        }
+
+        function updateSummary() {
+            const total = portalTests.length;
+            const passed = Object.values(testResults).filter(r => r.passed).length;
+            const failed = total - passed;
+            
+            document.getElementById('total-tests').textContent = total;
+            document.getElementById('passed-tests').textContent = passed;
+            document.getElementById('failed-tests').textContent = failed;
+        }
+
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function debug(message) {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Test helper functions
+        function createTestGameState() {
+            const board = GameModules.board.createBoard(GameModules.boardData);
+            return {
+                gamePhase: 'gameplay',
+                currentPlayer: 'circles',
+                pieces: {},
+                board: board,
+                moveHistory: [],
+                winner: null,
+                setupTurn: 17
+            };
+        }
+
+        // Helper to add piece to both state.pieces and board intersection
+        function addPieceToState(state, pieceId, type, player, coords) {
+            // Add to pieces collection
+            state.pieces[pieceId] = {
+                id: pieceId,
+                type: type,
+                player: player,
+                coords: coords
+            };
+            
+            // Place on board intersection
+            state.board = GameModules.board.placePiece(state.board, coords, pieceId);
+        }
+
+        // Test implementations
+
+        // Portal Swap Tests
+        async function testBasicPortalSwap() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up non-Portal on golden line and Portal piece
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 6]); // Golden line
+                addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_swap',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalSwapInvalidSource() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up non-Portal NOT on golden line
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [1, 1]); // Not golden line
+                addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_swap',
+                    playerId: 'circles',
+                    fromCoords: [1, 1],
+                    toCoords: [6, 6]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because source not on golden line
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalSwapNoPortalTarget() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up non-Portal on golden line, but target is not Portal
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 6]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [6, 6]); // Not Portal
+                
+                const move = {
+                    type: 'portal_swap',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because destination is not Portal
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Portal Line Tests
+        async function testPortalLineMovement() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal at golden line position
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
+                
+                const move = {
+                    type: 'portal_line',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6] // Connected golden line position
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalLineBlocked() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal and blocking piece
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
+                addPieceToState(state, 'blocker', 'Ruby', 'squares', [3, 6]); // Blocking path
+                
+                const move = {
+                    type: 'portal_line',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because path is blocked
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalLineNoConnection() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal at golden line
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
+                
+                const move = {
+                    type: 'portal_line',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [0, -12] // No direct golden line connection
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because no golden line path exists
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Portal Standard Tests
+        async function testPortalStandardMovement() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal at golden line
+                addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_standard',
+                    playerId: 'circles',
+                    fromCoords: [6, 6],
+                    toCoords: [6, 7] // Adjacent golden line position
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalStandardNotGolden() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal
+                addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_standard',
+                    playerId: 'circles',
+                    fromCoords: [6, 6],
+                    toCoords: [7, 7] // Not a golden line intersection
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because destination not golden line
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalStandardNotAdjacent() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal
+                addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_standard',
+                    playerId: 'circles',
+                    fromCoords: [6, 6],
+                    toCoords: [0, 6] // Golden line but not adjacent
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because not adjacent
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Portal Phasing Tests
+        async function testNonPortalPhasing() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up non-Portal piece and Portal to phase through
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(state, 'portal', 'Portal', 'squares', [1, 0]);
+                
+                const move = {
+                    type: 'portal_phasing',
+                    playerId: 'circles',
+                    fromCoords: [0, 0],
+                    toCoords: [2, 0] // Phase through Portal
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testNonPortalPhasingBlocked() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up non-Portal piece and non-Portal blocking
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'squares', [1, 0]); // Non-Portal blocks
+                
+                const move = {
+                    type: 'portal_phasing',
+                    playerId: 'circles',
+                    fromCoords: [0, 0],
+                    toCoords: [2, 0] // Blocked by non-Portal
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because non-Portal piece blocks non-Portal phasing
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalPhasing() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal and any piece type to phase through
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
+                addPieceToState(state, 'ruby', 'Ruby', 'squares', [1, 6]); // Any piece
+                
+                const move = {
+                    type: 'portal_phasing',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [3, 6] // Phase through any piece, land on golden line
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalPhasingMustBeGolden() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
+                
+                const move = {
+                    type: 'portal_phasing',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [3, 3] // Not golden line
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because Portal must land on golden line
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPhasingNotStraightLine() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up piece
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 0]);
+                
+                const move = {
+                    type: 'portal_phasing',
+                    playerId: 'circles',
+                    fromCoords: [0, 0],
+                    toCoords: [2, 1] // Not straight line
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                // Should fail because not straight line
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Complex scenarios
+        async function testMultiplePortalOptions() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Portal at hub with multiple connections
+                addPieceToState(state, 'portal', 'Portal', 'circles', [0, 0]);
+                
+                // Test multiple valid destinations
+                const moves = [
+                    { type: 'portal_line', playerId: 'circles', fromCoords: [0, 0], toCoords: [6, 0] },
+                    { type: 'portal_line', playerId: 'circles', fromCoords: [0, 0], toCoords: [-6, 0] },
+                    { type: 'portal_line', playerId: 'circles', fromCoords: [0, 0], toCoords: [0, 6] }
+                ];
+                
+                let allValid = true;
+                for (const move of moves) {
+                    const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                    if (!result.ok) {
+                        allValid = false;
+                        break;
+                    }
+                }
+                
+                return { passed: allValid, error: allValid ? null : 'Some valid moves failed' };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalSwapStrategy() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up strategic Portal swap scenario
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 6]); // Golden line
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'portal', 'Portal', 'circles', [2, 0]);
+                
+                // Portal swap to create Ruby+Amber adjacency
+                const move = {
+                    type: 'portal_swap',
+                    playerId: 'circles',
+                    fromCoords: [0, 6],
+                    toCoords: [2, 0]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Make functions globally available
+        window.runAllTests = runAllTests;
+        window.runTestsByType = runTestsByType;
+        window.runSingleTest = runSingleTest;
+        window.clearResults = clearResults;
+    </script>
+</body>
+</html>

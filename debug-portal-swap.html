@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Swap Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-info { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Portal Swap Validation Debug</h1>
+    <div id="debug-output"></div>
+
+    <script type="module">
+        const GameModules = await import('./core/rules.js');
+        const BoardModule = await import('./core/board.js');
+        const BoardData = await import('./data/board-data.json', { assert: { type: 'json' } });
+        const PieceDefs = await import('./data/piece-definitions.json', { assert: { type: 'json' } });
+
+        const debugOutput = document.getElementById('debug-output');
+
+        function addDebug(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-info ${type}`;
+            div.textContent = message;
+            debugOutput.appendChild(div);
+        }
+
+        try {
+            addDebug('🚀 Starting Portal Swap Debug...', 'info');
+
+            // Create test state
+            const board = BoardModule.createBoard(BoardData.default);
+            const state = {
+                gamePhase: 'gameplay',
+                currentPlayer: 'circles',
+                pieces: {},
+                board: board,
+                moveHistory: [],
+                winner: null,
+                setupTurn: 17
+            };
+
+            // Add test pieces exactly like the test
+            state.pieces['ruby'] = {
+                id: 'ruby',
+                type: 'Ruby',
+                player: 'circles',
+                coords: [0, 6]
+            };
+            state.pieces['portal'] = {
+                id: 'portal',
+                type: 'Portal',
+                player: 'circles',
+                coords: [6, 6]
+            };
+
+            // Place pieces on board
+            state.board = BoardModule.placePiece(state.board, [0, 6], 'ruby');
+            state.board = BoardModule.placePiece(state.board, [6, 6], 'portal');
+
+            addDebug('✅ Test pieces placed successfully', 'success');
+            addDebug(`📊 Ruby piece type: ${state.pieces['ruby'].type}`, 'info');
+            addDebug(`📊 Portal piece type: ${state.pieces['portal'].type}`, 'info');
+
+            // Test golden line detection
+            const rubyIsGolden = BoardModule.isGoldenLineIntersection(state.board, [0, 6]);
+            const portalIsGolden = BoardModule.isGoldenLineIntersection(state.board, [6, 6]);
+            addDebug(`📍 Ruby on golden line: ${rubyIsGolden}`, rubyIsGolden ? 'success' : 'error');
+            addDebug(`📍 Portal on golden line: ${portalIsGolden}`, portalIsGolden ? 'success' : 'error');
+
+            // Test portal swap validation
+            const move = {
+                type: 'portal_swap',
+                playerId: 'circles',
+                fromCoords: [0, 6],
+                toCoords: [6, 6]
+            };
+
+            const result = GameModules.isValidMove(state, move, PieceDefs.default);
+            addDebug(`🔄 Portal swap validation result: ${result.ok}`, result.ok ? 'success' : 'error');
+            if (!result.ok) {
+                addDebug(`❌ Reason: ${result.reason}`, 'error');
+            }
+
+            // Debug the validation step by step
+            addDebug('🔍 Debugging validation steps:', 'info');
+            
+            // Check source piece
+            const fromIntersection = BoardModule.getIntersectionByCoords(state.board, [0, 6]);
+            addDebug(`📍 Source intersection piece: ${fromIntersection?.piece || 'null'}`, 'info');
+            
+            const sourcePiece = state.pieces[fromIntersection?.piece];
+            addDebug(`📍 Source piece type: ${sourcePiece?.type || 'null'}`, 'info');
+            addDebug(`📍 Source piece player: ${sourcePiece?.player || 'null'}`, 'info');
+
+        } catch (error) {
+            addDebug(`❌ Error: ${error.message}`, 'error');
+            console.error('Debug error:', error);
+        }
+    </script>
+</body>
+</html>

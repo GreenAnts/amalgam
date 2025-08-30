@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam Setup Phase Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-header {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-ai { background: #27ae60; color: white; }
+        .btn-human { background: #3498db; color: white; }
+        .btn-test { background: #e67e22; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .results {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎯 Amalgam Setup Phase Test</h1>
+            <p>Testing the improved setup phase implementation</p>
+        </div>
+
+        <div class="test-buttons">
+            <button class="btn btn-ai" onclick="testAIvsAI()">🤖 Test AI vs AI</button>
+            <button class="btn btn-human" onclick="testHumanvsAI()">👤 Test Human vs AI</button>
+            <button class="btn btn-test" onclick="runSetupValidationTest()">🧪 Run Validation Tests</button>
+        </div>
+
+        <div id="status" class="status info">Ready to test. Click a button to start.</div>
+        <div id="results" class="results">Waiting for test to start...</div>
+        
+        <!-- Game Canvas Container (hidden) -->
+        <div id="board-container" style="display: none;">
+            <canvas id="game-canvas" width="800" height="800"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AmalgamGame } from './main.js';
+
+        let testGame = null;
+        let testResults = '';
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            testResults += `[${timestamp}] ${message}\n`;
+            document.getElementById('results').textContent = testResults;
+            console.log(message);
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        async function initializeGame() {
+            if (testGame) {
+                testGame.destroy();
+            }
+
+            try {
+                log('Initializing Amalgam game...');
+                testGame = new AmalgamGame();
+                await testGame.initialize();
+                log('✅ Game initialized successfully');
+                return true;
+            } catch (error) {
+                log(`❌ Game initialization failed: ${error.message}`);
+                setStatus(`Game initialization failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        window.testAIvsAI = async function() {
+            setStatus('Testing AI vs AI setup phase...', 'info');
+            testResults = '';
+            log('🤖 Starting AI vs AI test...');
+
+            if (!await initializeGame()) return;
+
+            try {
+                // Start AI vs AI game
+                testGame.startGameByOption({
+                    id: 'ai-vs-ai',
+                    label: 'AI vs AI Test',
+                    p1: 'heuristic',
+                    p2: 'random'
+                });
+
+                log('✅ AI vs AI game started successfully');
+                log('🎮 Watch the console and game canvas for AI moves');
+                setStatus('AI vs AI test running. Check console and canvas.', 'success');
+
+                // Monitor game state
+                const gameManager = testGame.gameManager;
+                if (gameManager) {
+                    const checkGameState = () => {
+                        const state = gameManager.getState();
+                        if (state) {
+                            log(`Game State: Phase=${state.gamePhase}, Turn=${state.setupTurn || 'N/A'}, Player=${state.currentPlayer}`);
+                            log(`Pieces placed: ${Object.keys(state.pieces).length}`);
+                            
+                            if (state.gamePhase === 'setup' && state.setupTurn <= 16) {
+                                setTimeout(checkGameState, 2000);
+                            } else if (state.gamePhase === 'gameplay') {
+                                log('🎉 Setup phase completed successfully! Transition to gameplay.');
+                                setStatus('Setup phase test PASSED! Transition to gameplay detected.', 'success');
+                            }
+                        }
+                    };
+                    setTimeout(checkGameState, 1000);
+                }
+
+            } catch (error) {
+                log(`❌ AI vs AI test failed: ${error.message}`);
+                setStatus(`AI vs AI test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testHumanvsAI = async function() {
+            setStatus('Testing Human vs AI setup phase...', 'info');
+            testResults = '';
+            log('👤 Starting Human vs AI test...');
+
+            if (!await initializeGame()) return;
+
+            try {
+                // Start Human vs AI game
+                testGame.startGameByOption({
+                    id: 'human-vs-ai',
+                    label: 'Human vs AI Test',
+                    p1: 'human',
+                    p2: 'random'
+                });
+
+                log('✅ Human vs AI game started successfully');
+                log('🎮 Click on the canvas to place pieces during your turn');
+                setStatus('Human vs AI test running. Click canvas to place pieces.', 'success');
+
+                // Monitor for human interaction issues
+                const gameManager = testGame.gameManager;
+                if (gameManager) {
+                    let lastTurnPlayer = null;
+                    let turnStuckCount = 0;
+
+                    const checkHumanInteraction = () => {
+                        const state = gameManager.getState();
+                        if (state) {
+                            log(`Game State: Phase=${state.gamePhase}, Turn=${state.setupTurn || 'N/A'}, Player=${state.currentPlayer}`);
+                            
+                            if (state.currentPlayer === lastTurnPlayer) {
+                                turnStuckCount++;
+                                if (turnStuckCount > 3) {
+                                    log(`⚠️ Human player seems stuck. Turn hasn't advanced in ${turnStuckCount * 2} seconds.`);
+                                    setStatus('Human player interaction may be broken. Turn not advancing.', 'error');
+                                }
+                            } else {
+                                turnStuckCount = 0;
+                                lastTurnPlayer = state.currentPlayer;
+                            }
+                            
+                            if (state.gamePhase === 'setup' && state.setupTurn <= 16) {
+                                setTimeout(checkHumanInteraction, 2000);
+                            } else if (state.gamePhase === 'gameplay') {
+                                log('🎉 Setup phase completed successfully!');
+                                setStatus('Human vs AI test PASSED!', 'success');
+                            }
+                        }
+                    };
+                    setTimeout(checkHumanInteraction, 1000);
+                }
+
+            } catch (error) {
+                log(`❌ Human vs AI test failed: ${error.message}`);
+                setStatus(`Human vs AI test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runSetupValidationTest = async function() {
+            setStatus('Running setup validation tests...', 'info');
+            testResults = '';
+            log('🧪 Running setup validation tests...');
+
+            try {
+                // Import test modules
+                const { isValidMove } = await import('./core/rules.js');
+                const boardDataResponse = await fetch('./data/board-data.json');
+                const pieceDefsResponse = await fetch('./data/piece-definitions.json');
+                
+                if (!boardDataResponse.ok || !pieceDefsResponse.ok) {
+                    throw new Error('Failed to load game data');
+                }
+
+                const boardData = await boardDataResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+                
+                // Attach board data to piece definitions
+                pieceDefs.board_data = boardData;
+
+                log('✅ Game data loaded successfully');
+
+                // Create a simple test game state
+                const testState = {
+                    gamePhase: 'setup',
+                    setupTurn: 1,
+                    currentPlayer: 'squares',
+                    pieces: {},
+                    board: {
+                        intersections: boardData.board_positions.coordinates.map(coords => ({
+                            id: `${coords[0]},${coords[1]}`,
+                            coords: coords,
+                            piece: null
+                        }))
+                    }
+                };
+
+                log('🧪 Testing setup move validation...');
+
+                // Test 1: Valid setup move
+                const validMove = {
+                    type: 'place',
+                    pieceId: 'S_Ruby1',
+                    toCoords: [2, -7], // Valid squares starting position
+                    playerId: 'squares'
+                };
+
+                const validResult = isValidMove(testState, validMove, pieceDefs);
+                if (validResult.ok) {
+                    log('✅ Valid setup move test PASSED');
+                } else {
+                    log(`❌ Valid setup move test FAILED: ${validResult.reason}`);
+                }
+
+                // Test 2: Invalid position (wrong starting area)
+                const invalidMove = {
+                    type: 'place',
+                    pieceId: 'S_Ruby1',
+                    toCoords: [2, 7], // Circles area for squares piece
+                    playerId: 'squares'
+                };
+
+                const invalidResult = isValidMove(testState, invalidMove, pieceDefs);
+                if (!invalidResult.ok) {
+                    log('✅ Invalid position test PASSED (correctly rejected)');
+                } else {
+                    log('❌ Invalid position test FAILED (should have been rejected)');
+                }
+
+                // Test 3: Wrong turn
+                const wrongTurnMove = {
+                    type: 'place',
+                    pieceId: 'C_Ruby1',
+                    toCoords: [2, 8], // Valid circles position
+                    playerId: 'circles' // But it's squares' turn
+                };
+
+                const wrongTurnResult = isValidMove(testState, wrongTurnMove, pieceDefs);
+                if (!wrongTurnResult.ok) {
+                    log('✅ Wrong turn test PASSED (correctly rejected)');
+                } else {
+                    log('❌ Wrong turn test FAILED (should have been rejected)');
+                }
+
+                // Test 4: Human player interaction test
+                log('🧪 Testing human player interface...');
+                try {
+                    const { HumanPlayer } = await import('./game/player.js');
+                    const humanPlayer = new HumanPlayer('squares', 'Test Human');
+                    
+                    log('✅ HumanPlayer class imported and instantiated successfully');
+                    
+                    // Test the promise-based interface
+                    const movePromise = humanPlayer.getMove(testState, pieceDefs);
+                    log('✅ HumanPlayer.getMove() returned a Promise');
+                    
+                    // Test setMoveIntent 
+                    humanPlayer.setMoveIntent(validMove);
+                    const receivedMove = await movePromise;
+                    
+                    if (receivedMove && receivedMove.pieceId === 'S_Ruby1') {
+                        log('✅ Human player interface test PASSED - move promise resolved correctly');
+                    } else {
+                        log('❌ Human player interface test FAILED - move not resolved correctly');
+                    }
+                } catch (error) {
+                    log(`❌ Human player interface test FAILED: ${error.message}`);
+                }
+
+                log('🎉 All setup validation tests completed!');
+                setStatus('Validation tests completed. Check results above.', 'success');
+
+            } catch (error) {
+                log(`❌ Validation tests failed: ${error.message}`);
+                setStatus(`Validation tests failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Auto-run basic validation on page load
+        setTimeout(() => {
+            log('Page loaded. Ready for testing.');
+            log('Click buttons above to run different tests.');
+        }, 500);
+    </script>
+</body>
+</html>

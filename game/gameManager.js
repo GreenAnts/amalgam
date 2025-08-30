@@ -4,7 +4,7 @@
  * Implements the move pipeline and turn management
  */
 import { logger } from '../utils/logger.js';
-import { isValidMove, applyMove, getLegalMoves, hasLegalMoves } from '../core/rules.js';
+import { isValidMove, applyMove, getLegalMoves, hasLegalMoves, getLegalMovesForPiece } from '../core/rules.js';
 import { createBoard, createInitialState, cloneState, getIntersectionByCoords } from '../core/board.js';
 import { createInteractionManager } from '../ui/interactions.js';
 import { createPlayer } from './player.js';
@@ -54,16 +54,16 @@ export class GameManager {
         // Create a basic animation manager placeholder
         this.animationManager = {
             animatePlacement: (toId, playerId, callback) => {
-                // Simple placeholder - just call callback immediately
-                setTimeout(callback, 100);
+                // Instant callback for immediate response
+                callback();
             },
             animateMovement: (fromId, toId, playerId, callback) => {
-                // Simple placeholder - just call callback immediately
-                setTimeout(callback, 100);
+                // Instant callback for immediate response
+                callback();
             },
             animateWinCelebration: (winner, callback) => {
                 logger.info(`🎉 ${winner.toUpperCase()} WINS! 🎉`);
-                setTimeout(callback, 1000);
+                setTimeout(callback, 300); // Keep some celebration delay
             },
             stopAllAnimations: () => {
                 // Placeholder
@@ -179,6 +179,12 @@ export class GameManager {
                 }
                 else {
                     logger.warn('Player returned null move, skipping turn');
+                    // If we're in gameplay phase and getting null moves, pause the game
+                    if (this.state.gamePhase === 'gameplay') {
+                        logger.info('Gameplay phase with null moves - pausing game (gameplay not implemented)');
+                        this.isGameActive = false;
+                        return;
+                    }
                     this.switchPlayer();
                 }
             }
@@ -207,21 +213,17 @@ export class GameManager {
         if (this.currentPlayer.type === 'human') {
             // Human player - wait for UI interaction
             logger.debug('getPlayerMove: waiting for human player move');
-            return new Promise((resolve) => {
-                logger.debug('getPlayerMove: setting up move callback for human player');
-                this.currentPlayer.setMoveCallback(resolve);
-                logger.debug('getPlayerMove: move callback set up, waiting for move input');
-            });
+            return this.currentPlayer.getMove(this.state, this.pieceDefs);
         }
         else {
             // AI player - get move immediately, but add delay during setup phase for visibility
             logger.debug('getPlayerMove: getting AI move');
             const move = await this.currentPlayer.getMove(this.state, this.pieceDefs);
             logger.debug(`getPlayerMove: AI returned move:`, move);
-            // Add a small delay during setup phase to make AI moves more visible
-            if (this.state.gamePhase === 'setup') {
-                logger.debug('getPlayerMove: adding setup phase delay');
-                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+            // Add a minimal delay during setup phase to make AI moves visible
+            if (this.state.gamePhase === 'setup' && this.currentPlayer.type !== 'human') {
+                logger.debug('getPlayerMove: adding AI setup phase delay');
+                await new Promise(resolve => setTimeout(resolve, 50)); // Minimal 50ms delay for AI only
             }
             logger.debug(`getPlayerMove: returning move:`, move);
             return move;
@@ -263,6 +265,8 @@ export class GameManager {
             // Update state
             this.state = result.nextState;
             logger.debug('processMove: state updated');
+            // Clear selection after successful move
+            this.selectedPiece = null;
             // Store in history
             this.moveHistory.push(move);
             this.stateHistory.push(cloneState(this.state));
@@ -370,8 +374,8 @@ export class GameManager {
         logger.debug('Handling ability activation:', ability);
         // Show ability effect - placeholder for now
         logger.debug(`Activating ability: ${ability.type} with formation:`, ability.formation);
-        // Wait for animation
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // No wait needed for basic moves - abilities will have proper animations later
+        // await new Promise(resolve => setTimeout(resolve, 1000));
     }
     /**
      * Handle game end
@@ -412,7 +416,6 @@ export class GameManager {
         logger.debug('handleMoveIntent: converted move intent to move:', move);
         if (move) {
             // Set the move for the human player to resolve the pending promise
-            // The game loop will handle processing the move
             if (this.currentPlayer && this.currentPlayer.type === 'human') {
                 logger.debug('handleMoveIntent: calling setMoveIntent on human player');
                 this.currentPlayer.setMoveIntent(move);
@@ -459,16 +462,40 @@ export class GameManager {
         }
         // Handle gameplay phase
         if (this.state.gamePhase === 'gameplay') {
+            // Check if clicking on a piece to select it
+            const pieceAtCoords = this.getPieceAtCoords(coords);
+            if (pieceAtCoords && pieceAtCoords.player === this.currentPlayer.id) {
+                // Selecting our own piece
+                this.selectedPiece = pieceAtCoords;
+                logger.debug('convertMoveIntentToMove: selected piece:', pieceAtCoords.id);
+                return null; // Don't create a move, just selection
+            }
+            // Check if we have a selected piece and are trying to move it
             const selectedPiece = this.getSelectedPiece();
             if (selectedPiece) {
-                return {
-                    type: 'standard',
-                    fromCoords: selectedPiece.coords,
-                    toCoords: coords,
-                    pieceId: selectedPiece.id,
-                    playerId: this.currentPlayer.id
-                };
+                // Get all legal moves for the selected piece
+                const allMoves = getLegalMovesForPiece(this.state, selectedPiece, this.pieceDefs);
+                // Find the move that matches the destination
+                const matchingMove = allMoves.find(move => move.toCoords &&
+                    move.toCoords[0] === coords[0] &&
+                    move.toCoords[1] === coords[1]);
+                if (matchingMove) {
+                    logger.debug('convertMoveIntentToMove: found matching move:', matchingMove);
+                    return matchingMove;
+                }
+                else {
+                    // Fall back to standard move if no specific move type found
+                    logger.debug('convertMoveIntentToMove: no matching move found, using standard');
+                    return {
+                        type: 'standard',
+                        fromCoords: selectedPiece.coords,
+                        toCoords: coords,
+                        pieceId: selectedPiece.id,
+                        playerId: this.currentPlayer.id
+                    };
+                }
             }
+            logger.debug('convertMoveIntentToMove: no valid selection or move possible');
         }
         return null;
     }
@@ -498,7 +525,7 @@ export class GameManager {
         const piece = this.getPieceAtCoords(coords);
         if (piece && piece.player === this.currentPlayer.id) {
             this.setSelectedPiece(piece);
-            // TODO: Implement highlighting for canvas-based rendering
+            this.updateVisualFeedback();
             logger.debug('Selected piece:', piece);
         }
     }
@@ -554,7 +581,43 @@ export class GameManager {
      */
     clearSelection() {
         this.selectedPiece = null;
-        // TODO: Clear highlights for canvas-based rendering
+        this.updateVisualFeedback();
+    }
+    /**
+     * Update visual feedback for selection and valid moves
+     */
+    async updateVisualFeedback() {
+        try {
+            // Import visual feedback functions
+            const { renderSelectionHighlight, renderValidMoveIndicators } = await import('../ui/graphics.js');
+            // Redraw board and pieces
+            this.drawBoardAndPieces();
+            const selectedPiece = this.getSelectedPiece();
+            if (selectedPiece) {
+                const renderContext = {
+                    ctx: this.gameCanvas.ctx,
+                    originX: this.gameCanvas.originX,
+                    originY: this.gameCanvas.originY,
+                    gridSize: 25
+                };
+                // Render selection highlight
+                renderSelectionHighlight(renderContext, selectedPiece.coords);
+                // Get and render valid moves
+                const legalMoves = this.getLegalMovesForCurrentState();
+                const validMoves = legalMoves
+                    .filter(move => move.fromCoords &&
+                    move.fromCoords[0] === selectedPiece.coords[0] &&
+                    move.fromCoords[1] === selectedPiece.coords[1])
+                    .map(move => move.toCoords)
+                    .filter(Boolean);
+                if (validMoves.length > 0) {
+                    renderValidMoveIndicators(renderContext, validMoves);
+                }
+            }
+        }
+        catch (error) {
+            logger.error('Failed to update visual feedback:', error);
+        }
     }
     /**
      * Switch to next player
@@ -1007,5 +1070,44 @@ export class GameManager {
         };
         // Handle the move intent through the game manager
         this.handleMoveIntent(moveIntent);
+    }
+    /**
+     * Draw board and pieces together
+     */
+    drawBoardAndPieces() {
+        if (!this.gameCanvas || !this.state)
+            return;
+        // Draw the board
+        this.gameCanvas.drawBoard();
+        // Convert and draw pieces
+        const piecesData = this.convertPiecesForCanvas(this.state.pieces);
+        this.gameCanvas.drawPieces(piecesData, null);
+    }
+    /**
+     * Convert pieces from game state format to canvas rendering format
+     */
+    convertPiecesForCanvas(pieces) {
+        const canvasPieces = {};
+        for (const [pieceId, piece] of Object.entries(pieces)) {
+            const coordStr = `${piece.coords[0]},${piece.coords[1]}`;
+            canvasPieces[coordStr] = {
+                id: piece.id,
+                type: piece.type,
+                player: piece.player,
+                size: piece.graphics?.size || this.getDefaultPieceSize(piece.type),
+                graphics: piece.graphics
+            };
+        }
+        return canvasPieces;
+    }
+    /**
+     * Get default piece size
+     */
+    getDefaultPieceSize(type) {
+        const sizeMap = {
+            'Ruby': 8, 'Pearl': 8, 'Amber': 8, 'Jade': 8,
+            'Amalgam': 10, 'Portal': 6, 'Void': 10
+        };
+        return sizeMap[type] || 8;
     }
 }

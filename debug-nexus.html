@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Nexus Bug Fix</title>
+</head>
+<body>
+    <h1>Debug Nexus Bug Fix</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        async function testNexusBugFix() {
+            const output = document.getElementById('output');
+            
+            try {
+                // Load modules
+                const { isValidMove } = await import('./core/rules.js');
+                const { createBoard } = await import('./core/board.js');
+                
+                // Load data
+                const boardResponse = await fetch('./data/board-data.json');
+                const boardData = await boardResponse.json();
+                
+                const pieceResponse = await fetch('./data/piece-definitions.json');
+                const pieceDefs = await pieceResponse.json();
+                
+                output.innerHTML += '<p>✅ Modules and data loaded</p>';
+                
+                // Create test state
+                const board = createBoard(boardData);
+                const state = {
+                    gamePhase: 'gameplay',
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null,
+                    setupTurn: 17
+                };
+                
+                // Add pieces to state
+                state.pieces['pearl'] = {
+                    id: 'pearl',
+                    type: 'Pearl',
+                    player: 'circles',
+                    coords: [0, 0]
+                };
+                state.pieces['amber'] = {
+                    id: 'amber',
+                    type: 'Amber',
+                    player: 'circles',
+                    coords: [1, 0]
+                };
+                
+                // Place pieces on board
+                for (const intersection of state.board.intersections) {
+                    if (intersection.coords && intersection.coords[0] === 0 && intersection.coords[1] === 0) {
+                        intersection.piece = 'pearl';
+                    }
+                    if (intersection.coords && intersection.coords[0] === 1 && intersection.coords[1] === 0) {
+                        intersection.piece = 'amber';
+                    }
+                }
+                
+                output.innerHTML += '<p>✅ Test state set up: Pearl at [0,0], Amber at [1,0]</p>';
+                
+                // Test the move
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [0, 0],
+                    toCoords: [2, 0]
+                };
+                
+                output.innerHTML += '<p>🧪 Testing Pearl move to [2,0] using nexus...</p>';
+                
+                const result = isValidMove(state, move, pieceDefs);
+                
+                output.innerHTML += `<p><strong>Result:</strong> ok=${result.ok}, reason="${result.reason}"</p>`;
+                
+                if (result.ok) {
+                    output.innerHTML += '<p>❌ <strong>BUG NOT FIXED:</strong> Pearl can still use itself as nexus!</p>';
+                } else {
+                    output.innerHTML += '<p>✅ <strong>BUG FIXED:</strong> Pearl correctly blocked from using itself as nexus!</p>';
+                }
+                
+            } catch (error) {
+                output.innerHTML += `<p>❌ <strong>Error:</strong> ${error.message}</p>`;
+                console.error(error);
+            }
+        }
+        
+        testNexusBugFix();
+    </script>
+</body>
+</html>

@@ -10,6 +10,9 @@
     <div class="game-container">
         <div id="board-container" class="board-container">
             <!-- Canvas will be created here by JavaScript -->
+            <div id="action-panel" class="action-panel" style="display: none;">
+                <!-- Action buttons will be created here by JavaScript -->
+            </div>
         </div>
         <div class="side-panel">
             <div class="game-info">
@@ -27,6 +30,34 @@
             <div class="controls">
                 <button id="new-game" class="btn">New Game</button>
                 <button id="undo" class="btn" disabled>Undo</button>
+            </div>
+            <div class="action-buttons-panel">
+                <h3>Piece Actions</h3>
+                <div id="selected-piece-info" class="selected-piece-info">
+                    <span class="no-selection">Select a piece to see available actions</span>
+                </div>
+                <div class="action-buttons">
+                    <button id="portal-swap-btn" class="action-btn disabled" disabled>
+                        <span class="btn-icon">🔄</span>
+                        <span class="btn-text">Portal Swap</span>
+                    </button>
+                    <button id="fireball-btn" class="action-btn disabled" disabled>
+                        <span class="btn-icon">🔥</span>
+                        <span class="btn-text">Fireball</span>
+                    </button>
+                    <button id="tidal-wave-btn" class="action-btn disabled" disabled>
+                        <span class="btn-icon">🌊</span>
+                        <span class="btn-text">Tidal Wave</span>
+                    </button>
+                    <button id="sap-btn" class="action-btn disabled" disabled>
+                        <span class="btn-icon">🍯</span>
+                        <span class="btn-text">Sap</span>
+                    </button>
+                    <button id="launch-btn" class="action-btn disabled" disabled>
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">Launch</span>
+                    </button>
+                </div>
             </div>
             <div class="piece-info">
                 <h3>Piece Types</h3>

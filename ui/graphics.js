@@ -41,6 +41,9 @@ function darkenColor(hex, percent) {
  * @returns Canvas context and helper functions
  */
 export function createGameCanvas(container, boardData) {
+    // Preserve existing elements (like action-panel) before clearing
+    const existingElements = Array.from(container.children);
+    const elementsToPreserve = existingElements.filter(el => el.id === 'action-panel' || el.classList.contains('preserve'));
     // Clear the container
     container.innerHTML = '';
     // Create canvas element
@@ -57,6 +60,10 @@ export function createGameCanvas(container, boardData) {
     const originX = boardSize / 2;
     const originY = boardSize / 2;
     container.appendChild(canvas);
+    // Re-append preserved elements
+    elementsToPreserve.forEach(element => {
+        container.appendChild(element);
+    });
     // Create board dictionary from board data
     const boardDict = createBoardDictionary(boardData);
     // Create golden connections lookup
@@ -386,6 +393,65 @@ function getCoordinatesFromPixel(mouseX, mouseY, originX, originY) {
  * @param piece - Piece to render
  * @param coords - Board coordinates
  */
+/**
+ * Render piece selection highlight
+ */
+export function renderSelectionHighlight(context, coords) {
+    const { ctx, originX, originY, gridSize } = context;
+    const centerPixelX = originX + coords[0] * gridSize;
+    const centerPixelY = originY - coords[1] * gridSize;
+    // Draw selection ring
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, 18, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#00FF00';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    // Add pulsing effect
+    const time = Date.now() / 1000;
+    const pulse = 0.8 + 0.2 * Math.sin(time * 4);
+    ctx.globalAlpha = pulse;
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, 22, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#00FF00';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+}
+/**
+ * Render valid move indicators
+ */
+export function renderValidMoveIndicators(context, validMoves) {
+    const { ctx, originX, originY, gridSize } = context;
+    validMoves.forEach(coords => {
+        const centerPixelX = originX + coords[0] * gridSize;
+        const centerPixelY = originY - coords[1] * gridSize;
+        // Draw move indicator circle
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+        ctx.fill();
+        // Draw border
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#00FF00';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+}
+/**
+ * Render hover effect
+ */
+export function renderHoverEffect(context, coords) {
+    const { ctx, originX, originY, gridSize } = context;
+    const centerPixelX = originX + coords[0] * gridSize;
+    const centerPixelY = originY - coords[1] * gridSize;
+    // Draw subtle hover ring
+    ctx.beginPath();
+    ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
 export function renderPiece(context, piece, coords) {
     const [x, y] = coords;
     // Use the graphics property from the piece

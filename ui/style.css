@@ -6,24 +6,23 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #ffffff;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #333;
+    margin: 0;
+    padding: 0;
+    color: #2c1810;
+    overflow: hidden;
 }
 
 .game-container {
     display: flex;
-    gap: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    gap: 1rem;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 1rem;
+    background: #ffffff;
 }
 
 .board-container {
@@ -31,83 +30,279 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f8f9fa;
+    background: #ffffff;
+    padding: 0.5rem;
+    min-height: calc(100vh - 2rem);
+    position: relative;
+}
+
+.action-panel {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #8B4513;
     border-radius: 8px;
-    padding: 1rem;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+    z-index: 1000;
+    min-width: 200px;
+    backdrop-filter: blur(4px);
+}
+
+.action-panel .selected-piece-info {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #d4c4a8;
+}
+
+.action-panel .selected-piece-info h4 {
+    color: #8B4513;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.action-panel .selected-piece-info p {
+    color: #5d3a1a;
+    font-size: 12px;
+    margin: 0;
+}
+
+.action-panel .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.action-panel .action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.action-panel .action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.action-panel .portal-swap-btn {
+    background: #4a90e2;
+    color: white;
+}
+
+.action-panel .fireball-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.action-panel .tidal-wave-btn {
+    background: #3498db;
+    color: white;
+}
+
+.action-panel .sap-btn {
+    background: #f39c12;
+    color: white;
+}
+
+.action-panel .launch-btn {
+    background: #27ae60;
+    color: white;
+}
+
+.action-panel .cancel-btn {
+    background: #95a5a6;
+    color: white;
 }
 
 #gameCanvas {
-    max-width: 100%;
-    max-height: 100%;
+    width: min(calc(100vh - 3rem), calc(100vw - 280px - 3rem));
+    height: min(calc(100vh - 3rem), calc(100vw - 280px - 3rem));
     background: #ffffff;
     border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .side-panel {
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    width: 280px;
+    background: #f9f6f0;
+    border: 2px solid #8B4513;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
 }
 
 .game-info {
-    background: #ffffff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 1.5rem;
 }
 
 .game-info h2 {
-    color: #2c3e50;
+    color: #8B4513;
     margin-bottom: 1rem;
     text-align: center;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.1);
 }
 
 .status {
-    background: #e9ecef;
+    background: #e6d7c3;
     padding: 0.75rem;
-    border-radius: 4px;
+    border-radius: 6px;
     text-align: center;
     font-weight: 600;
     margin-bottom: 1rem;
-    color: #495057;
+    color: #5d3a1a;
+    border: 1px solid #d4c4a8;
 }
 
 .score {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9rem;
-    color: #6c757d;
+    font-size: 0.95rem;
+    color: #5d3a1a;
+    font-weight: 500;
 }
 
 .controls {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .btn {
-    padding: 0.75rem 1rem;
-    border: none;
-    border-radius: 4px;
-    background: #007bff;
-    color: white;
+    padding: 0.85rem 1.2rem;
+    border: 2px solid #8B4513;
+    border-radius: 6px;
+    background: #d2b48c;
+    color: #2c1810;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: all 0.2s ease;
+    text-shadow: 0.5px 0.5px 1px rgba(255, 255, 255, 0.3);
 }
 
 .btn:hover {
-    background: #0056b3;
+    background: #c19a6b;
+    border-color: #654321;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(139, 69, 19, 0.3);
 }
 
 .btn:disabled {
-    background: #6c757d;
+    background: #a0a0a0;
+    color: #666;
+    border-color: #888;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Action Buttons Panel */
+.action-buttons-panel {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.action-buttons-panel h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.selected-piece-info {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+}
+
+.selected-piece-info .no-selection {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.selected-piece-info .piece-selected {
+    color: #495057;
+    font-weight: bold;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.action-btn:not(.disabled):hover {
+    background: #e9ecef;
+    border-color: #007bff;
+    transform: translateY(-1px);
+}
+
+.action-btn:not(.disabled):active {
+    transform: translateY(0);
+}
+
+.action-btn.disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    border-color: #dee2e6;
     cursor: not-allowed;
 }
+
+.action-btn .btn-icon {
+    font-size: 1.25rem;
+    min-width: 1.5rem;
+}
+
+.action-btn .btn-text {
+    flex: 1;
+}
+
+/* Enabled action buttons */
+.action-btn:not(.disabled)#portal-swap-btn { border-color: #17a2b8; }
+.action-btn:not(.disabled)#fireball-btn { border-color: #dc3545; }
+.action-btn:not(.disabled)#tidal-wave-btn { border-color: #007bff; }
+.action-btn:not(.disabled)#sap-btn { border-color: #ffc107; }
+.action-btn:not(.disabled)#launch-btn { border-color: #28a745; }
 
 /* SVG Board Elements */
 .intersection {
@@ -285,21 +480,24 @@ body {
 /* Game Phase Indicators */
 .game-phase {
     display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 3px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
+    border: 1px solid;
 }
 
 .game-phase--setup {
-    background: #fff3cd;
-    color: #856404;
+    background: #f4e4bc;
+    color: #8B4513;
+    border-color: #d4c4a8;
 }
 
 .game-phase--gameplay {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #e8d5b7;
+    color: #5d3a1a;
+    border-color: #c19a6b;
 }
 
 /* Player Indicators */
@@ -328,46 +526,58 @@ body {
 
 /* Piece Information Panel */
 .piece-info {
-    background: #ffffff;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 1rem;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
 }
 
 .piece-info h3 {
-    margin-bottom: 0.5rem;
-    color: #2c3e50;
-    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: #8B4513;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #d4c4a8;
+    padding-bottom: 0.5rem;
 }
 
 .piece-ability {
     font-size: 0.85rem;
-    color: #6c757d;
-    margin-bottom: 0.25rem;
+    color: #5d3a1a;
+    margin-bottom: 0.35rem;
+    padding-left: 0.5rem;
+    border-left: 3px solid #e6d7c3;
 }
 
 /* Move History */
 .move-history {
-    background: #ffffff;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
     max-height: 200px;
     overflow-y: auto;
 }
 
 .move-history h3 {
     margin-bottom: 0.75rem;
-    color: #2c3e50;
-    font-size: 1rem;
+    color: #8B4513;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-bottom: 2px solid #d4c4a8;
+    padding-bottom: 0.5rem;
 }
 
 .move-entry {
     font-size: 0.8rem;
-    padding: 0.25rem 0;
-    border-bottom: 1px solid #e9ecef;
-    color: #6c757d;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid #e6d7c3;
+    color: #5d3a1a;
+    background: rgba(230, 215, 195, 0.2);
+    margin-bottom: 0.2rem;
+    border-radius: 3px;
 }
 
 .move-entry:last-child {
@@ -378,13 +588,25 @@ body {
 @media (max-width: 1200px) {
     .game-container {
         flex-direction: column;
-        max-width: 800px;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .board-container {
+        min-height: 60vh;
+    }
+    
+    #gameCanvas {
+        width: min(60vh, calc(100vw - 2rem));
+        height: min(60vh, calc(100vw - 2rem));
     }
     
     .side-panel {
         width: 100%;
+        max-height: none;
         flex-direction: row;
         justify-content: space-between;
+        overflow-y: visible;
     }
     
     .game-info, .controls {
@@ -394,8 +616,8 @@ body {
 
 @media (max-width: 768px) {
     .game-container {
-        padding: 1rem;
-        margin: 1rem;
+        padding: 0.5rem;
+        gap: 1rem;
     }
     
     .side-panel {
@@ -403,19 +625,20 @@ body {
     }
     
     .board-container {
-        padding: 0.5rem;
+        padding: 0.25rem;
+        min-height: 50vh;
     }
     
-    #board {
-        width: 100%;
-        height: auto;
+    #gameCanvas {
+        width: min(50vh, calc(100vw - 1rem));
+        height: min(50vh, calc(100vw - 1rem));
     }
 }
 
 @media (max-width: 480px) {
     .game-container {
-        margin: 0.5rem;
-        padding: 0.5rem;
+        padding: 0.25rem;
+        gap: 0.5rem;
     }
     
     .game-info h2 {
@@ -425,6 +648,11 @@ body {
     .btn {
         padding: 0.5rem 0.75rem;
         font-size: 0.8rem;
+    }
+    
+    .side-panel {
+        width: 100%;
+        gap: 0.5rem;
     }
 }
 
@@ -472,56 +700,61 @@ body {
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: center;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 .piece-select-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    border: 2px solid #e9ecef;
+    width: 52px;
+    height: 52px;
+    border: 2px solid #d4c4a8;
     border-radius: 6px;
-    background: #f8f9fa;
+    background: #f9f6f0;
     cursor: pointer;
     font-size: 1.2rem;
     font-weight: bold;
-    color: #333;
-    transition: border-color 0.2s, background 0.2s;
+    color: #5d3a1a;
+    transition: all 0.2s ease;
     outline: none;
     position: relative;
+    font-family: 'Georgia', 'Times New Roman', serif;
 }
 .piece-select-btn.selected, .piece-select-btn:focus {
-    border-color: #007bff;
-    background: #e3f0ff;
+    border-color: #8B4513;
+    background: #e6d7c3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
 }
 .piece-select-btn .piece-symbol {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     margin-bottom: 0.2rem;
 }
 .piece-select-btn .piece-type-label {
-    font-size: 0.8rem;
-    color: #6c757d;
+    font-size: 0.75rem;
+    color: #8B4513;
+    opacity: 0.8;
 }
 .piece-select-btn.circles {
-    color: #CC0000;
+    color: #8B1538;
 }
 .piece-select-btn.squares {
-    color: #006666;
+    color: #1B5E5E;
 }
 .piece-select-btn .piece-hotkey {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    background: #007bff;
-    color: white;
+    top: -6px;
+    right: -6px;
+    background: #8B4513;
+    color: #f9f6f0;
     border-radius: 50%;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     font-size: 0.7rem;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    border: 1px solid #654321;
 }

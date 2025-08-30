@@ -16,9 +16,16 @@ export function createBoard(boardData) {
     // Generate golden line connections from the dictionary
     const goldenLineConnections = [];
     const goldenLineIntersections = [];
+    // First, add all coordinates from golden_coordinates array if it exists
+    const goldenCoords = new Set();
+    if (boardData.golden_coordinates && Array.isArray(boardData.golden_coordinates)) {
+        boardData.golden_coordinates.forEach(coordStr => {
+            goldenCoords.add(coordStr);
+        });
+        logger.debug(`Added ${boardData.golden_coordinates.length} golden coordinates from golden_coordinates array`);
+    }
+    // Then, process golden_lines_dict for connections
     if (boardData.golden_lines.golden_lines_dict) {
-        // Extract all unique coordinates from golden lines
-        const goldenCoords = new Set();
         Object.entries(boardData.golden_lines.golden_lines_dict).forEach(([coordStr, connections]) => {
             const [x, y] = coordStr.split(',').map(Number);
             goldenCoords.add(coordStr);
@@ -35,12 +42,14 @@ export function createBoard(boardData) {
                 }
             });
         });
-        // Convert golden coordinates to Vector2 array
-        goldenCoords.forEach(coordStr => {
-            const [x, y] = coordStr.split(',').map(Number);
-            goldenLineIntersections.push([x, y]);
-        });
+        logger.debug(`Processed ${Object.keys(boardData.golden_lines.golden_lines_dict).length} entries from golden_lines_dict`);
     }
+    // Convert all golden coordinates to Vector2 array
+    goldenCoords.forEach(coordStr => {
+        const [x, y] = coordStr.split(',').map(Number);
+        goldenLineIntersections.push([x, y]);
+    });
+    logger.debug(`Total golden line intersections: ${goldenLineIntersections.length}`);
     return {
         intersections: intersections,
         goldenLineConnections: goldenLineConnections,
@@ -184,8 +193,16 @@ export function createInitialState(board, boardData) {
             size: 6
         }
     };
+    // Place pre-placed pieces on the board
+    let initialBoard = cloneBoard(board);
+    for (const [pieceId, piece] of Object.entries(pieces)) {
+        if (piece.isPrePlaced) {
+            initialBoard = placePiece(initialBoard, piece.coords, pieceId);
+            logger.debug(`Placed pre-placed piece ${pieceId} at ${JSON.stringify(piece.coords)}`);
+        }
+    }
     return {
-        board: cloneBoard(board),
+        board: initialBoard,
         pieces: pieces,
         currentPlayer: 'squares', // Squares goes first in setup
         gamePhase: 'setup',

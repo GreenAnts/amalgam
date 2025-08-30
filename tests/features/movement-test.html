@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movement System Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+
+        .test-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .test-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .test-desc {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .test-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .test-status.pending { background: #f39c12; color: white; }
+        .test-status.passed { background: #27ae60; color: white; }
+        .test-status.failed { background: #e74c3c; color: white; }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        .console-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
+            <a href="../../tests.html" class="nav-btn" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn" style="background: #27ae60; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">📊 Full Suite</a>
+            <a href="fireball-test.html" class="nav-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🔥 Fireball</a>
+            <a href="visual-feedback-test.html" class="nav-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🎨 Visual</a>
+        </div>
+
+        <div class="test-header">
+            <h1>⚔️ Movement System Tests</h1>
+            <p>Comprehensive testing for all movement types and validation</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runAllMovementTests()">🚀 Run All Movement Tests</button>
+            <button class="btn btn-success" onclick="runSpecificTest('standard')">Test Standard Movement</button>
+            <button class="btn btn-success" onclick="runSpecificTest('nexus')">Test Nexus Movement</button>
+        </div>
+
+        <div class="test-grid" id="test-grid">
+            <!-- Tests will be dynamically generated -->
+        </div>
+
+        <div class="console-output" id="console-output">
+Movement test system initialized.
+Click "Run All Movement Tests" to begin validation.
+        </div>
+    </div>
+
+    <script type="module">
+        // Global state
+        let GameModules = {};
+        let testResults = {};
+
+        // Initialize modules
+        async function initializeModules() {
+            try {
+                GameModules.rules = await import('../../core/rules.js');
+                GameModules.board = await import('../../core/board.js');
+                GameModules.player = await import('../../game/player.js');
+                log('✅ Game modules loaded successfully');
+                return true;
+            } catch (error) {
+                log(`❌ Module loading failed: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Movement test definitions
+        const movementTests = {
+            'Standard Movement': {
+                id: 'standard',
+                description: 'Test 8-directional adjacent movement with Portal restrictions',
+                test: () => testStandardMovement()
+            },
+            'Nexus Movement': {
+                id: 'nexus',
+                description: 'Test movement through golden line network',
+                test: () => testNexusMovement()
+            },
+            'Portal Swap': {
+                id: 'portal_swap',
+                description: 'Test Portal piece position swapping',
+                test: () => testPortalSwap()
+            },
+            'Portal Line Movement': {
+                id: 'portal_line',
+                description: 'Test movement along golden line paths',
+                test: () => testPortalLineMovement()
+            },
+            'Portal Standard Movement': {
+                id: 'portal_standard',
+                description: 'Test Portal-specific standard movement restrictions',
+                test: () => testPortalStandardMovement()
+            },
+            'Portal Phasing': {
+                id: 'portal_phasing',
+                description: 'Test Portal phasing through pieces',
+                test: () => testPortalPhasing()
+            }
+        };
+
+        // Initialize page
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initializeModules();
+            initializeTestGrid();
+        });
+
+        function initializeTestGrid() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '';
+
+            Object.entries(movementTests).forEach(([name, test]) => {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-item';
+                testDiv.innerHTML = `
+                    <div class="test-name">${name}</div>
+                    <div class="test-desc">${test.description}</div>
+                    <span class="test-status pending" id="status-${test.id}">PENDING</span>
+                `;
+                grid.appendChild(testDiv);
+                
+                testResults[test.id] = { status: 'pending', error: null };
+            });
+        }
+
+        function log(message) {
+            const console = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            console.textContent += `[${timestamp}] ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function updateTestStatus(testId, passed, error = null) {
+            const statusEl = document.getElementById(`status-${testId}`);
+            if (passed) {
+                statusEl.textContent = 'PASSED';
+                statusEl.className = 'test-status passed';
+                testResults[testId] = { status: 'passed', error: null };
+            } else {
+                statusEl.textContent = 'FAILED';
+                statusEl.className = 'test-status failed';
+                testResults[testId] = { status: 'failed', error };
+            }
+        }
+
+        // Test implementation functions
+        async function testStandardMovement() {
+            try {
+                if (!GameModules.rules || !GameModules.board) {
+                    return { passed: false, error: 'Required modules not available' };
+                }
+
+                // Load game data
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+                pieceDefs.board_data = boardData;
+
+                // Create test state
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'squares',
+                    pieces: {
+                        'S_Ruby1': {
+                            id: 'S_Ruby1',
+                            type: 'Ruby',
+                            player: 'squares',
+                            coords: [0, 0],
+                            graphics: { shape: 'square', color: '#E63960', size: 8 }
+                        }
+                    },
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Place piece on board
+                testState.board = GameModules.board.placePiece(testState.board, [0, 0], 'S_Ruby1');
+
+                // Test valid movement
+                const validMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 1],
+                    playerId: 'squares'
+                };
+
+                const validResult = GameModules.rules.isValidMove(testState, validMove, pieceDefs);
+                if (!validResult.ok) {
+                    return { passed: false, error: `Valid move rejected: ${validResult.reason}` };
+                }
+
+                // Test invalid movement (non-adjacent)
+                const invalidMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 3],
+                    playerId: 'squares'
+                };
+
+                const invalidResult = GameModules.rules.isValidMove(testState, invalidMove, pieceDefs);
+                if (invalidResult.ok) {
+                    return { passed: false, error: 'Non-adjacent move was incorrectly accepted' };
+                }
+
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testNexusMovement() {
+            try {
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Helper to add piece properly
+                function addPiece(pieceId, type, player, coords) {
+                    testState.pieces[pieceId] = {
+                        id: pieceId,
+                        type: type,
+                        player: player,
+                        coords: coords
+                    };
+                    testState.board = GameModules.board.placePiece(testState.board, coords, pieceId);
+                }
+
+                // Set up nexus formation: Pearl + Amber
+                addPiece('pearl', 'Pearl', 'circles', [0, 0]);
+                addPiece('amber', 'Amber', 'circles', [1, 0]);
+                addPiece('ruby', 'Ruby', 'circles', [-1, 0]);
+
+                // Test nexus movement
+                const nexusMove = {
+                    type: 'nexus',
+                    fromCoords: [-1, 0],
+                    toCoords: [2, 0],
+                    playerId: 'circles'
+                };
+
+                const result = GameModules.rules.isValidMove(testState, nexusMove, pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalSwap() {
+            try {
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Helper to add piece properly
+                function addPiece(pieceId, type, player, coords) {
+                    testState.pieces[pieceId] = {
+                        id: pieceId,
+                        type: type,
+                        player: player,
+                        coords: coords
+                    };
+                    testState.board = GameModules.board.placePiece(testState.board, coords, pieceId);
+                }
+
+                // Set up portal swap: non-Portal on golden line + Portal
+                addPiece('ruby', 'Ruby', 'circles', [0, 6]); // Golden line
+                addPiece('portal', 'Portal', 'circles', [6, 6]);
+
+                const swapMove = {
+                    type: 'portal_swap',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6],
+                    playerId: 'circles'
+                };
+
+                const result = GameModules.rules.isValidMove(testState, swapMove, pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalLineMovement() {
+            try {
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Helper to add piece properly
+                function addPiece(pieceId, type, player, coords) {
+                    testState.pieces[pieceId] = {
+                        id: pieceId,
+                        type: type,
+                        player: player,
+                        coords: coords
+                    };
+                    testState.board = GameModules.board.placePiece(testState.board, coords, pieceId);
+                }
+
+                // Set up Portal on golden line
+                addPiece('portal', 'Portal', 'circles', [0, 6]);
+
+                const lineMove = {
+                    type: 'portal_line',
+                    fromCoords: [0, 6],
+                    toCoords: [6, 6],
+                    playerId: 'circles'
+                };
+
+                const result = GameModules.rules.isValidMove(testState, lineMove, pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalStandardMovement() {
+            try {
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Helper to add piece properly
+                function addPiece(pieceId, type, player, coords) {
+                    testState.pieces[pieceId] = {
+                        id: pieceId,
+                        type: type,
+                        player: player,
+                        coords: coords
+                    };
+                    testState.board = GameModules.board.placePiece(testState.board, coords, pieceId);
+                }
+
+                // Set up Portal
+                addPiece('portal', 'Portal', 'circles', [6, 6]);
+
+                const standardMove = {
+                    type: 'portal_standard',
+                    fromCoords: [6, 6],
+                    toCoords: [6, 7],
+                    playerId: 'circles'
+                };
+
+                const result = GameModules.rules.isValidMove(testState, standardMove, pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPortalPhasing() {
+            try {
+                const boardResponse = await fetch('../../data/board-data.json');
+                const pieceDefsResponse = await fetch('../../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'circles',
+                    pieces: {},
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+
+                // Helper to add piece properly
+                function addPiece(pieceId, type, player, coords) {
+                    testState.pieces[pieceId] = {
+                        id: pieceId,
+                        type: type,
+                        player: player,
+                        coords: coords
+                    };
+                    testState.board = GameModules.board.placePiece(testState.board, coords, pieceId);
+                }
+
+                // Set up phasing scenario
+                addPiece('ruby', 'Ruby', 'circles', [0, 0]);
+                addPiece('portal', 'Portal', 'squares', [1, 0]);
+
+                const phasingMove = {
+                    type: 'portal_phasing',
+                    fromCoords: [0, 0],
+                    toCoords: [2, 0],
+                    playerId: 'circles'
+                };
+
+                const result = GameModules.rules.isValidMove(testState, phasingMove, pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Global functions
+        window.runAllMovementTests = async function() {
+            log('🚀 Starting comprehensive movement tests...');
+            
+            let totalTests = 0;
+            let passedTests = 0;
+
+            for (const [name, test] of Object.entries(movementTests)) {
+                totalTests++;
+                log(`Testing ${name}...`);
+
+                try {
+                    const result = await test.test();
+                    if (result.passed) {
+                        log(`✅ ${name} - PASSED`);
+                        updateTestStatus(test.id, true);
+                        passedTests++;
+                    } else {
+                        log(`❌ ${name} - FAILED: ${result.error}`);
+                        updateTestStatus(test.id, false, result.error);
+                    }
+                } catch (error) {
+                    log(`❌ ${name} - ERROR: ${error.message}`);
+                    updateTestStatus(test.id, false, error.message);
+                }
+            }
+
+            log(`\n📊 Movement Tests Complete: ${passedTests}/${totalTests} passed`);
+        };
+
+        window.runSpecificTest = async function(testId) {
+            const test = Object.values(movementTests).find(t => t.id === testId);
+            if (!test) {
+                log(`❌ Test ${testId} not found`);
+                return;
+            }
+
+            log(`🧪 Running specific test: ${testId}...`);
+            
+            try {
+                const result = await test.test();
+                if (result.passed) {
+                    log(`✅ ${testId} - PASSED`);
+                    updateTestStatus(testId, true);
+                } else {
+                    log(`❌ ${testId} - FAILED: ${result.error}`);
+                    updateTestStatus(testId, false, result.error);
+                }
+            } catch (error) {
+                log(`❌ ${testId} - ERROR: ${error.message}`);
+                updateTestStatus(testId, false, error.message);
+            }
+        };
+    </script>
+</body>
+</html>

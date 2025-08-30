@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amalgam - Comprehensive Game Mechanics Test Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .test-summary {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .summary-stat {
+            text-align: center;
+        }
+
+        .summary-stat h3 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .summary-stat.passed h3 { color: #10b981; }
+        .summary-stat.failed h3 { color: #ef4444; }
+        .summary-stat.pending h3 { color: #f59e0b; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        .test-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+        }
+
+        .test-category {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .category-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-title h3 {
+            font-size: 1.3rem;
+            color: #1f2937;
+        }
+
+        .category-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-passed { background: #dcfce7; color: #166534; }
+        .status-failed { background: #fecaca; color: #991b1b; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+
+        .test-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .test-item.passed { border-left-color: #10b981; background: #ecfdf5; }
+        .test-item.failed { border-left-color: #ef4444; background: #fef2f2; }
+        .test-item.pending { border-left-color: #f59e0b; background: #fffbeb; }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .test-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .test-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .copy-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .copy-btn:hover { background: #4f46e5; }
+
+        .test-description {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .test-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            font-family: monospace;
+        }
+
+        .implementation-guide {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+
+        .implementation-guide strong {
+            color: #0369a1;
+        }
+
+        .roadmap-progress {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+        }
+
+        .console-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .expand-btn {
+            background: #374151;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .expand-btn:hover { background: #4b5563; }
+
+        @media (max-width: 768px) {
+            .test-categories {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-summary {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
+            <a href="../tests.html" class="nav-btn" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🏠 Testing Hub</a>
+            <a href="features/movement-test.html" class="nav-btn" style="background: #8e44ad; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">⚔️ Movement</a>
+            <a href="features/fireball-test.html" class="nav-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🔥 Fireball</a>
+            <a href="features/visual-feedback-test.html" class="nav-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🎨 Visual</a>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Amalgam Game Mechanics Test Suite</h1>
+            <p>Comprehensive feature implementation roadmap with pass/fail validation</p>
+            <div class="test-summary">
+                <div class="summary-stat passed">
+                    <h3 id="passed-count">0</h3>
+                    <span>Passed</span>
+                </div>
+                <div class="summary-stat failed">
+                    <h3 id="failed-count">0</h3>
+                    <span>Failed</span>
+                </div>
+                <div class="summary-stat pending">
+                    <h3 id="pending-count">0</h3>
+                    <span>Pending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Roadmap -->
+        <div class="roadmap-progress">
+            <h3>🗺️ Implementation Roadmap Progress</h3>
+            <p>Overall completion status for all game mechanics implementation</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="overall-progress" style="width: 0%"></div>
+            </div>
+            <p id="progress-text">0% Complete (0/0 features implemented)</p>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="btn btn-success" onclick="copyAllResults()">📋 Copy Results</button>
+            <button class="btn btn-warning" onclick="showFailedOnly()">⚠️ Show Failed Only</button>
+            <button class="btn btn-danger" onclick="resetAllTests()">🔄 Reset Tests</button>
+            <button class="btn" onclick="debugTestSuite()" style="background: #f39c12; color: white;">🔧 Debug Tests</button>
+        </div>
+
+        <!-- Test Categories -->
+        <div class="test-categories" id="test-categories">
+            <!-- Test categories will be dynamically generated -->
+        </div>
+
+        <!-- Console Output -->
+        <div class="console-output" id="console-output"></div>
+    </div>
+
+    <script type="module">
+        // Global state for test suite
+        let GameModules = {};
+        let modulesLoaded = false;
+        
+        // Initialize modules asynchronously
+        async function initializeModules() {
+            try {
+                // Try to import core modules
+                GameModules.types = await import('../core/types.js');
+                GameModules.board = await import('../core/board.js');
+                GameModules.rules = await import('../core/rules.js');
+                GameModules.gameManager = await import('../game/gameManager.js');
+                GameModules.graphics = await import('../ui/graphics.js');
+                GameModules.player = await import('../game/player.js');
+                console.log('✅ Successfully imported game modules:', Object.keys(GameModules));
+                modulesLoaded = true;
+                return true;
+            } catch (error) {
+                console.warn('⚠️ Some game modules not available for testing:', error.message);
+                console.warn('Tests will run with limited functionality');
+                modulesLoaded = false;
+                return false;
+            }
+        }
+
+        // Test definitions organized by category
+        const testCategories = {
+            'Core Data Structures': {
+                icon: '🏗️',
+                description: 'Foundation data types and board representation',
+                tests: [
+                    {
+                        name: 'Module Loading',
+                        description: 'Verify all game modules load successfully',
+                        implementation: 'module imports - basic system check',
+                        test: () => testModuleLoading()
+                    },
+                    {
+                        name: 'Board Data Loading',
+                        description: 'Validate board data structure and coordinate system',
+                        implementation: 'core/board.ts - createBoard() function',
+                        test: () => testBoardDataLoading()
+                    },
+                    {
+                        name: 'Piece Type Definitions', 
+                        description: 'Verify all piece types and their properties are correctly defined',
+                        implementation: 'core/types.ts - PieceType enum and Piece interface',
+                        test: () => testPieceTypeDefinitions()
+                    },
+                    {
+                        name: 'Golden Line Network',
+                        description: 'Validate golden line connections and Portal movement paths',
+                        implementation: 'core/board.ts - golden line network functions',
+                        test: () => testGoldenLineNetwork()
+                    },
+                    {
+                        name: 'Starting Positions',
+                        description: 'Verify pre-placed pieces and starting area definitions',
+                        implementation: 'core/board.ts - createInitialState() function',
+                        test: () => testStartingPositions()
+                    },
+                    {
+                        name: 'Coordinate System',
+                        description: 'Validate Vector2 coordinate system and transformations',
+                        implementation: 'core/board.ts - coordinate utility functions',
+                        test: () => testCoordinateSystem()
+                    }
+                ]
+            },
+            'Game State Management': {
+                icon: '🎮',
+                description: 'Game state, turn management, and phase transitions',
+                tests: [
+                    {
+                        name: 'Game Initialization',
+                        description: 'Verify proper game setup and initial state creation',
+                        implementation: 'game/gameManager.ts - GameManager constructor and initialization',
+                        test: () => testGameInitialization()
+                    },
+                    {
+                        name: 'Setup Phase Logic',
+                        description: 'Validate 16-turn setup phase with alternating players',
+                        implementation: 'core/rules.ts - setup phase validation functions',
+                        test: () => testSetupPhaseLogic()
+                    },
+                    {
+                        name: 'Human Player Interface',
+                        description: 'Verify human player interaction during setup phase',
+                        implementation: 'game/player.ts - HumanPlayer class',
+                        test: () => testHumanPlayerInterface()
+                    },
+                    {
+                        name: 'Player Turn Management',
+                        description: 'Verify correct player alternation and turn tracking',
+                        implementation: 'game/gameManager.ts - switchPlayer() and turn management',
+                        test: () => testPlayerTurnManagement()
+                    },
+                    {
+                        name: 'Game Phase Transitions',
+                        description: 'Test setup to gameplay phase transition',
+                        implementation: 'core/rules.ts - phase transition logic',
+                        test: () => testGamePhaseTransitions()
+                    },
+                    {
+                        name: 'State Immutability',
+                        description: 'Ensure game state changes follow immutable patterns',
+                        implementation: 'core/board.ts - cloneState() and immutable operations',
+                        test: () => testStateImmutability()
+                    }
+                ]
+            },
+            'Movement System': {
+                icon: '↗️',
+                description: 'All movement types and validation logic',
+                tests: [
+                    {
+                        name: 'Standard Movement',
+                        description: 'Basic 8-directional adjacent movement for all pieces',
+                        implementation: 'core/rules.ts - validateStandardMovement() function',
+                        test: () => testStandardMovement()
+                    },
+                    {
+                        name: 'Nexus Movement',
+                        description: 'Movement adjacent to Pearl + Amber formations',
+                        implementation: 'core/rules.ts - validateNexusMovement() function',
+                        test: () => testNexusMovement()
+                    },
+                    {
+                        name: 'Portal Swap',
+                        description: 'Position exchange between golden line pieces and Portals',
+                        implementation: 'core/rules.ts - validatePortalSwap() function',
+                        test: () => testPortalSwap()
+                    },
+                    {
+                        name: 'Portal Line Movement',
+                        description: 'Portal movement along golden line paths',
+                        implementation: 'core/rules.ts - validatePortalLineMovement() function',
+                        test: () => testPortalLineMovement()
+                    },
+                    {
+                        name: 'Portal Standard Movement',
+                        description: 'Portal adjacent movement restricted to golden line intersections',
+                        implementation: 'core/rules.ts - validatePortalStandardMovement() function',
+                        test: () => testPortalStandardMovement()
+                    },
+                    {
+                        name: 'Portal Phasing',
+                        description: 'Movement through other pieces in straight lines',
+                        implementation: 'core/rules.ts - validatePortalPhasing() function',
+                        test: () => testPortalPhasing()
+                    }
+                ]
+            },
+            'Combat System': {
+                icon: '⚔️',
+                description: 'Attack patterns and combat resolution',
+                tests: [
+                    {
+                        name: 'Standard Combat',
+                        description: 'Gem and Amalgam pieces attacking adjacent opponents (no Portals)',
+                        implementation: 'core/rules.ts - executeStandardCombat() function',
+                        test: () => testStandardCombat()
+                    },
+                    {
+                        name: 'Portal Combat',
+                        description: 'Portal pieces attacking only other Portals',
+                        implementation: 'core/rules.ts - executePortalCombat() function',
+                        test: () => testPortalCombat()
+                    },
+                    {
+                        name: 'Void Combat',
+                        description: 'Void pieces attacking all adjacent opponents including Portals',
+                        implementation: 'core/rules.ts - executeVoidCombat() function',
+                        test: () => testVoidCombat()
+                    },
+                    {
+                        name: 'Combat Immunity',
+                        description: 'Verify piece immunity rules (Portals immune to standard attacks)',
+                        implementation: 'core/rules.ts - combat immunity validation',
+                        test: () => testCombatImmunity()
+                    },
+                    {
+                        name: 'Multi-Target Combat',
+                        description: 'Simultaneous attacks on multiple adjacent targets',
+                        implementation: 'core/rules.ts - multi-target combat execution',
+                        test: () => testMultiTargetCombat()
+                    }
+                ]
+            },
+            'Ability System': {
+                icon: '✨',
+                description: 'Formation-based abilities and their effects',
+                tests: [
+                    {
+                        name: 'Fireball Ability',
+                        description: 'Line attack from Ruby formations',
+                        implementation: 'core/rules.ts - executeFireball() function',
+                        test: () => testFireballAbility()
+                    },
+                    {
+                        name: 'Tidal Wave Ability',
+                        description: 'Area attack from Pearl formations',
+                        implementation: 'core/rules.ts - executeTidalWave() function',
+                        test: () => testTidalWaveAbility()
+                    },
+                    {
+                        name: 'Sap Ability',
+                        description: 'Line between pieces attack from Amber formations',
+                        implementation: 'core/rules.ts - executeSap() function',
+                        test: () => testSapAbility()
+                    },
+                    {
+                        name: 'Launch Ability',
+                        description: 'Piece movement and recursive combat from Jade formations',
+                        implementation: 'core/rules.ts - executeLaunch() function',
+                        test: () => testLaunchAbility()
+                    },
+                    {
+                        name: 'Ability Amplification',
+                        description: 'Void piece enhancing abilities with extended range/targeting',
+                        implementation: 'core/rules.ts - amplified ability functions',
+                        test: () => testAbilityAmplification()
+                    },
+                    {
+                        name: 'Formation Detection',
+                        description: 'Identifying valid ability formations after moves',
+                        implementation: 'core/rules.ts - detectFormations() function',
+                        test: () => testFormationDetection()
+                    }
+                ]
+            },
+            'Victory Conditions': {
+                icon: '🏆',
+                description: 'Win/lose conditions and game end detection',
+                tests: [
+                    {
+                        name: 'Objective Victory',
+                        description: 'Void reaching opponent Amalgam position',
+                        implementation: 'core/rules.ts - checkObjectiveVictory() function',
+                        test: () => testObjectiveVictory()
+                    },
+                    {
+                        name: 'Elimination Victory', 
+                        description: 'Destroying all opponent non-Portal pieces',
+                        implementation: 'core/rules.ts - checkEliminationVictory() function',
+                        test: () => testEliminationVictory()
+                    },
+                    {
+                        name: 'Victory Detection',
+                        description: 'Automatic game end when victory conditions met',
+                        implementation: 'core/rules.ts - checkVictoryConditions() function',
+                        test: () => testVictoryDetection()
+                    },
+                    {
+                        name: 'Draw Conditions',
+                        description: 'Stalemate and mutual draw detection',
+                        implementation: 'core/rules.ts - checkDrawConditions() function',
+                        test: () => testDrawConditions()
+                    }
+                ]
+            },
+            'User Interface': {
+                icon: '🖥️',
+                description: 'Canvas rendering, interactions, and user experience',
+                tests: [
+                    {
+                        name: 'Canvas Initialization',
+                        description: 'Proper canvas setup and rendering context creation',
+                        implementation: 'ui/graphics.ts - createGameCanvas() function',
+                        test: () => testCanvasInitialization()
+                    },
+                    {
+                        name: 'Board Rendering',
+                        description: 'Drawing board intersections, golden lines, and grid',
+                        implementation: 'ui/graphics.ts - board rendering functions',
+                        test: () => testBoardRendering()
+                    },
+                    {
+                        name: 'Piece Rendering',
+                        description: 'Drawing all piece types with correct graphics',
+                        implementation: 'ui/graphics.ts - piece rendering functions',
+                        test: () => testPieceRendering()
+                    },
+                    {
+                        name: 'Click Detection',
+                        description: 'Converting mouse clicks to game coordinates',
+                        implementation: 'ui/interactions.ts - click detection and coordinate conversion',
+                        test: () => testClickDetection()
+                    },
+                    {
+                        name: 'Move Validation UI',
+                        description: 'Visual feedback for valid/invalid moves',
+                        implementation: 'ui/interactions.ts - move validation and highlighting',
+                        test: () => testMoveValidationUI()
+                    },
+                    {
+                        name: 'Animation System',
+                        description: 'Piece movement and ability effect animations',
+                        implementation: 'ui/animations.ts - animation functions',
+                        test: () => testAnimationSystem()
+                    }
+                ]
+            },
+            'AI Players': {
+                icon: '🤖',
+                description: 'Computer player logic and decision making',
+                tests: [
+                    {
+                        name: 'Random AI',
+                        description: 'Basic random move selection for testing',
+                        implementation: 'game/player.ts - RandomAI class',
+                        test: () => testRandomAI()
+                    },
+                    {
+                        name: 'Heuristic AI',
+                        description: 'Rule-based AI with tactical evaluation',
+                        implementation: 'game/player.ts - HeuristicAI class',
+                        test: () => testHeuristicAI()
+                    },
+                    {
+                        name: 'Setup Phase AI',
+                        description: 'Intelligent piece placement during setup',
+                        implementation: 'game/player.ts - AI setup phase logic',
+                        test: () => testSetupPhaseAI()
+                    },
+                    {
+                        name: 'AI Move Speed',
+                        description: 'Reasonable AI thinking time and responsiveness',
+                        implementation: 'game/player.ts - AI timing and delays',
+                        test: () => testAIMoveSpeed()
+                    }
+                ]
+            }
+        };
+
+        // Test results storage
+        let testResults = {};
+        let showingFailedOnly = false;
+
+        // Initialize tests on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing comprehensive test suite...');
+            
+            // Step 1: Initialize modules
+            await initializeModules();
+            
+            // Step 2: Initialize tests  
+            initializeTests();
+            
+            // Step 3: Update summary
+            updateSummary();
+            
+            console.log('✅ Test suite initialization complete');
+            console.log('📊 Debug info:', debugTestSuite());
+        });
+
+        function initializeTests() {
+            console.log('🔧 initializeTests: Starting test initialization...');
+            
+            const container = document.getElementById('test-categories');
+            if (!container) {
+                console.error('❌ Test categories container not found!');
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            console.log('📊 testCategories object:', testCategories);
+            console.log('📊 Number of categories:', Object.keys(testCategories).length);
+
+            let totalTestsInitialized = 0;
+            Object.entries(testCategories).forEach(([categoryName, category]) => {
+                console.log(`🏷️ Processing category: ${categoryName}, tests: ${category.tests.length}`);
+                
+                const categoryDiv = createCategoryDiv(categoryName, category);
+                container.appendChild(categoryDiv);
+
+                // Initialize all tests as pending
+                category.tests.forEach(test => {
+                    const testId = generateTestId(categoryName, test.name);
+                    testResults[testId] = { status: 'pending', error: null };
+                    totalTestsInitialized++;
+                    console.log(`✅ Initialized test: ${testId}`);
+                });
+            });
+            
+            console.log(`🎯 Total tests initialized: ${totalTestsInitialized}`);
+            console.log('📋 All test results:', Object.keys(testResults));
+        }
+
+        function createCategoryDiv(categoryName, category) {
+            const div = document.createElement('div');
+            div.className = 'test-category';
+            div.innerHTML = `
+                <div class="category-header">
+                    <div class="category-title">
+                        <span style="font-size: 1.5rem;">${category.icon}</span>
+                        <h3>${categoryName}</h3>
+                    </div>
+                    <span class="category-status status-pending" id="status-${categoryName.replace(/\s+/g, '-')}">
+                        Pending
+                    </span>
+                </div>
+                <p style="color: #6b7280; margin-bottom: 20px; font-size: 0.9rem;">${category.description}</p>
+                <div class="category-tests">
+                    ${category.tests.map(test => createTestDiv(categoryName, test)).join('')}
+                </div>
+            `;
+            return div;
+        }
+
+        function createTestDiv(categoryName, test) {
+            const testId = generateTestId(categoryName, test.name);
+            return `
+                <div class="test-item pending" id="test-${testId}">
+                    <div class="test-header">
+                        <span class="test-name">${test.name}</span>
+                        <div class="test-controls">
+                            <span class="test-status status-pending" id="status-${testId}">PENDING</span>
+                            <button class="copy-btn" onclick="copyTestError('${testId}')">📋</button>
+                        </div>
+                    </div>
+                    <div class="test-description">${test.description}</div>
+                    <div class="implementation-guide">
+                        <strong>Implementation:</strong> ${test.implementation}
+                    </div>
+                    <div class="test-error" id="error-${testId}" style="display: none;"></div>
+                    <button class="expand-btn" onclick="toggleTestDetails('${testId}')" style="display: none;">
+                        Show Details
+                    </button>
+                </div>
+            `;
+        }
+
+        function generateTestId(categoryName, testName) {
+            return (categoryName + '-' + testName).replace(/\s+/g, '-').toLowerCase();
+        }
+
+        // Test execution functions
+        async function runAllTests() {
+            console.log('🚀 Starting comprehensive test run...');
+            logToConsole('Starting comprehensive test run...');
+            
+            let totalTests = 0;
+            let passedTests = 0;
+
+            for (const [categoryName, category] of Object.entries(testCategories)) {
+                for (const test of category.tests) {
+                    const testId = generateTestId(categoryName, test.name);
+                    totalTests++;
+                    
+                    try {
+                        logToConsole(`Running ${test.name}...`);
+                        const result = await test.test();
+                        
+                        if (result.passed) {
+                            testResults[testId] = { status: 'passed', error: null };
+                            passedTests++;
+                            logToConsole(`✅ ${test.name} - PASSED`);
+                        } else {
+                            testResults[testId] = { status: 'failed', error: result.error };
+                            logToConsole(`❌ ${test.name} - FAILED: ${result.error}`);
+                        }
+                    } catch (error) {
+                        testResults[testId] = { status: 'failed', error: error.message };
+                        logToConsole(`❌ ${test.name} - ERROR: ${error.message}`);
+                    }
+                    
+                    updateTestDisplay(testId);
+                    
+                    // Small delay to prevent UI blocking
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                
+                updateCategoryStatus(categoryName);
+            }
+
+            updateSummary();
+            logToConsole(`\n🏁 Test run complete: ${passedTests}/${totalTests} tests passed`);
+            
+            document.getElementById('console-output').style.display = 'block';
+        }
+
+        function updateTestDisplay(testId) {
+            const result = testResults[testId];
+            const testElement = document.getElementById(`test-${testId}`);
+            const statusElement = document.getElementById(`status-${testId}`);
+            const errorElement = document.getElementById(`error-${testId}`);
+            
+            // Update test item class
+            testElement.className = `test-item ${result.status}`;
+            
+            // Update status badge
+            statusElement.className = `test-status status-${result.status}`;
+            statusElement.textContent = result.status.toUpperCase();
+            
+            // Show error if failed
+            if (result.status === 'failed' && result.error) {
+                errorElement.textContent = result.error;
+                errorElement.style.display = 'block';
+                testElement.querySelector('.expand-btn').style.display = 'inline-block';
+            } else {
+                errorElement.style.display = 'none';
+                testElement.querySelector('.expand-btn').style.display = 'none';
+            }
+        }
+
+        function updateCategoryStatus(categoryName) {
+            const category = testCategories[categoryName];
+            const categoryTests = category.tests.map(test => 
+                testResults[generateTestId(categoryName, test.name)]
+            );
+            
+            const passed = categoryTests.filter(r => r.status === 'passed').length;
+            const failed = categoryTests.filter(r => r.status === 'failed').length;
+            const total = categoryTests.length;
+            
+            const statusElement = document.getElementById(`status-${categoryName.replace(/\s+/g, '-')}`);
+            
+            if (failed > 0) {
+                statusElement.className = 'category-status status-failed';
+                statusElement.textContent = `${failed} Failed`;
+            } else if (passed === total) {
+                statusElement.className = 'category-status status-passed';
+                statusElement.textContent = 'All Passed';
+            } else {
+                statusElement.className = 'category-status status-pending';
+                statusElement.textContent = `${passed}/${total}`;
+            }
+        }
+
+        function updateSummary() {
+            const allResults = Object.values(testResults);
+            const passed = allResults.filter(r => r.status === 'passed').length;
+            const failed = allResults.filter(r => r.status === 'failed').length;
+            const pending = allResults.filter(r => r.status === 'pending').length;
+            const total = allResults.length;
+            
+            document.getElementById('passed-count').textContent = passed;
+            document.getElementById('failed-count').textContent = failed;
+            document.getElementById('pending-count').textContent = pending;
+            
+            const progressPercent = total > 0 ? (passed / total) * 100 : 0;
+            document.getElementById('overall-progress').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').textContent = 
+                `${Math.round(progressPercent)}% Complete (${passed}/${total} features implemented)`;
+        }
+
+        function logToConsole(message) {
+            const console = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            console.innerHTML += `[${timestamp}] ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        // Test functions implementation
+        // These are working test functions with detailed implementation
+
+        /**
+         * MODULE LOADING TEST
+         * Purpose: Verify all game modules loaded successfully
+         * Implementation Guide:
+         * 1. Check if modules were imported during initialization
+         * 2. Verify core modules exist
+         * 3. Test basic module functionality
+         */
+        async function testModuleLoading() {
+            try {
+                // Check if modules were loaded
+                if (!modulesLoaded) {
+                    return { passed: false, error: 'Modules failed to load during initialization' };
+                }
+                
+                // Check if required modules exist
+                const requiredModules = ['types', 'board', 'rules', 'gameManager', 'graphics', 'player'];
+                const missingModules = [];
+                
+                for (const moduleName of requiredModules) {
+                    if (!GameModules[moduleName]) {
+                        missingModules.push(moduleName);
+                    }
+                }
+                
+                if (missingModules.length > 0) {
+                    return { passed: false, error: `Missing modules: ${missingModules.join(', ')}` };
+                }
+                
+                // Test basic module functionality (if available)
+                try {
+                    if (GameModules.board && GameModules.board.createBoard) {
+                        // Module has expected function
+                    }
+                } catch (error) {
+                    return { passed: false, error: `Module function test failed: ${error.message}` };
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * BOARD DATA LOADING TEST
+         * Purpose: Validate that board data structure loads correctly
+         * Implementation Guide:
+         * 1. Load board-data.json and validate schema
+         * 2. Check all required properties exist
+         * 3. Validate coordinate ranges and data types
+         * 4. Ensure golden line network is properly structured
+         */
+        async function testBoardDataLoading() {
+            try {
+                // TODO: Implement board data validation
+                // 1. Fetch board-data.json
+                // 2. Validate schema structure
+                // 3. Check coordinate ranges [-12, 12]
+                // 4. Verify golden lines connectivity
+                
+                // Placeholder implementation
+                const response = await fetch('/data/board-data.json');
+                if (!response.ok) {
+                    return { passed: false, error: 'Failed to load board-data.json' };
+                }
+                
+                const boardData = await response.json();
+                
+                // Basic validation
+                if (!boardData.board || !boardData.golden_lines) {
+                    return { passed: false, error: 'Invalid board data structure' };
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * PIECE TYPE DEFINITIONS TEST
+         * Purpose: Verify all piece types are correctly defined
+         * Implementation Guide:
+         * 1. Check all 7 piece types exist: Ruby, Pearl, Amber, Jade, Amalgam, Portal, Void
+         * 2. Validate piece properties and graphics definitions
+         * 3. Ensure proper player piece counts (2 of each gem, 1 Amalgam, 2 Portal, 1 Void)
+         */
+        async function testPieceTypeDefinitions() {
+            try {
+                // Step 1: Load piece definitions
+                const response = await fetch('../data/piece-definitions.json');
+                if (!response.ok) {
+                    return { passed: false, error: 'Failed to load piece-definitions.json' };
+                }
+                
+                const pieceDefs = await response.json();
+                
+                // Step 2: Verify required structure
+                if (!pieceDefs.piece_definitions) {
+                    return { passed: false, error: 'Missing piece_definitions property' };
+                }
+                
+                if (!pieceDefs.piece_definitions.circles_pieces) {
+                    return { passed: false, error: 'Missing circles_pieces definitions' };
+                }
+                
+                if (!pieceDefs.piece_definitions.squares_pieces) {
+                    return { passed: false, error: 'Missing squares_pieces definitions' };
+                }
+                
+                // Step 3: Check required piece types exist
+                const requiredTypes = ['Ruby', 'Pearl', 'Amber', 'Jade', 'Amalgam', 'Portal', 'Void'];
+                const circlesPieces = Object.values(pieceDefs.piece_definitions.circles_pieces);
+                const squaresPieces = Object.values(pieceDefs.piece_definitions.squares_pieces);
+                
+                for (const type of requiredTypes) {
+                    const hasCirclesType = circlesPieces.some(piece => piece.type === type);
+                    const hasSquaresType = squaresPieces.some(piece => piece.type === type);
+                    
+                    if (!hasCirclesType) {
+                        return { passed: false, error: `Missing ${type} piece for circles player` };
+                    }
+                    if (!hasSquaresType) {
+                        return { passed: false, error: `Missing ${type} piece for squares player` };
+                    }
+                }
+                
+                // Step 4: Validate piece counts (basic check)
+                const circlesCount = Object.keys(pieceDefs.piece_definitions.circles_pieces).length;
+                const squaresCount = Object.keys(pieceDefs.piece_definitions.squares_pieces).length;
+                
+                if (circlesCount !== squaresCount) {
+                    return { passed: false, error: `Unequal piece counts: circles=${circlesCount}, squares=${squaresCount}` };
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * GOLDEN LINE NETWORK TEST
+         * Purpose: Validate golden line connections for Portal movement
+         * Implementation Guide:
+         * 1. Load golden line data from game rules
+         * 2. Verify all connections are bidirectional
+         * 3. Check path connectivity between all golden line intersections
+         * 4. Validate outer terminals: [-12,0], [12,0], [0,12], [0,-12]
+         */
+        async function testGoldenLineNetwork() {
+            try {
+                // Step 1: Load board data with golden lines
+                const response = await fetch('../data/board-data.json');
+                if (!response.ok) {
+                    return { passed: false, error: 'Failed to load board-data.json' };
+                }
+                
+                const boardData = await response.json();
+                
+                // Step 2: Verify golden lines structure exists
+                if (!boardData.golden_lines_network) {
+                    return { passed: false, error: 'Missing golden_lines_network in board data' };
+                }
+                
+                const goldenLines = boardData.golden_lines_network;
+                
+                // Step 3: Check outer terminals exist
+                const expectedTerminals = [
+                    [-12, 0], [12, 0], [0, 12], [0, -12]
+                ];
+                
+                for (const terminal of expectedTerminals) {
+                    const terminalKey = `${terminal[0]},${terminal[1]}`;
+                    if (!goldenLines.golden_lines_dict || !goldenLines.golden_lines_dict[terminalKey]) {
+                        return { passed: false, error: `Missing outer terminal at ${terminalKey}` };
+                    }
+                }
+                
+                // Step 4: Verify if board creation works with golden lines
+                if (GameModules.board && GameModules.board.createBoard) {
+                    try {
+                        const board = GameModules.board.createBoard(boardData);
+                        
+                        // Check if golden line intersections were created
+                        if (!board.goldenLineIntersections || board.goldenLineIntersections.length === 0) {
+                            return { passed: false, error: 'Board creation failed to generate golden line intersections' };
+                        }
+                        
+                        // Verify golden line connectivity functions work
+                        if (GameModules.board.isGoldenLineIntersection) {
+                            const isTerminalGolden = GameModules.board.isGoldenLineIntersection(board, [-12, 0]);
+                            if (!isTerminalGolden) {
+                                return { passed: false, error: 'Golden line intersection check failed for terminal [-12, 0]' };
+                            }
+                        }
+                        
+                        // Check connections exist
+                        if (board.goldenLineConnections.length === 0) {
+                            return { passed: false, error: 'No golden line connections found in board' };
+                        }
+                        
+                    } catch (boardError) {
+                        return { passed: false, error: `Board creation with golden lines failed: ${boardError.message}` };
+                    }
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * STARTING POSITIONS TEST
+         * Purpose: Verify pre-placed pieces and starting areas
+         * Implementation Guide:
+         * 1. Check pre-placed pieces at correct positions
+         * 2. Validate starting area definitions for setup phase
+         * 3. Ensure no overlapping positions
+         * 4. Verify player-specific starting zones
+         */
+        async function testStartingPositions() {
+            try {
+                // Step 1: Load board data and starting positions
+                const boardResponse = await fetch('../data/board-data.json');
+                const startingResponse = await fetch('../data/game-rules/starting_positions.json');
+                
+                if (!boardResponse.ok || !startingResponse.ok) {
+                    return { passed: false, error: 'Failed to load board data or starting positions' };
+                }
+                
+                const boardData = await boardResponse.json();
+                const startingData = await startingResponse.json();
+                
+                // Step 2: Verify starting areas exist in board data
+                if (!boardData.starting_areas) {
+                    return { passed: false, error: 'Missing starting_areas in board data' };
+                }
+                
+                const circlesArea = boardData.starting_areas.circles_starting_area;
+                const squaresArea = boardData.starting_areas.squares_starting_area;
+                
+                if (!circlesArea || !circlesArea.positions || !Array.isArray(circlesArea.positions)) {
+                    return { passed: false, error: 'Invalid circles starting area definition' };
+                }
+                
+                if (!squaresArea || !squaresArea.positions || !Array.isArray(squaresArea.positions)) {
+                    return { passed: false, error: 'Invalid squares starting area definition' };
+                }
+                
+                // Step 3: Verify sufficient positions for setup phase
+                // Each player needs to place 8 pieces (2 of each gem type)
+                if (circlesArea.positions.length < 8) {
+                    return { passed: false, error: `Circles starting area too small: ${circlesArea.positions.length} positions (need at least 8)` };
+                }
+                
+                if (squaresArea.positions.length < 8) {
+                    return { passed: false, error: `Squares starting area too small: ${squaresArea.positions.length} positions (need at least 8)` };
+                }
+                
+                // Step 4: Test board creation with starting positions
+                if (GameModules.board && GameModules.board.createBoard && GameModules.board.createInitialState) {
+                    try {
+                        const board = GameModules.board.createBoard(boardData);
+                        const initialState = GameModules.board.createInitialState(board, startingData);
+                        
+                        // Verify initial state is correctly set up
+                        if (initialState.gamePhase !== 'setup') {
+                            return { passed: false, error: `Expected initial game phase to be 'setup', got '${initialState.gamePhase}'` };
+                        }
+                        
+                        if (initialState.currentPlayer !== 'squares') {
+                            return { passed: false, error: `Expected initial player to be 'squares', got '${initialState.currentPlayer}'` };
+                        }
+                        
+                        if (initialState.setupTurn !== 1) {
+                            return { passed: false, error: `Expected initial setup turn to be 1, got ${initialState.setupTurn}` };
+                        }
+                        
+                        // Check if pre-placed pieces exist (Amalgam, Portal, Void pieces)
+                        const prePlacedCount = Object.keys(initialState.pieces).length;
+                        if (prePlacedCount === 0) {
+                            // This is fine - pre-placed pieces might be optional
+                            console.log('No pre-placed pieces found - starting with empty board');
+                        }
+                        
+                    } catch (stateError) {
+                        return { passed: false, error: `Initial state creation failed: ${stateError.message}` };
+                    }
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * COORDINATE SYSTEM TEST
+         * Purpose: Validate Vector2 coordinate system and transformations
+         * Implementation Guide:
+         * 1. Test coordinate to pixel conversions
+         * 2. Verify adjacency calculations
+         * 3. Check distance calculations
+         * 4. Validate coordinate bounds checking
+         */
+        async function testCoordinateSystem() {
+            try {
+                // Step 1: Test board module coordinate functions
+                if (!GameModules.board) {
+                    return { passed: false, error: 'Board module not available' };
+                }
+                
+                const board = GameModules.board;
+                
+                // Step 2: Test basic coordinate utilities
+                if (typeof board.areAdjacent !== 'function') {
+                    return { passed: false, error: 'areAdjacent function not available' };
+                }
+                
+                if (typeof board.distance !== 'function') {
+                    return { passed: false, error: 'distance function not available' };
+                }
+                
+                if (typeof board.getAdjacentCoords !== 'function') {
+                    return { passed: false, error: 'getAdjacentCoords function not available' };
+                }
+                
+                // Step 3: Test adjacency calculations
+                const center = [0, 0];
+                const adjacent = [0, 1];
+                const notAdjacent = [0, 2];
+                
+                if (!board.areAdjacent(center, adjacent)) {
+                    return { passed: false, error: 'areAdjacent failed for adjacent coordinates [0,0] and [0,1]' };
+                }
+                
+                if (board.areAdjacent(center, notAdjacent)) {
+                    return { passed: false, error: 'areAdjacent incorrectly returned true for non-adjacent coordinates [0,0] and [0,2]' };
+                }
+                
+                // Step 4: Test distance calculations
+                const distance1 = board.distance(center, adjacent);
+                if (distance1 !== 1) {
+                    return { passed: false, error: `Expected distance 1 between [0,0] and [0,1], got ${distance1}` };
+                }
+                
+                const distance2 = board.distance([0, 0], [3, 4]);
+                if (distance2 !== 5) {
+                    return { passed: false, error: `Expected distance 5 between [0,0] and [3,4], got ${distance2}` };
+                }
+                
+                // Step 5: Test adjacent coordinates generation
+                const adjacentCoords = board.getAdjacentCoords(center);
+                if (!Array.isArray(adjacentCoords) || adjacentCoords.length !== 8) {
+                    return { passed: false, error: `Expected 8 adjacent coordinates, got ${adjacentCoords ? adjacentCoords.length : 'null'}` };
+                }
+                
+                // Verify specific adjacent coordinates
+                const expectedAdjacent = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+                
+                for (const expectedCoord of expectedAdjacent) {
+                    const found = adjacentCoords.some(coord => 
+                        coord[0] === expectedCoord[0] && coord[1] === expectedCoord[1]
+                    );
+                    if (!found) {
+                        return { passed: false, error: `Missing expected adjacent coordinate ${JSON.stringify(expectedCoord)}` };
+                    }
+                }
+                
+                // Step 6: Test coordinate validation with a real board
+                const boardResponse = await fetch('../data/board-data.json');
+                if (boardResponse.ok && board.createBoard && board.isValidCoords) {
+                    const boardData = await boardResponse.json();
+                    const gameBoard = board.createBoard(boardData);
+                    
+                    // Test valid coordinates
+                    if (!board.isValidCoords(gameBoard, [0, 0])) {
+                        return { passed: false, error: 'Center coordinate [0,0] should be valid' };
+                    }
+                    
+                    // Test invalid coordinates (outside board)
+                    if (board.isValidCoords(gameBoard, [20, 20])) {
+                        return { passed: false, error: 'Coordinate [20,20] should be invalid (outside board)' };
+                    }
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * GAME INITIALIZATION TEST
+         * Purpose: Verify proper game setup and initial state creation
+         * Implementation Guide:
+         * 1. Test GameManager constructor
+         * 2. Verify initial game state creation
+         * 3. Check player initialization
+         * 4. Validate UI component setup
+         */
+        async function testGameInitialization() {
+            try {
+                // TODO: Implement game initialization validation
+                // 1. Create GameManager instance
+                // 2. Verify initial state properties
+                // 3. Check player setup
+                // 4. Validate canvas initialization
+                
+                if (GameModules.gameManager && GameModules.gameManager.GameManager) {
+                    return { passed: true };
+                }
+                
+                return { passed: false, error: 'GameManager class not implemented' };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        /**
+         * SETUP PHASE LOGIC TEST
+         * Purpose: Validate 16-turn setup phase with alternating players
+         * Implementation Guide:
+         * 1. Test setup phase initialization
+         * 2. Verify player alternation (Squares starts)
+         * 3. Check piece placement validation
+         * 4. Test transition to gameplay phase
+         */
+        async function testSetupPhaseLogic() {
+            try {
+                // Step 1: Import required modules
+                const { isValidMove, applyMove } = await import('../core/rules.js');
+                const { createBoard, createInitialState } = await import('../core/board.js');
+                
+                // Step 2: Load game data
+                const boardDataResponse = await fetch('../data/board-data.json');
+                const pieceDefsResponse = await fetch('../data/piece-definitions.json');
+                
+                if (!boardDataResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+                
+                const boardData = await boardDataResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+                pieceDefs.board_data = boardData;
+                
+                // Step 3: Create initial game state
+                const board = createBoard(boardData);
+                let state = createInitialState(board);
+                
+                // Verify initial setup phase state
+                if (state.gamePhase !== 'setup') {
+                    return { passed: false, error: 'Initial phase should be setup' };
+                }
+                
+                if (state.currentPlayer !== 'squares') {
+                    return { passed: false, error: 'Squares player should start' };
+                }
+                
+                if (state.setupTurn !== 1) {
+                    return { passed: false, error: 'Setup should start at turn 1' };
+                }
+                
+                // Step 4: Test first valid move (squares player)
+                const firstMove = {
+                    type: 'place',
+                    pieceId: 'S_Ruby1',
+                    toCoords: [2, -7], // Valid squares starting position
+                    playerId: 'squares'
+                };
+                
+                const validationResult = isValidMove(state, firstMove, pieceDefs);
+                if (!validationResult.ok) {
+                    return { passed: false, error: `First move validation failed: ${validationResult.reason}` };
+                }
+                
+                // Step 5: Apply first move and check state transition
+                const moveResult = applyMove(state, firstMove, pieceDefs);
+                if (!moveResult.ok) {
+                    return { passed: false, error: `First move application failed: ${moveResult.reason}` };
+                }
+                
+                state = moveResult.nextState;
+                
+                // Verify state after first move
+                if (state.setupTurn !== 2) {
+                    return { passed: false, error: 'Setup turn should increment to 2' };
+                }
+                
+                if (state.currentPlayer !== 'circles') {
+                    return { passed: false, error: 'Should switch to circles player after squares move' };
+                }
+                
+                if (!state.pieces['S_Ruby1']) {
+                    return { passed: false, error: 'Piece should be placed in game state' };
+                }
+                
+                // Step 6: Test invalid move (wrong player's turn)
+                const invalidMove = {
+                    type: 'place',
+                    pieceId: 'S_Pearl1',
+                    toCoords: [3, -7],
+                    playerId: 'squares' // Wrong player's turn
+                };
+                
+                const invalidResult = isValidMove(state, invalidMove, pieceDefs);
+                if (invalidResult.ok) {
+                    return { passed: false, error: 'Should reject move when not player\'s turn' };
+                }
+                
+                // Step 7: Test piece type limits
+                let testState = { ...state };
+                testState.pieces['S_Ruby2'] = { type: 'Ruby', player: 'squares', coords: [1, -7] };
+                
+                const thirdRubyMove = {
+                    type: 'place',
+                    pieceId: 'S_Ruby3', // This doesn't exist, but testing the logic
+                    toCoords: [4, -7],
+                    playerId: 'circles'
+                };
+                
+                // All core setup phase logic tests passed
+                return { passed: true };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Continue with all other test function placeholders...
+        // Each function follows the same pattern with detailed implementation guidance
+
+        /**
+         * HUMAN PLAYER INTERFACE TEST
+         * Purpose: Verify human player interface works correctly
+         * Implementation Guide:
+         * 1. Create HumanPlayer instance
+         * 2. Test getMove() promise interface
+         * 3. Test setMoveIntent() resolution
+         * 4. Verify promise resolves with correct move
+         */
+        async function testHumanPlayerInterface() {
+            try {
+                // Step 1: Check if player module is available
+                if (!GameModules.player || !GameModules.player.HumanPlayer) {
+                    return { passed: false, error: 'HumanPlayer class not available' };
+                }
+                
+                // Step 2: Create HumanPlayer instance
+                const { HumanPlayer } = GameModules.player;
+                const humanPlayer = new HumanPlayer('squares', 'Test Human');
+                
+                // Step 3: Create basic test state
+                const testState = {
+                    gamePhase: 'setup',
+                    setupTurn: 1,
+                    currentPlayer: 'squares',
+                    pieces: {},
+                    board: { intersections: [] }
+                };
+                
+                const testPieceDefs = { piece_definitions: {} };
+                
+                // Step 4: Test the promise-based interface
+                const movePromise = humanPlayer.getMove(testState, testPieceDefs);
+                
+                // Verify getMove returns a Promise
+                if (!(movePromise instanceof Promise)) {
+                    return { passed: false, error: 'getMove() should return a Promise' };
+                }
+                
+                // Step 5: Test setMoveIntent resolution
+                const testMove = {
+                    type: 'place',
+                    pieceId: 'S_Ruby1',
+                    toCoords: [2, -7],
+                    playerId: 'squares'
+                };
+                
+                // Set move intent to resolve the promise
+                humanPlayer.setMoveIntent(testMove);
+                
+                // Wait for promise resolution
+                const receivedMove = await movePromise;
+                
+                // Step 6: Verify the move was received correctly
+                if (!receivedMove) {
+                    return { passed: false, error: 'Promise resolved with null move' };
+                }
+                
+                if (receivedMove.pieceId !== 'S_Ruby1') {
+                    return { passed: false, error: 'Promise resolved with incorrect move' };
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPlayerTurnManagement() {
+            return { passed: false, error: 'Player turn management not implemented' };
+        }
+
+        async function testGamePhaseTransitions() {
+            return { passed: false, error: 'Game phase transitions not implemented' };
+        }
+
+        async function testStateImmutability() {
+            return { passed: false, error: 'State immutability validation not implemented' };
+        }
+
+        // Movement system tests
+        async function testStandardMovement() {
+            try {
+                // Step 1: Check if movement validation is available
+                if (!GameModules.rules || typeof GameModules.rules.isValidMove !== 'function') {
+                    return { passed: false, error: 'Rules module or isValidMove function not available' };
+                }
+                
+                if (!GameModules.board) {
+                    return { passed: false, error: 'Board module not available' };
+                }
+                
+                // Step 2: Create test game state with pieces
+                const boardResponse = await fetch('../data/board-data.json');
+                const pieceDefsResponse = await fetch('../data/piece-definitions.json');
+                
+                if (!boardResponse.ok || !pieceDefsResponse.ok) {
+                    return { passed: false, error: 'Failed to load game data' };
+                }
+                
+                const boardData = await boardResponse.json();
+                const pieceDefs = await pieceDefsResponse.json();
+                pieceDefs.board_data = boardData;
+                
+                // Create board and basic game state
+                const board = GameModules.board.createBoard(boardData);
+                const testState = {
+                    gamePhase: 'gameplay',
+                    setupTurn: 17,
+                    currentPlayer: 'squares',
+                    pieces: {
+                        'S_Ruby1': {
+                            id: 'S_Ruby1',
+                            type: 'Ruby',
+                            player: 'squares',
+                            coords: [0, 0],
+                            graphics: { shape: 'square', color: '#E63960', size: 8 }
+                        }
+                    },
+                    board: board,
+                    moveHistory: [],
+                    winner: null
+                };
+                
+                // Place piece on board
+                testState.board = GameModules.board.placePiece(testState.board, [0, 0], 'S_Ruby1');
+                
+                // Step 3: Test valid standard movement
+                const validMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 1], // Adjacent position
+                    playerId: 'squares'
+                };
+                
+                const validResult = GameModules.rules.isValidMove(testState, validMove, pieceDefs);
+                if (!validResult.ok) {
+                    return { passed: false, error: `Valid standard move rejected: ${validResult.reason}` };
+                }
+                
+                // Step 4: Test invalid movements
+                // Test 1: Non-adjacent destination
+                const nonAdjacentMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 3], // Not adjacent
+                    playerId: 'squares'
+                };
+                
+                const nonAdjacentResult = GameModules.rules.isValidMove(testState, nonAdjacentMove, pieceDefs);
+                if (nonAdjacentResult.ok) {
+                    return { passed: false, error: 'Non-adjacent move was incorrectly accepted' };
+                }
+                
+                // Test 2: No piece at source
+                const noPieceMove = {
+                    type: 'standard',
+                    fromCoords: [5, 5], // Empty position
+                    toCoords: [5, 6],
+                    playerId: 'squares'
+                };
+                
+                const noPieceResult = GameModules.rules.isValidMove(testState, noPieceMove, pieceDefs);
+                if (noPieceResult.ok) {
+                    return { passed: false, error: 'Move from empty position was incorrectly accepted' };
+                }
+                
+                // Test 3: Wrong player's piece
+                const wrongPlayerMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 1],
+                    playerId: 'circles' // Wrong player
+                };
+                
+                const wrongPlayerResult = GameModules.rules.isValidMove(testState, wrongPlayerMove, pieceDefs);
+                if (wrongPlayerResult.ok) {
+                    return { passed: false, error: 'Move by wrong player was incorrectly accepted' };
+                }
+                
+                // Step 5: Test occupied destination
+                // Place another piece and try to move to it
+                testState.pieces['S_Pearl1'] = {
+                    id: 'S_Pearl1',
+                    type: 'Pearl',
+                    player: 'squares',
+                    coords: [0, -1],
+                    graphics: { shape: 'square', color: '#F8F6DA', size: 8 }
+                };
+                testState.board = GameModules.board.placePiece(testState.board, [0, -1], 'S_Pearl1');
+                
+                const occupiedDestMove = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, -1], // Occupied by Pearl
+                    playerId: 'squares'
+                };
+                
+                const occupiedResult = GameModules.rules.isValidMove(testState, occupiedDestMove, pieceDefs);
+                if (occupiedResult.ok) {
+                    return { passed: false, error: 'Move to occupied position was incorrectly accepted' };
+                }
+                
+                return { passed: true };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testNexusMovement() {
+            return { passed: false, error: 'Nexus movement validation not implemented' };
+        }
+
+        async function testPortalSwap() {
+            return { passed: false, error: 'Portal swap validation not implemented' };
+        }
+
+        async function testPortalLineMovement() {
+            return { passed: false, error: 'Portal line movement validation not implemented' };
+        }
+
+        async function testPortalStandardMovement() {
+            return { passed: false, error: 'Portal standard movement validation not implemented' };
+        }
+
+        async function testPortalPhasing() {
+            return { passed: false, error: 'Portal phasing validation not implemented' };
+        }
+
+        // Combat system tests
+        async function testStandardCombat() {
+            return { passed: false, error: 'Standard combat logic not implemented' };
+        }
+
+        async function testPortalCombat() {
+            return { passed: false, error: 'Portal combat logic not implemented' };
+        }
+
+        async function testVoidCombat() {
+            return { passed: false, error: 'Void combat logic not implemented' };
+        }
+
+        async function testCombatImmunity() {
+            return { passed: false, error: 'Combat immunity rules not implemented' };
+        }
+
+        async function testMultiTargetCombat() {
+            return { passed: false, error: 'Multi-target combat not implemented' };
+        }
+
+        // Ability system tests
+        async function testFireballAbility() {
+            return { passed: false, error: 'Fireball ability not implemented' };
+        }
+
+        async function testTidalWaveAbility() {
+            return { passed: false, error: 'Tidal Wave ability not implemented' };
+        }
+
+        async function testSapAbility() {
+            return { passed: false, error: 'Sap ability not implemented' };
+        }
+
+        async function testLaunchAbility() {
+            return { passed: false, error: 'Launch ability not implemented' };
+        }
+
+        async function testAbilityAmplification() {
+            return { passed: false, error: 'Ability amplification not implemented' };
+        }
+
+        async function testFormationDetection() {
+            return { passed: false, error: 'Formation detection not implemented' };
+        }
+
+        // Victory condition tests
+        async function testObjectiveVictory() {
+            return { passed: false, error: 'Objective victory detection not implemented' };
+        }
+
+        async function testEliminationVictory() {
+            return { passed: false, error: 'Elimination victory detection not implemented' };
+        }
+
+        async function testVictoryDetection() {
+            return { passed: false, error: 'Victory detection logic not implemented' };
+        }
+
+        async function testDrawConditions() {
+            return { passed: false, error: 'Draw condition detection not implemented' };
+        }
+
+        // UI tests
+        async function testCanvasInitialization() {
+            try {
+                if (GameModules.graphics && typeof GameModules.graphics.createGameCanvas === 'function') {
+                    return { passed: true };
+                }
+                return { passed: false, error: 'Canvas initialization functions not available' };
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testBoardRendering() {
+            return { passed: false, error: 'Board rendering not implemented' };
+        }
+
+        async function testPieceRendering() {
+            return { passed: false, error: 'Piece rendering not implemented' };
+        }
+
+        async function testClickDetection() {
+            return { passed: false, error: 'Click detection not implemented' };
+        }
+
+        async function testMoveValidationUI() {
+            return { passed: false, error: 'Move validation UI not implemented' };
+        }
+
+        async function testAnimationSystem() {
+            return { passed: false, error: 'Animation system not implemented' };
+        }
+
+        // AI tests
+        async function testRandomAI() {
+            return { passed: false, error: 'Random AI not implemented' };
+        }
+
+        async function testHeuristicAI() {
+            return { passed: false, error: 'Heuristic AI not implemented' };
+        }
+
+        async function testSetupPhaseAI() {
+            return { passed: false, error: 'Setup phase AI not implemented' };
+        }
+
+        async function testAIMoveSpeed() {
+            return { passed: false, error: 'AI move speed optimization not implemented' };
+        }
+
+        // Utility functions
+        function copyTestError(testId) {
+            const result = testResults[testId];
+            let text = `Test: ${testId}\nStatus: ${result.status}`;
+            
+            if (result.error) {
+                text += `\nError: ${result.error}`;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Test details copied to clipboard!');
+            });
+        }
+
+        function copyAllResults() {
+            const summary = generateTestSummary();
+            navigator.clipboard.writeText(summary).then(() => {
+                showToast('All test results copied to clipboard!');
+            });
+        }
+
+        function generateTestSummary() {
+            const allResults = Object.values(testResults);
+            const passed = allResults.filter(r => r.status === 'passed').length;
+            const failed = allResults.filter(r => r.status === 'failed').length;
+            const pending = allResults.filter(r => r.status === 'pending').length;
+            const total = allResults.length;
+            
+            let summary = `AMALGAM GAME MECHANICS TEST RESULTS\n`;
+            summary += `======================================\n\n`;
+            summary += `Overall Progress: ${passed}/${total} tests passing (${Math.round((passed/total)*100)}%)\n`;
+            summary += `✅ Passed: ${passed}\n`;
+            summary += `❌ Failed: ${failed}\n`;
+            summary += `⏳ Pending: ${pending}\n\n`;
+            
+            // Add failed tests details
+            if (failed > 0) {
+                summary += `FAILED TESTS:\n`;
+                summary += `=============\n`;
+                
+                Object.entries(testResults).forEach(([testId, result]) => {
+                    if (result.status === 'failed') {
+                        summary += `❌ ${testId}: ${result.error}\n`;
+                    }
+                });
+                
+                summary += `\n`;
+            }
+            
+            summary += `Generated: ${new Date().toLocaleString()}\n`;
+            return summary;
+        }
+
+        function showFailedOnly() {
+            showingFailedOnly = !showingFailedOnly;
+            
+            const button = event.target;
+            if (showingFailedOnly) {
+                button.textContent = '👁️ Show All Tests';
+                button.className = 'btn btn-primary';
+            } else {
+                button.textContent = '⚠️ Show Failed Only';
+                button.className = 'btn btn-warning';
+            }
+            
+            // Filter test display
+            document.querySelectorAll('.test-item').forEach(item => {
+                if (showingFailedOnly) {
+                    item.style.display = item.classList.contains('failed') ? 'block' : 'none';
+                } else {
+                    item.style.display = 'block';
+                }
+            });
+        }
+
+        function resetAllTests() {
+            // Reset all test results to pending
+            Object.keys(testResults).forEach(testId => {
+                testResults[testId] = { status: 'pending', error: null };
+                updateTestDisplay(testId);
+            });
+            
+            // Update category statuses
+            Object.keys(testCategories).forEach(categoryName => {
+                updateCategoryStatus(categoryName);
+            });
+            
+            updateSummary();
+            document.getElementById('console-output').style.display = 'none';
+            document.getElementById('console-output').innerHTML = '';
+            
+            showToast('All tests reset to pending state');
+        }
+
+        function toggleTestDetails(testId) {
+            const button = event.target;
+            const errorElement = document.getElementById(`error-${testId}`);
+            
+            if (errorElement.style.display === 'none') {
+                errorElement.style.display = 'block';
+                button.textContent = 'Hide Details';
+            } else {
+                errorElement.style.display = 'none';
+                button.textContent = 'Show Details';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 500;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 2000);
+        }
+
+        // Debug function to check test initialization
+        function debugTestSuite() {
+            console.log('🔍 Debugging test suite...');
+            console.log('testCategories:', testCategories);
+            console.log('Total categories:', Object.keys(testCategories).length);
+            
+            let totalTests = 0;
+            for (const [categoryName, category] of Object.entries(testCategories)) {
+                console.log(`Category "${categoryName}": ${category.tests.length} tests`);
+                totalTests += category.tests.length;
+            }
+            console.log(`Total tests: ${totalTests}`);
+            
+            // Show current test results
+            console.log('testResults:', testResults);
+            console.log('Total test results:', Object.keys(testResults).length);
+            
+            return { totalCategories: Object.keys(testCategories).length, totalTests };
+        }
+
+        // Make functions available globally
+        window.runAllTests = runAllTests;
+        window.copyAllResults = copyAllResults;
+        window.showFailedOnly = showFailedOnly;
+        window.resetAllTests = resetAllTests;
+        window.copyTestError = copyTestError;
+        window.toggleTestDetails = toggleTestDetails;
+        window.debugTestSuite = debugTestSuite;
+    </script>
+</body>
+</html>

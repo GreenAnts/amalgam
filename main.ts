@@ -94,6 +94,24 @@ class PatchedGameManager extends GameManager {
                     playerId: this.state.currentPlayer
                 };
             }
+        } else if (this.state.gamePhase === 'gameplay') {
+            // Handle gameplay phase moves with piece selection
+            if (moveIntent.selectedPieceId) {
+                const selectedPiece = this.state.pieces[moveIntent.selectedPieceId];
+                if (selectedPiece && selectedPiece.player === this.state.currentPlayer) {
+                    return {
+                        type: 'standard',
+                        fromCoords: selectedPiece.coords,
+                        toCoords: coords,
+                        playerId: this.state.currentPlayer
+                    };
+                }
+            }
+            
+            // Handle portal swap moves
+            if (moveIntent.meta?.portalSwap && moveIntent.meta?.move) {
+                return moveIntent.meta.move;
+            }
         }
         
         // Fallback to original implementation
@@ -122,6 +140,16 @@ export class AmalgamGame {
     private undoButton: HTMLButtonElement | null = null;
     private selectedPieceId: string | null = null;
     private pieceSelectionPanel: HTMLElement | null = null;
+    private actionPanel: HTMLElement | null = null;
+    private portalSwapMode: { enabled: boolean; sourcePiece: string | null } = { enabled: false, sourcePiece: null };
+    
+    // Permanent action buttons
+    private selectedPieceInfo: HTMLElement | null = null;
+    private portalSwapButton: HTMLButtonElement | null = null;
+    private fireballButton: HTMLButtonElement | null = null;
+    private tidalWaveButton: HTMLButtonElement | null = null;
+    private sapButton: HTMLButtonElement | null = null;
+    private launchButton: HTMLButtonElement | null = null;
 
     /**
      * Initialize the game application
@@ -226,8 +254,18 @@ export class AmalgamGame {
         this.newGameButton = document.getElementById('new-game') as HTMLButtonElement;
         this.undoButton = document.getElementById('undo') as HTMLButtonElement;
         this.pieceSelectionPanel = document.getElementById('piece-selection-panel');
+        this.actionPanel = document.getElementById('action-panel');
         
-        if (!this.statusElement || !this.scoreElement || !this.newGameButton || !this.undoButton || !this.pieceSelectionPanel) {
+        // Get permanent action buttons
+        this.selectedPieceInfo = document.getElementById('selected-piece-info');
+        this.portalSwapButton = document.getElementById('portal-swap-btn') as HTMLButtonElement;
+        this.fireballButton = document.getElementById('fireball-btn') as HTMLButtonElement;
+        this.tidalWaveButton = document.getElementById('tidal-wave-btn') as HTMLButtonElement;
+        this.sapButton = document.getElementById('sap-btn') as HTMLButtonElement;
+        this.launchButton = document.getElementById('launch-btn') as HTMLButtonElement;
+        
+        if (!this.statusElement || !this.scoreElement || !this.newGameButton || !this.undoButton || !this.pieceSelectionPanel || !this.actionPanel ||
+            !this.selectedPieceInfo || !this.portalSwapButton || !this.fireballButton || !this.tidalWaveButton || !this.sapButton || !this.launchButton) {
             throw new Error('Required UI elements not found');
         }
         
@@ -253,6 +291,52 @@ export class AmalgamGame {
             }
         });
         
+        // Permanent action buttons
+        this.portalSwapButton?.addEventListener('click', () => {
+            if (!this.portalSwapButton?.disabled && this.selectedPieceId) {
+                const state = this.gameManager?.getState();
+                if (state && state.pieces[this.selectedPieceId]) {
+                    this.handlePortalSwap(state.pieces[this.selectedPieceId]);
+                }
+            }
+        });
+        
+        this.fireballButton?.addEventListener('click', () => {
+            if (!this.fireballButton?.disabled && this.selectedPieceId) {
+                const state = this.gameManager?.getState();
+                if (state && state.pieces[this.selectedPieceId]) {
+                    this.handleFireball(state.pieces[this.selectedPieceId]);
+                }
+            }
+        });
+        
+        this.tidalWaveButton?.addEventListener('click', () => {
+            if (!this.tidalWaveButton?.disabled && this.selectedPieceId) {
+                const state = this.gameManager?.getState();
+                if (state && state.pieces[this.selectedPieceId]) {
+                    this.handleTidalWave(state.pieces[this.selectedPieceId]);
+                }
+            }
+        });
+        
+        this.sapButton?.addEventListener('click', () => {
+            if (!this.sapButton?.disabled && this.selectedPieceId) {
+                const state = this.gameManager?.getState();
+                if (state && state.pieces[this.selectedPieceId]) {
+                    this.handleSap(state.pieces[this.selectedPieceId]);
+                }
+            }
+        });
+        
+        this.launchButton?.addEventListener('click', () => {
+            if (!this.launchButton?.disabled && this.selectedPieceId) {
+                const state = this.gameManager?.getState();
+                if (state && state.pieces[this.selectedPieceId]) {
+                    this.handleLaunch(state.pieces[this.selectedPieceId]);
+                }
+            }
+        });
+        
         // Canvas click events handled by InteractionManager
         logger.info('Canvas click events will be handled by InteractionManager');
         
@@ -263,52 +347,21 @@ export class AmalgamGame {
     }
 
     /**
-     * Handle canvas click events
+     * Handle canvas click events (now handled by InteractionManager)
      */
     private handleCanvasClick(event: MouseEvent): void {
-        logger.info('Canvas click event received!');
-        
-        if (!this.gameManager || !this.gameCanvas) {
-            logger.warn('Canvas click: gameManager or gameCanvas not available');
-            return;
-        }
-        
-        // Get canvas coordinates
-        const rect = this.gameCanvas.canvas.getBoundingClientRect();
-        const scaleX = this.gameCanvas.canvas.width / rect.width;
-        const scaleY = this.gameCanvas.canvas.height / rect.height;
-        const mouseX = (event.clientX - rect.left) * scaleX;
-        const mouseY = (event.clientY - rect.top) * scaleY;
-        
-        // Convert to game coordinates
-        const gameCoords = this.gameCanvas.getCoordinatesFromPixel(mouseX, mouseY);
-        
-        logger.info('Canvas clicked at game coordinates:', gameCoords);
-        
-        // Handle the intersection click
-        this.handleIntersectionClick(gameCoords);
+        // This method is now redundant as InteractionManager handles clicks
+        // Keep for backward compatibility but don't process
+        logger.debug('Canvas click event received but handled by InteractionManager');
     }
 
     /**
-     * Handle intersection click
+     * Handle intersection click (now handled by GameManager via InteractionManager)
      */
     private handleIntersectionClick(coords: Vector2): void {
-        if (!this.gameManager || !this.gameCanvas) return;
-        
-        const state = this.gameManager.getState();
-        if (!state) return;
-        
-        // Check if it's a valid intersection
-        if (!this.gameCanvas.boardDict[`${coords[0]},${coords[1]}`]) {
-            logger.debug('Clicked on invalid intersection:', coords);
-            return;
-        }
-        
-        if (state.gamePhase === 'setup') {
-            this.handleSetupClick(coords);
-        } else {
-            this.handleGameplayClick(coords);
-        }
+        // This method is now redundant as GameManager handles intersection clicks
+        // Keep for backward compatibility but don't process
+        logger.debug('Intersection click handled by GameManager');
     }
 
     /**
@@ -333,8 +386,331 @@ export class AmalgamGame {
      * Handle gameplay phase clicks
      */
     private handleGameplayClick(coords: Vector2): void {
-        // For now, just log the click
+        if (!this.gameManager) return;
+        
+        const state = this.gameManager.getState();
+        if (!state) return;
+        
+        // Get intersection at clicked coordinates
+        const intersection = this.gameCanvas?.boardDict[`${coords[0]},${coords[1]}`];
+        if (!intersection) return;
+        
+        // Check if there's a piece at this location
+        const pieceAtLocation = Object.values(state.pieces).find(piece => 
+            piece.coords[0] === coords[0] && piece.coords[1] === coords[1]
+        );
+        
+        // Handle portal swap target selection
+        if (this.portalSwapMode.enabled && this.portalSwapMode.sourcePiece) {
+            const sourcePiece = state.pieces[this.portalSwapMode.sourcePiece];
+            
+            if (pieceAtLocation && 
+                pieceAtLocation.type === 'Portal' && 
+                pieceAtLocation.player === state.currentPlayer &&
+                pieceAtLocation.id !== this.portalSwapMode.sourcePiece) {
+                
+                // Execute portal swap move
+                const portalSwapMove = {
+                    type: 'portal_swap' as const,
+                    fromCoords: sourcePiece.coords,
+                    toCoords: pieceAtLocation.coords,
+                    pieceId: sourcePiece.id,
+                    playerId: state.currentPlayer
+                };
+                
+                const moveIntent = {
+                    coords: coords,
+                    type: 'click' as const,
+                    meta: { portalSwap: true, move: portalSwapMove }
+                };
+                
+                this.gameManager.handleMoveIntent(moveIntent);
+                
+                // Reset portal swap mode
+                this.portalSwapMode.enabled = false;
+                this.portalSwapMode.sourcePiece = null;
+                this.showMessage('Portal swap executed!');
+                
+                console.log('🔄 Portal swap executed:', sourcePiece.id, '↔️', pieceAtLocation.id);
+                return;
+            } else {
+                // Invalid target or clicked elsewhere - cancel portal swap
+                this.portalSwapMode.enabled = false;
+                this.portalSwapMode.sourcePiece = null;
+                this.showMessage('Portal swap cancelled');
+                
+                if (!pieceAtLocation || pieceAtLocation.type !== 'Portal') {
+                    console.log('❌ Portal swap cancelled: Invalid target');
+                    return;
+                }
+            }
+        }
+        
+        // If clicking on a piece that belongs to current player, select it
+        if (pieceAtLocation && pieceAtLocation.player === state.currentPlayer) {
+            this.selectedPieceId = pieceAtLocation.id;
+            logger.debug('Selected piece:', pieceAtLocation.id, 'at:', coords);
+            console.log('🔍 DEBUG: Piece selected:', pieceAtLocation.type, 'at', coords);
+            
+            // Show action buttons for the selected piece
+            console.log('🔍 DEBUG: Calling showActionButtons...');
+            this.showActionButtons(pieceAtLocation);
+            console.log('🔍 DEBUG: showActionButtons completed');
+            
+            // Update visual feedback immediately for responsiveness
+            const validMoves = this.getValidMovesForPiece(pieceAtLocation);
+            this.updateVisualFeedback(coords, validMoves);
+        }
+        // If we have a selected piece and clicking on empty or enemy piece, try to move
+        else if (this.selectedPieceId) {
+            const selectedPiece = state.pieces[this.selectedPieceId];
+            if (selectedPiece) {
+                const move = {
+                    type: 'standard' as const,
+                    fromCoords: selectedPiece.coords,
+                    toCoords: coords,
+                    playerId: state.currentPlayer
+                };
+                
+                // Create move intent and send to game manager
+                const moveIntent = {
+                    coords: coords,
+                    type: 'click' as const,
+                    selectedPieceId: this.selectedPieceId
+                };
+                
+                // Process move immediately for better responsiveness
+                this.gameManager?.handleMoveIntent(moveIntent);
+                
+                // Clear selection after move attempt
+                this.selectedPieceId = null;
+                this.updateVisualFeedback(null, []);
+                this.hideActionButtons();
+            }
+        }
+        
         logger.debug('Gameplay click at:', coords);
+    }
+
+    /**
+     * Update permanent action buttons for a selected piece
+     */
+    private showActionButtons(piece: Piece): void {
+        if (!this.selectedPieceInfo) return;
+        
+        // Update piece info display
+        const isOnGolden = this.isOnGoldenLine(piece.coords);
+        this.selectedPieceInfo.innerHTML = `
+            <div class="piece-selected">
+                <strong>${piece.type}</strong> at [${piece.coords[0]}, ${piece.coords[1]}]<br>
+                <small>${piece.player === 'circles' ? 'Circles' : 'Squares'} player</small>
+                ${isOnGolden ? '<br><small style="color: #28a745;">⭐ On Golden Line</small>' : ''}
+            </div>
+        `;
+        
+        // Update Portal Swap button
+        const canPortalSwap = piece.type !== 'Portal' && isOnGolden;
+        this.updateButtonState(this.portalSwapButton!, canPortalSwap);
+        
+        // Update ability buttons based on piece type
+        const canFireball = piece.type === 'Ruby' || piece.type === 'Amalgam';
+        this.updateButtonState(this.fireballButton!, canFireball);
+        
+        const canTidalWave = piece.type === 'Pearl' || piece.type === 'Amalgam';
+        this.updateButtonState(this.tidalWaveButton!, canTidalWave);
+        
+        const canSap = piece.type === 'Amber' || piece.type === 'Amalgam';
+        this.updateButtonState(this.sapButton!, canSap);
+        
+        const canLaunch = piece.type === 'Jade' || piece.type === 'Amalgam';
+        this.updateButtonState(this.launchButton!, canLaunch);
+        
+        console.log(`Debug: Updated action buttons for ${piece.type} - Portal Swap: ${canPortalSwap}, Golden: ${isOnGolden}`);
+    }
+    
+    /**
+     * Update button state (enabled/disabled)
+     */
+    private updateButtonState(button: HTMLButtonElement, enabled: boolean): void {
+        if (enabled) {
+            button.disabled = false;
+            button.classList.remove('disabled');
+        } else {
+            button.disabled = true;
+            button.classList.add('disabled');
+        }
+    }
+    
+    /**
+     * Position the action panel next to the selected piece
+     */
+    private positionActionPanel(coords: Vector2): void {
+        if (!this.actionPanel || !this.gameCanvas) return;
+        
+        // Convert game coordinates to canvas coordinates
+        const canvas = this.gameCanvas.canvas;
+        const rect = canvas.getBoundingClientRect();
+        const originX = canvas.width / 2;
+        const originY = canvas.height / 2;
+        const gridSize = 25;
+        
+        const canvasX = originX + (coords[0] * gridSize);
+        const canvasY = originY - (coords[1] * gridSize);
+        
+        // Convert to screen coordinates
+        const screenX = rect.left + (canvasX * rect.width / canvas.width);
+        const screenY = rect.top + (canvasY * rect.height / canvas.height);
+        
+        // Position the action panel to the right of the piece
+        const panelWidth = 200;
+        const panelHeight = 300;
+        
+        // Check if panel would go off screen to the right
+        let left = screenX + 30; // 30px offset from piece
+        if (left + panelWidth > window.innerWidth) {
+            left = screenX - panelWidth - 30; // Position to the left instead
+        }
+        
+        // Check if panel would go off screen vertically
+        let top = screenY - panelHeight / 2;
+        if (top < 0) {
+            top = 10;
+        } else if (top + panelHeight > window.innerHeight) {
+            top = window.innerHeight - panelHeight - 10;
+        }
+        
+        this.actionPanel.style.left = `${left}px`;
+        this.actionPanel.style.top = `${top}px`;
+    }
+    
+    /**
+     * Hide action buttons (reset to default state)
+     */
+    private hideActionButtons(): void {
+        // Reset piece info display
+        if (this.selectedPieceInfo) {
+            this.selectedPieceInfo.innerHTML = '<span class="no-selection">Select a piece to see available actions</span>';
+        }
+        
+        // Disable all action buttons
+        this.updateButtonState(this.portalSwapButton!, false);
+        this.updateButtonState(this.fireballButton!, false);
+        this.updateButtonState(this.tidalWaveButton!, false);
+        this.updateButtonState(this.sapButton!, false);
+        this.updateButtonState(this.launchButton!, false);
+    }
+    
+    /**
+     * Check if coordinates are on golden line
+     */
+    private isOnGoldenLine(coords: Vector2): boolean {
+        console.log('🔍 DEBUG: isOnGoldenLine called with coords:', coords);
+        
+        if (!this.boardData?.golden_coordinates) {
+            console.log('🔍 DEBUG: No golden_coordinates in boardData');
+            return false;
+        }
+        
+        const coordString = `${coords[0]},${coords[1]}`;
+        const isGolden = this.boardData.golden_coordinates.includes(coordString);
+        console.log(`🔍 DEBUG: Checking [${coords[0]}, ${coords[1]}] (${coordString}) - isGolden: ${isGolden}`);
+        console.log(`🔍 DEBUG: Golden coordinates array length: ${this.boardData.golden_coordinates.length}`);
+        console.log(`🔍 DEBUG: First 5 golden coordinates:`, this.boardData.golden_coordinates.slice(0, 5));
+        
+        return isGolden;
+    }
+    
+    /**
+     * Handle Portal Swap action
+     */
+    private handlePortalSwap(piece: Piece): void {
+        // Enable portal swap mode
+        this.portalSwapMode.enabled = true;
+        this.portalSwapMode.sourcePiece = piece.id;
+        
+        // Update visual feedback
+        this.showMessage(`Portal Swap mode: Click on a Portal piece to swap with ${piece.type}`);
+        
+        // Hide action buttons
+        this.hideActionButtons();
+        
+        console.log('🔄 Portal swap mode enabled for piece:', piece.id);
+    }
+    
+    /**
+     * Handle Fireball ability
+     */
+    private handleFireball(piece: Piece): void {
+        alert(`Fireball ability selected for ${piece.type}. Click to select direction.`);
+        // TODO: Implement ability targeting
+    }
+    
+    /**
+     * Handle Tidal Wave ability
+     */
+    private handleTidalWave(piece: Piece): void {
+        alert(`Tidal Wave ability selected for ${piece.type}. Click to select direction.`);
+        // TODO: Implement ability targeting
+    }
+    
+    /**
+     * Handle Sap ability
+     */
+    private handleSap(piece: Piece): void {
+        alert(`Sap ability selected for ${piece.type}. Click to select target.`);
+        // TODO: Implement ability targeting
+    }
+    
+    /**
+     * Handle Launch ability
+     */
+    private handleLaunch(piece: Piece): void {
+        alert(`Launch ability selected for ${piece.type}. Click to select target.`);
+        // TODO: Implement ability targeting
+    }
+
+    /**
+     * Get valid moves for a piece
+     */
+    private getValidMovesForPiece(piece: Piece): Vector2[] {
+        if (!this.gameManager || !this.pieceDefs) return [];
+        
+        const state = this.gameManager.getState();
+        if (!state) return [];
+        
+        // Get adjacent coordinates as potential moves
+        const adjacentCoords: Vector2[] = [];
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                const newCoords: Vector2 = [piece.coords[0] + dx, piece.coords[1] + dy];
+                
+                // Check if coordinates are valid and within board bounds
+                if (newCoords[0] >= -12 && newCoords[0] <= 12 && 
+                    newCoords[1] >= -12 && newCoords[1] <= 12) {
+                    
+                    // Check if the position is empty
+                    const pieceAtPos = Object.values(state.pieces).find(p => 
+                        p.coords[0] === newCoords[0] && p.coords[1] === newCoords[1]
+                    );
+                    
+                    if (!pieceAtPos) {
+                        adjacentCoords.push(newCoords);
+                    }
+                }
+            }
+        }
+        
+        return adjacentCoords;
+    }
+
+    /**
+     * Update visual feedback (now handled by GameManager)
+     */
+    private async updateVisualFeedback(selectedCoords: Vector2 | null, validMoves: Vector2[]): Promise<void> {
+        // This method is now redundant as GameManager handles visual feedback
+        // Keep for backward compatibility but don't process
+        logger.debug('Visual feedback handled by GameManager');
     }
 
     /**
@@ -360,6 +736,13 @@ export class AmalgamGame {
                 break;
             case 'Escape':
                 this.selectedPieceId = null;
+                // Cancel portal swap mode
+                if (this.portalSwapMode.enabled) {
+                    this.portalSwapMode.enabled = false;
+                    this.portalSwapMode.sourcePiece = null;
+                    this.showMessage('Portal swap cancelled');
+                    this.hideActionButtons();
+                }
                 if (this.gameManager) {
                     const state = this.gameManager.getState();
                     if (state) {
@@ -423,6 +806,116 @@ export class AmalgamGame {
         
         // Provide callback for selected piece
         this.gameManager.setSelectedPieceIdCallback(() => this.selectedPieceId);
+        
+        // Hook into InteractionManager for piece selection UI
+        this.setupPieceSelectionHandling();
+    }
+
+    /**
+     * Set up piece selection handling for UI updates
+     */
+    private setupPieceSelectionHandling(): void {
+        if (!this.gameManager) return;
+        
+        // Get the InteractionManager from GameManager
+        const interactionManager = this.gameManager.getInteractionManager();
+        if (!interactionManager) {
+            logger.warn('No InteractionManager available for piece selection');
+            return;
+        }
+        
+        // Store the original GameManager callback 
+        const originalCallback = (moveIntent: any) => {
+            if (this.gameManager) {
+                this.gameManager.handleMoveIntent(moveIntent);
+            }
+        };
+        
+        // Set up chained callback: UI first, then game logic
+        interactionManager.setMoveIntentCallback((moveIntent) => {
+            // First, handle the piece selection for UI
+            this.handlePieceSelectionUI(moveIntent);
+            
+            // Then call the GameManager logic
+            originalCallback(moveIntent);
+        });
+        
+        logger.debug('Piece selection UI handling set up');
+    }
+    
+    /**
+     * Handle piece selection for UI updates (separate from game logic)
+     */
+    private handlePieceSelectionUI(moveIntent: any): void {
+        if (moveIntent.type !== 'click') return;
+        
+        const coords = moveIntent.coords;
+        const state = this.gameManager?.getState();
+        if (!state || state.gamePhase !== 'gameplay') return;
+        
+        // Find piece at clicked coordinates
+        const pieceAtLocation = Object.values(state.pieces).find(piece => 
+            piece.coords[0] === coords[0] && piece.coords[1] === coords[1]
+        );
+        
+        // Handle portal swap target selection (existing logic)
+        if (this.portalSwapMode.enabled && this.portalSwapMode.sourcePiece) {
+            const sourcePiece = state.pieces[this.portalSwapMode.sourcePiece];
+            
+            if (pieceAtLocation && 
+                pieceAtLocation.type === 'Portal' && 
+                pieceAtLocation.player === state.currentPlayer &&
+                pieceAtLocation.id !== this.portalSwapMode.sourcePiece) {
+                
+                // Execute portal swap move (existing logic)
+                const portalSwapMove = {
+                    type: 'portal_swap' as const,
+                    fromCoords: sourcePiece.coords,
+                    toCoords: pieceAtLocation.coords,
+                    pieceId: sourcePiece.id,
+                    playerId: state.currentPlayer
+                };
+                
+                this.gameManager?.handleMoveIntent({
+                    coords: coords,
+                    type: 'click' as const,
+                    meta: { portalSwap: true, move: portalSwapMove }
+                });
+                
+                // Reset portal swap mode
+                this.portalSwapMode.enabled = false;
+                this.portalSwapMode.sourcePiece = null;
+                this.showMessage('Portal swap executed!');
+                
+                console.log('🔄 Portal swap executed:', sourcePiece.id, '↔️', pieceAtLocation.id);
+                return;
+            } else {
+                // Cancel portal swap mode
+                this.portalSwapMode.enabled = false;
+                this.portalSwapMode.sourcePiece = null;
+                this.showMessage('Portal swap cancelled');
+                
+                if (!pieceAtLocation || pieceAtLocation.type !== 'Portal') {
+                    console.log('❌ Portal swap cancelled: Invalid target');
+                }
+            }
+        }
+        
+        // Handle piece selection for action buttons
+        if (pieceAtLocation && pieceAtLocation.player === state.currentPlayer) {
+            this.selectedPieceId = pieceAtLocation.id;
+            logger.debug('UI: Selected piece:', pieceAtLocation.id, 'at:', coords);
+            console.log('🔍 DEBUG: Piece selected for UI:', pieceAtLocation.type, 'at', coords);
+            
+            // Show action buttons
+            console.log('🔍 DEBUG: Calling showActionButtons for UI...');
+            this.showActionButtons(pieceAtLocation);
+            console.log('🔍 DEBUG: showActionButtons for UI completed');
+        } else {
+            // Deselect piece
+            this.selectedPieceId = null;
+            this.hideActionButtons();
+        }
     }
 
     /**

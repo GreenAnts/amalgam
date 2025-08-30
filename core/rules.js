@@ -490,11 +490,25 @@ export function applyMove(state, move, pieceDefs) {
     }
     // Track destroyed pieces from the attack result
     let destroyedPieces = [];
-    if (move.type !== 'place' && move.type !== 'portal_swap' && move.toCoords) {
-        const attackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
-        newState.board = attackResult.board;
-        newState.pieces = attackResult.pieces;
-        destroyedPieces = attackResult.destroyedPieces || [];
+    if (move.type !== 'place' && move.toCoords) {
+        if (move.type === 'portal_swap' && move.fromCoords) {
+            // For portal swap, apply combat at both positions since both pieces moved
+            const fromAttackResult = performAutomaticAttack(newState, move.fromCoords, pieceDefs);
+            newState.board = fromAttackResult.board;
+            newState.pieces = fromAttackResult.pieces;
+            destroyedPieces = fromAttackResult.destroyedPieces || [];
+            const toAttackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
+            newState.board = toAttackResult.board;
+            newState.pieces = toAttackResult.pieces;
+            destroyedPieces = [...destroyedPieces, ...(toAttackResult.destroyedPieces || [])];
+        }
+        else {
+            // Standard movement - apply combat at destination only
+            const attackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
+            newState.board = attackResult.board;
+            newState.pieces = attackResult.pieces;
+            destroyedPieces = attackResult.destroyedPieces || [];
+        }
     }
     return {
         ok: true,
@@ -654,14 +668,33 @@ function findNexusFormations(state, playerId) {
  * @returns Path coordinates or null if no path
  */
 function findGoldenLinePath(board, fromCoords, toCoords) {
-    // Simple pathfinding - this would need to be more sophisticated
-    // For now, just check if there's a direct connection
-    const connections = getGoldenLineConnections(board, fromCoords);
-    const hasDirectConnection = connections.some(conn => conn[0] === toCoords[0] && conn[1] === toCoords[1]);
-    if (hasDirectConnection) {
-        return [fromCoords, toCoords];
+    // Use breadth-first search to find path along golden line connections
+    const queue = [{ coords: fromCoords, path: [fromCoords] }];
+    const visited = new Set();
+    while (queue.length > 0) {
+        const current = queue.shift();
+        const coordStr = `${current.coords[0]},${current.coords[1]}`;
+        if (visited.has(coordStr)) {
+            continue;
+        }
+        visited.add(coordStr);
+        // Check if we've reached the destination
+        if (current.coords[0] === toCoords[0] && current.coords[1] === toCoords[1]) {
+            return current.path;
+        }
+        // Add connected golden line positions to queue
+        const connections = getGoldenLineConnections(board, current.coords);
+        for (const connection of connections) {
+            const connStr = `${connection[0]},${connection[1]}`;
+            if (!visited.has(connStr)) {
+                queue.push({
+                    coords: connection,
+                    path: [...current.path, connection]
+                });
+            }
+        }
     }
-    return null;
+    return null; // No path found
 }
 /**
  * Find phasing path between two coordinates
@@ -909,9 +942,19 @@ export function getLegalMovesForPiece(state, piece, pieceDefs) {
             return formation.pieces.some(nexusCoords => areAdjacent(piece.coords, nexusCoords));
         });
         if (isAdjacentToNexus) {
-            // Find all valid nexus destinations
+            // Find all valid nexus destinations - only from formations the piece is actually adjacent to
             const nexusDestinations = new Set();
             for (const formation of nexusFormations) {
+                // Skip formations that this piece is part of (same logic as validation)
+                const isPartOfThisFormation = formation.pieces.some(nexusCoords => piece.coords[0] === nexusCoords[0] && piece.coords[1] === nexusCoords[1]);
+                if (isPartOfThisFormation) {
+                    continue;
+                }
+                // Check if this piece is actually adjacent to THIS specific formation
+                const isAdjacentToThisFormation = formation.pieces.some(nexusCoords => areAdjacent(piece.coords, nexusCoords));
+                if (!isAdjacentToThisFormation) {
+                    continue;
+                }
                 for (const nexusCoords of formation.pieces) {
                     const adjacentToNexus = getAdjacentCoords(nexusCoords);
                     for (const dest of adjacentToNexus) {
@@ -940,23 +983,27 @@ export function getLegalMovesForPiece(state, piece, pieceDefs) {
     // Portal-specific movements
     if (pieceDef.type === 'Portal') {
         // Portal standard movement (already handled above with golden line restriction)
-        // Portal line movement
-        const connections = getGoldenLineConnections(state.board, piece.coords);
-        for (const connection of connections) {
-            if (isEmptyIntersection(state.board, connection)) {
-                // Check if path is clear
-                const path = findGoldenLinePath(state.board, piece.coords, connection);
-                if (path && path.length > 0) {
-                    const isPathClear = path.every(pathCoords => areAdjacent(pathCoords, piece.coords) || isEmptyIntersection(state.board, pathCoords));
-                    if (isPathClear) {
-                        moves.push({
-                            type: 'portal_line',
-                            fromCoords: piece.coords,
-                            toCoords: connection,
-                            pieceId: piece.id,
-                            playerId: piece.player
-                        });
-                    }
+        // Portal line movement - check all golden line positions for reachability
+        const allGoldenPositions = state.board.goldenLineIntersections;
+        for (const goldenPos of allGoldenPositions) {
+            // Skip current position and occupied positions
+            if ((goldenPos[0] === piece.coords[0] && goldenPos[1] === piece.coords[1]) ||
+                !isEmptyIntersection(state.board, goldenPos)) {
+                continue;
+            }
+            // Check if there's a golden line path to this position
+            const path = findGoldenLinePath(state.board, piece.coords, goldenPos);
+            if (path && path.length > 1) { // Path exists and is longer than just the starting position
+                // Check if all intermediate positions in path are clear (excluding start and end)
+                const isPathClear = path.slice(1, -1).every(pathCoords => isEmptyIntersection(state.board, pathCoords));
+                if (isPathClear) {
+                    moves.push({
+                        type: 'portal_line',
+                        fromCoords: piece.coords,
+                        toCoords: goldenPos,
+                        pieceId: piece.id,
+                        playerId: piece.player
+                    });
                 }
             }
         }

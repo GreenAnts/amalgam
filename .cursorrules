@@ -1,0 +1,315 @@
+# 🎯 **LLM Agent Guide: Amalgam Game Development**
+
+## **📋 Quick Command Format**
+
+For any feature implementation, use this exact format:
+```
+"Implement [FEATURE NAME] logic gameplay and accompanied tests - according to .cursorrules methodology."
+```
+
+Examples:
+- `"Implement fireball ability logic gameplay and accompanied tests - according to .cursorrules methodology."`
+- `"Implement nexus movement logic gameplay and accompanied tests - according to .cursorrules methodology."`
+- `"Implement combat system logic gameplay and accompanied tests - according to .cursorrules methodology."`
+
+---
+
+## **🚀 Mandatory 5-Step Implementation Process**
+
+### **Step 1: Analysis & Planning**
+1. **Read game rules** in `data/game-rules/amalgam_complete_rules.json`
+2. **Identify implementation location** in `core/rules-implementation-guide.ts` 
+3. **Check existing code** in `core/rules.ts` for patterns
+4. **Plan test structure** in `tests/features/[feature-name]-test.html`
+
+### **Step 2: Core Implementation**
+1. **Find function stub** in `core/rules.ts` (search for feature name)
+2. **Follow detailed comments** in `core/rules-implementation-guide.ts`
+3. **Use existing patterns** (e.g., `validateStandardMove` for validation)
+4. **Return proper `MoveResult`** format: `{ ok: boolean, reason?: string }`
+
+### **Step 3: Test Implementation**
+1. **Create/update** test file in `tests/features/[feature-name]-test.html`
+2. **Follow test template** from existing feature tests
+3. **Test positive cases** (valid inputs should pass)
+4. **Test negative cases** (invalid inputs should fail with clear errors)
+5. **Add navigation** back to tests.html hub
+
+### **Step 4: Integration**
+1. **Update main test hub** `tests.html` with new test link
+2. **Add visual feedback** if UI-related (use graphics.ts functions)
+3. **Test in main application** at `http://localhost:8000/`
+4. **Verify performance** (no delays > 200ms)
+
+### **Step 5: Validation & Documentation**
+1. **Run comprehensive tests** to check for regressions
+2. **Verify main game functionality** works correctly
+3. **Update implementation guide** if new patterns emerged
+4. **Report completion** with test results and next suggestions
+
+---
+
+## **📁 Critical File Structure**
+
+### **Core Game Logic**
+```
+core/
+├── rules.ts                           # MAIN IMPLEMENTATION (edit here)
+├── rules-implementation-guide.ts      # Detailed guidance (reference only)
+├── board.ts                          # Board utilities (extend if needed)
+└── types.ts                          # Type definitions (extend if needed)
+```
+
+### **Testing Structure**
+```
+tests/
+├── tests.html                       # MAIN HUB (always update navigation)
+├── comprehensive-game-mechanics-test.html  # Complete test suite
+├── features/                         # Individual feature tests
+│   ├── [feature-name]-test.html     # Must include navigation header
+│   └── template: fireball-test.html # Copy structure from this
+└── [legacy-folders]/               # Ignore these
+```
+
+### **UI Components**
+```
+ui/
+├── graphics.ts                       # Visual effects (renderSelectionHighlight, etc.)
+├── interactions.ts                   # User input handling
+└── style.css                        # Styling
+```
+
+---
+
+## **🎮 Game Implementation Priorities**
+
+### **Phase 1: Movement System (IN PROGRESS)**
+1. ✅ **Standard Movement** - COMPLETED
+2. ⏳ **Nexus Movement** - Ready for implementation
+3. ⏳ **Portal Movement Types** - Portal swap, line, standard, phasing
+
+### **Phase 2: Combat System**
+1. ⏳ **Standard Combat** - Auto-combat after movement
+2. ⏳ **Combat Immunity** - Portal immunity rules
+3. ⏳ **Combat Resolution** - Piece destruction logic
+
+### **Phase 3: Ability System**
+1. ⏳ **Fireball** - Ruby formation line attack
+2. ⏳ **Tidal Wave** - Pearl formation area attack  
+3. ⏳ **Sap** - Amber formation debuff
+4. ⏳ **Launch** - Jade formation movement boost
+
+### **Phase 4: Victory System**
+1. ⏳ **Objective Victory** - Void reaches enemy Amalgam
+2. ⏳ **Elimination Victory** - Destroy all non-Portal pieces
+3. ⏳ **Game End Handling** - Clean game state transitions
+
+---
+
+## **🔧 Implementation Templates**
+
+### **Function Implementation Pattern**
+```typescript
+export function newFeatureFunction(state: GameState, move: Move, pieceDefs: PieceDefinitions): MoveResult {
+    // Step 1: Validate inputs
+    if (!move || !state) {
+        return { ok: false, reason: 'Invalid inputs' };
+    }
+    
+    // Step 2: Check game state conditions
+    if (state.gamePhase !== 'gameplay') {
+        return { ok: false, reason: 'Feature only available during gameplay' };
+    }
+    
+    // Step 3: Implement specific logic
+    // ... your implementation here ...
+    
+    // Step 4: Return result
+    return { ok: true };
+}
+```
+
+### **Test File Template**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>[Feature] Tests</title>
+    <!-- Copy styles from existing feature tests -->
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header (REQUIRED) -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>🔥 [Feature] Tests</h1>
+        </div>
+        
+        <!-- Test grid and implementation -->
+    </div>
+    
+    <script type="module">
+        // Test implementation following existing patterns
+    </script>
+</body>
+</html>
+```
+
+---
+
+## **⚡ Performance Requirements**
+
+### **Response Time Standards**
+- **User interactions**: < 200ms response
+- **AI move calculation**: < 1000ms  
+- **Visual feedback**: Immediate (< 50ms)
+- **Test execution**: < 5s per test suite
+
+### **Optimization Guidelines**
+1. **Cache calculations** where possible
+2. **Use efficient algorithms** (avoid O(n²) unless necessary)
+3. **Batch DOM updates** for visual effects
+4. **Minimize canvas redraws** in graphics functions
+5. **Profile performance** if delays exceed standards
+
+---
+
+## **🎨 Visual Feedback Standards**
+
+### **Required Visual Elements**
+- **Selection highlight**: Green pulsing ring (use `renderSelectionHighlight`)
+- **Valid moves**: Green dots (use `renderValidMoveIndicators`) 
+- **Hover effects**: White rings (use `renderHoverEffect`)
+- **Error feedback**: Red indicators for invalid moves
+
+### **Integration Points**
+- **Main game**: Integrate in `main.ts` render loop
+- **Test pages**: Use for interactive demonstrations
+- **Canvas updates**: Call graphics functions after state changes
+
+---
+
+## **🛠️ Common Implementation Patterns**
+
+### **Move Validation**
+```typescript
+// Always follow this pattern for validation
+const validation = isValidMove(state, move, pieceDefs);
+if (!validation.ok) {
+    return { passed: false, error: `Move rejected: ${validation.reason}` };
+}
+```
+
+### **State Creation for Tests**
+```typescript
+const testState = {
+    gamePhase: 'gameplay',
+    currentPlayer: 'squares',
+    pieces: { /* test pieces */ },
+    board: GameModules.board.createBoard(boardData),
+    moveHistory: [],
+    winner: null
+};
+```
+
+### **Error Handling**
+```typescript
+try {
+    // Implementation code
+    return { passed: true };
+} catch (error) {
+    return { passed: false, error: error.message };
+}
+```
+
+---
+
+## **🎯 Critical Rules for LLM Agents**
+
+### **DO:**
+- ✅ **Always add navigation** to tests.html in new test pages
+- ✅ **Follow the 5-step process** exactly as specified
+- ✅ **Test both positive and negative cases**
+- ✅ **Update main test hub** when adding new tests
+- ✅ **Use existing patterns** from working implementations
+- ✅ **Profile performance** if any delays are noticed
+
+### **DON'T:**
+- ❌ **Never create files outside** the specified structure
+- ❌ **Don't skip test implementation** - tests are mandatory
+- ❌ **Don't ignore navigation** - every test page needs header links
+- ❌ **Don't create new documentation** - everything goes in .cursorrules
+- ❌ **Don't break existing functionality** - run regression tests
+
+---
+
+## **🔍 Debugging Workflow**
+
+### **When Tests Fail:**
+1. **Check console errors** in browser dev tools
+2. **Verify module imports** are correct
+3. **Test with minimal input** to isolate the problem
+4. **Compare with working functions** (e.g., validateStandardMove)
+5. **Use test error messages** for debugging guidance
+
+### **When Main Game Fails:**
+1. **Check visual indicators** work in test pages first
+2. **Verify performance** with browser profiler
+3. **Test incrementally** - add features one at a time
+4. **Check integration points** (main.ts, gameManager.ts)
+
+---
+
+## **📊 Success Metrics**
+
+### **Feature Implementation Complete When:**
+- ✅ Core logic implemented and tested
+- ✅ Comprehensive test suite passing
+- ✅ Main application working with feature
+- ✅ Performance meets standards (< 200ms response)
+- ✅ Visual feedback integrated (if applicable)
+- ✅ No regressions in existing functionality
+
+### **Reporting Template:**
+```
+## ✅ [FEATURE] Implementation Complete
+
+**Core Logic:** ✅ Implemented in core/rules.ts - [function name]
+**Tests:** ✅ [X/Y] tests passing in tests/features/[feature]-test.html
+**Main Game:** ✅ Feature working in gameplay at http://localhost:8000/
+**Performance:** ✅ Response time < 200ms verified
+**Navigation:** ✅ Test page integrated into tests.html hub
+
+**Next Suggested Feature:** [next priority from Phase list]
+```
+
+---
+
+## **🎮 Current Game Status**
+
+### **✅ WORKING FEATURES:**
+- Human vs AI setup phase
+- Pre-placed pieces (Amalgam, Void, Portal)
+- Standard movement with Portal restrictions
+- Board coordinate system and golden line network
+- Visual selection highlights and move indicators (in tests)
+- AI gameplay continuation after setup
+
+### **🔄 CURRENT ISSUES TO FIX:**
+- Visual indicators not working in main game (only in tests)
+- Click performance delay (~1 second response time)
+- Test navigation integration incomplete
+
+### **⏳ READY FOR IMPLEMENTATION:**
+- Nexus movement (golden line network traversal)
+- Portal movement variants (swap, line, standard, phasing)
+- Combat system (automatic after movement)
+- Ability system (Fireball, Tidal Wave, Sap, Launch)
+
+---
+
+**Use this guide as the single source of truth for all Amalgam development. Follow the 5-step process and command format exactly for consistent, successful implementations.** 🚀

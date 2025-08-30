@@ -24,6 +24,8 @@ export class InteractionManager {
     // State
     private selectedCoords: Vector2 | null = null;
     private hoveredCoords: Vector2 | null = null;
+    private validMoves: Vector2[] = [];
+    private currentPlayer: string | null = null;
     
     // Event listeners
     private boundHandleClick: (event: MouseEvent) => void;
@@ -226,7 +228,16 @@ export class InteractionManager {
         // Update selected coordinates
         this.selectedCoords = coords;
         
-        logger.debug('Selection at coordinates:', coords);
+        // Calculate valid moves for selected piece (basic implementation)
+        // For now, just show adjacent coordinates as valid moves
+        // This should be enhanced to use actual game rule validation
+        this.validMoves = this.getAdjacentCoords(coords).filter(adjCoords => {
+            // Basic validation: within board bounds
+            const [x, y] = adjCoords;
+            return x >= -12 && x <= 12 && y >= -12 && y <= 12;
+        });
+        
+        logger.debug('Selection at coordinates:', coords, 'Valid moves:', this.validMoves);
         
         // Emit selection callback
         if (this.selectCallback) {
@@ -269,21 +280,7 @@ export class InteractionManager {
         this.selectedCoords = coords;
     }
 
-    /**
-     * Get selected coordinates
-     * @returns Selected coordinates
-     */
-    getSelectedCoords(): Vector2 | null {
-        return this.selectedCoords;
-    }
 
-    /**
-     * Clear selection
-     */
-    clearSelection(): void {
-        this.selectedCoords = null;
-        this.hoveredCoords = null;
-    }
 
     /**
      * Enable or disable interactions
@@ -418,6 +415,58 @@ export class InteractionManager {
     }
 
     /**
+     * Update valid moves for the currently selected piece
+     * @param validMoves - Array of valid move coordinates
+     */
+    updateValidMoves(validMoves: Vector2[]): void {
+        this.validMoves = validMoves;
+    }
+
+    /**
+     * Set the current player (for piece ownership checking)
+     * @param playerId - Current player ID
+     */
+    setCurrentPlayer(playerId: string): void {
+        this.currentPlayer = playerId;
+    }
+
+    /**
+     * Get the currently selected coordinates
+     * @returns Selected coordinates or null
+     */
+    getSelectedCoords(): Vector2 | null {
+        return this.selectedCoords;
+    }
+
+    /**
+     * Get the currently hovered coordinates
+     * @returns Hovered coordinates or null
+     */
+    getHoveredCoords(): Vector2 | null {
+        return this.hoveredCoords;
+    }
+
+    /**
+     * Get valid move coordinates
+     * @returns Array of valid move coordinates
+     */
+    getValidMoves(): Vector2[] {
+        return this.validMoves;
+    }
+
+    /**
+     * Clear selection and valid moves
+     */
+    clearSelection(): void {
+        this.selectedCoords = null;
+        this.validMoves = [];
+        
+        if (this.selectCallback) {
+            this.selectCallback(null);
+        }
+    }
+
+    /**
      * Clean up resources
      */
     destroy(): void {
@@ -434,6 +483,8 @@ export class InteractionManager {
         // Clear state
         this.selectedCoords = null;
         this.hoveredCoords = null;
+        this.validMoves = [];
+        this.currentPlayer = null;
         
         logger.debug('InteractionManager destroyed');
     }

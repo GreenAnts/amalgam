@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Movement Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Portal Movement Implementation Verification</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        // Load game modules
+        const GameModules = await import('./core/rules.js');
+        const BoardModule = await import('./core/board.js');
+        const BoardData = await import('./data/board-data.json', { assert: { type: 'json' } });
+        const PieceDefs = await import('./data/piece-definitions.json', { assert: { type: 'json' } });
+
+        const results = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        addResult('🚀 Starting Portal Movement Verification...', 'info');
+
+        try {
+            // Create test board
+            const board = BoardModule.createBoard(BoardData.default);
+            addResult('✅ Board created successfully', 'pass');
+
+            // Create test state
+            const testState = {
+                gamePhase: 'gameplay',
+                currentPlayer: 'circles',
+                pieces: {},
+                board: board,
+                moveHistory: [],
+                winner: null,
+                setupTurn: 17
+            };
+
+            // Add test pieces
+            testState.pieces['ruby1'] = {
+                id: 'ruby1',
+                type: 'Ruby',
+                player: 'circles',
+                coords: [0, 6] // Golden line position
+            };
+            testState.pieces['portal1'] = {
+                id: 'portal1',
+                type: 'Portal',
+                player: 'circles',
+                coords: [6, 6]
+            };
+
+            // Place pieces on board
+            testState.board = BoardModule.placePiece(testState.board, [0, 6], 'ruby1');
+            testState.board = BoardModule.placePiece(testState.board, [6, 6], 'portal1');
+
+            addResult('✅ Test pieces placed successfully', 'pass');
+
+            // Test Portal Swap validation
+            const swapMove = {
+                type: 'portal_swap',
+                playerId: 'circles',
+                fromCoords: [0, 6],
+                toCoords: [6, 6]
+            };
+
+            const swapResult = GameModules.isValidMove(testState, swapMove, PieceDefs.default);
+            
+            if (swapResult.ok) {
+                addResult('✅ Portal Swap validation PASSED', 'pass');
+            } else {
+                addResult(`❌ Portal Swap validation FAILED: ${swapResult.reason}`, 'fail');
+            }
+
+            // Test Portal Line validation
+            const lineMove = {
+                type: 'portal_line',
+                playerId: 'circles',
+                fromCoords: [6, 6],
+                toCoords: [0, 6]
+            };
+
+            const lineResult = GameModules.isValidMove(testState, lineMove, PieceDefs.default);
+            
+            if (lineResult.ok) {
+                addResult('✅ Portal Line validation PASSED', 'pass');
+            } else {
+                addResult(`❌ Portal Line validation FAILED: ${lineResult.reason}`, 'fail');
+            }
+
+            // Test Portal Standard validation
+            const standardMove = {
+                type: 'portal_standard',
+                playerId: 'circles',
+                fromCoords: [6, 6],
+                toCoords: [6, 7] // Adjacent golden line position
+            };
+
+            const standardResult = GameModules.isValidMove(testState, standardMove, PieceDefs.default);
+            
+            if (standardResult.ok) {
+                addResult('✅ Portal Standard validation PASSED', 'pass');
+            } else {
+                addResult(`❌ Portal Standard validation FAILED: ${standardResult.reason}`, 'fail');
+            }
+
+            // Test Portal Phasing validation
+            const phasingMove = {
+                type: 'portal_phasing',
+                playerId: 'circles',
+                fromCoords: [6, 6],
+                toCoords: [6, 8] // Through the ruby piece
+            };
+
+            const phasingResult = GameModules.isValidMove(testState, phasingMove, PieceDefs.default);
+            
+            if (phasingResult.ok) {
+                addResult('✅ Portal Phasing validation PASSED', 'pass');
+            } else {
+                addResult(`❌ Portal Phasing validation FAILED: ${phasingResult.reason}`, 'fail');
+            }
+
+            addResult('🎯 Portal Movement Verification Complete!', 'info');
+
+        } catch (error) {
+            addResult(`❌ Error during verification: ${error.message}`, 'fail');
+            console.error('Verification error:', error);
+        }
+    </script>
+</body>
+</html>

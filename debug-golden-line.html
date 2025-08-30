@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Line Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-info { margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Golden Line Intersection Debug</h1>
+    <div id="debug-output"></div>
+
+    <script type="module">
+        const BoardModule = await import('./core/board.js');
+        const BoardData = await import('./data/board-data.json', { assert: { type: 'json' } });
+
+        const debugOutput = document.getElementById('debug-output');
+
+        function addDebug(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-info ${type}`;
+            div.textContent = message;
+            debugOutput.appendChild(div);
+        }
+
+        try {
+            addDebug('🚀 Starting Golden Line Debug...', 'info');
+
+            // Create board
+            const board = BoardModule.createBoard(BoardData.default);
+            addDebug('✅ Board created successfully', 'success');
+
+            // Check golden line intersections
+            addDebug(`📊 Total golden line intersections: ${board.goldenLineIntersections.length}`, 'info');
+
+            // Test specific coordinates
+            const testCoords = [
+                [0, 6], // Should be golden line
+                [6, 6], // Should be golden line
+                [1, 1], // Should NOT be golden line
+                [0, 0], // Should be golden line
+                [12, 0], // Should be golden line
+            ];
+
+            testCoords.forEach(coord => {
+                const isGolden = BoardModule.isGoldenLineIntersection(board, coord);
+                const status = isGolden ? '✅ GOLDEN' : '❌ NOT GOLDEN';
+                addDebug(`${status} [${coord[0]}, ${coord[1]}]`, isGolden ? 'success' : 'error');
+            });
+
+            // Show some golden line intersections
+            addDebug('📋 First 10 golden line intersections:', 'info');
+            board.goldenLineIntersections.slice(0, 10).forEach(coord => {
+                addDebug(`  [${coord[0]}, ${coord[1]}]`, 'info');
+            });
+
+        } catch (error) {
+            addDebug(`❌ Error: ${error.message}`, 'error');
+            console.error('Debug error:', error);
+        }
+    </script>
+</body>
+</html>
