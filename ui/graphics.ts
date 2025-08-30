@@ -808,4 +808,4 @@ function renderGemSquare(context: RenderContext, x: number, y: number, size: num
 
 
 
-export { AMALGAM_COLORS, GRID_SIZE };
+export { AMALGAM_COLORS, GRID_SIZE, createBoardDictionary, createGoldenConnectionsSet };

@@ -658,4 +658,4 @@ function renderGemSquare(context, x, y, size, color) {
     ctx.fillRect(-innerSize * 0.35, -innerSize * 0.35, innerSize * 0.2, innerSize * 0.2);
     ctx.restore();
 }
-export { AMALGAM_COLORS, GRID_SIZE };
+export { AMALGAM_COLORS, GRID_SIZE, createBoardDictionary, createGoldenConnectionsSet };

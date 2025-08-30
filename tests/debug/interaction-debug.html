@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Phase Interaction Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .debug-section {
+            border: 2px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .canvas-container {
+            border: 2px solid #007bff;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 650px;
+            overflow: auto;
+            max-width: 100%;
+            background: #f8f9fa;
+        }
+        
+        .canvas-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border: 1px solid #ccc;
+        }
+        .debug-output {
+            background: #f8f9fa;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .primary { background: #28a745; }
+        .primary:hover { background: #218838; }
+        .warning { background: #ffc107; color: #212529; }
+        .warning:hover { background: #e0a800; }
+
+        /* Navigation Bar Styles */
+        .nav-bar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+
+        .nav-left, .nav-right {
+            flex: 1;
+        }
+
+        .nav-center {
+            flex: 2;
+            text-align: center;
+        }
+
+        .nav-center h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .nav-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-content">
+            <div class="nav-left">
+                <a href="../../tests.html" class="nav-link">
+                    🏠 Back to Test Hub
+                </a>
+            </div>
+            <div class="nav-center">
+                <h2>🔧 Setup Phase Interaction Debug</h2>
+            </div>
+            <div class="nav-right">
+                <a href="../../index.html" class="nav-link">
+                    🎮 Back to Game
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>🔍 Setup Phase Interaction Debug Tool</h1>
+        <p>This tool diagnoses why human players cannot place pieces during setup phase.</p>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="primary" onclick="startHumanVsHumanTest()">🎮 Test Human vs Human Setup</button>
+            <button class="primary" onclick="startHumanVsAITest()">🤖 Test Human vs AI Setup</button>
+            <button class="warning" onclick="checkInteractionState()">⚙️ Check Interaction State</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="debug-grid">
+            <div class="debug-section">
+                <h3>🎮 Game State Debug</h3>
+                <p>Monitor game initialization and state changes</p>
+                <div id="game-canvas-container" class="canvas-container"></div>
+                <div>
+                    <button onclick="logGameState()">📊 Log Current Game State</button>
+                    <button onclick="logInteractionManager()">🔧 Log InteractionManager</button>
+                </div>
+                <div id="game-debug" class="debug-output"></div>
+            </div>
+            
+            <div class="debug-section">
+                <h3>🖱️ Interaction Debug</h3>
+                <p>Monitor click events and move intent processing</p>
+                <div>
+                    <button onclick="simulateCanvasClick()">🖱️ Simulate Canvas Click</button>
+                    <button onclick="testDirectInteractionManager()">⚡ Test Direct InteractionManager</button>
+                    <button onclick="inspectCanvasListeners()">🔍 Inspect Canvas Listeners</button>
+                    <button onclick="testMoveIntentFlow()">🔄 Test Move Intent Flow</button>
+                </div>
+                <div id="interaction-debug" class="debug-output"></div>
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>📊 Diagnostic Results</h3>
+            <div style="margin-bottom: 10px;">
+                <button onclick="copyResults()" class="copy-btn">📋 Copy Results</button>
+            </div>
+            <div id="diagnostic-results" class="debug-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        const cacheBust = Date.now();
+        
+        let testGame = null;
+        let debugCanvas = null;
+        
+        function log(section, message, data = null) {
+            const debugDiv = document.getElementById(section);
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            debugDiv.innerHTML += logEntry + '\n\n';
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(logEntry);
+        }
+
+        function logDiagnostic(message, data = null) {
+            log('diagnostic-results', message, data);
+        }
+
+        window.clearResults = function() {
+            ['game-debug', 'interaction-debug', 'diagnostic-results'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            document.getElementById('game-canvas-container').innerHTML = '';
+            
+            // Reset console.log
+            if (window.originalConsoleLog) {
+                console.log = window.originalConsoleLog;
+                window.originalConsoleLog = null;
+            }
+        };
+
+        window.startHumanVsHumanTest = async function() {
+            try {
+                logDiagnostic('🚀 Starting Human vs Human setup test...');
+                
+                // Capture console logs to see InteractionManager debug output  
+                if (!window.originalConsoleLog) {
+                    window.originalConsoleLog = console.log;
+                    let capturing = false;
+                    console.log = function(...args) {
+                        window.originalConsoleLog.apply(console, args);
+                        if (!capturing && args[0] && typeof args[0] === 'string' && (args[0].includes('🔧') || args[0].includes('🔥'))) {
+                            capturing = true;
+                            try {
+                                logDiagnostic('📋 Console: ' + args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '));
+                            } finally {
+                                capturing = false;
+                            }
+                        }
+                    };
+                }
+                
+                // Initialize game like main.js does
+                const { AmalgamGame } = await import('../../main.js');
+                
+                // Create a test container
+                const container = document.getElementById('game-canvas-container');
+                container.innerHTML = '<div id="board-container" style="width: 100%; max-width: 800px; height: 600px; margin: 0 auto; display: flex; justify-content: center; align-items: center;"></div>';
+                
+                // Create a minimal UI structure
+                if (!document.getElementById('status')) {
+                    container.innerHTML += `
+                        <div style="display: none;">
+                            <div id="status">Status</div>
+                            <div id="score">Score</div>
+                            <button id="new-game">New Game</button>
+                            <button id="undo">Undo</button>
+                            <div id="piece-selection-panel"></div>
+                        </div>
+                    `;
+                }
+                
+                testGame = new AmalgamGame();
+                await testGame.initialize();
+                
+                // Force human vs human game
+                testGame.gameManager.startNewGame({
+                    player1: { type: 'human', name: 'Circles' },
+                    player2: { type: 'human', name: 'Squares' }
+                });
+                
+                logDiagnostic('✅ Human vs Human game initialized');
+                
+                // Test interaction state
+                setTimeout(() => {
+                    checkInteractionState();
+                }, 1000);
+                
+            } catch (error) {
+                logDiagnostic('❌ Human vs Human test failed:', error.message);
+                console.error(error);
+            }
+        };
+
+        window.startHumanVsAITest = async function() {
+            try {
+                logDiagnostic('🚀 Starting Human vs AI setup test...');
+                
+                // Similar to human vs human but with AI opponent
+                if (!testGame) {
+                    const { AmalgamGame } = await import('../../main.js');
+                    
+                    const container = document.getElementById('game-canvas-container');
+                    container.innerHTML = '<div id="board-container" style="width: 100%; max-width: 800px; height: 600px; margin: 0 auto; display: flex; justify-content: center; align-items: center;"></div>';
+                    
+                    if (!document.getElementById('status')) {
+                        container.innerHTML += `
+                            <div style="display: none;">
+                                <div id="status">Status</div>
+                                <div id="score">Score</div>
+                                <button id="new-game">New Game</button>
+                                <button id="undo">Undo</button>
+                                <div id="piece-selection-panel"></div>
+                            </div>
+                        `;
+                    }
+                    
+                    testGame = new AmalgamGame();
+                    await testGame.initialize();
+                }
+                
+                testGame.gameManager.startNewGame({
+                    player1: { type: 'human', name: 'Circles' },
+                    player2: { type: 'heuristic', name: 'AI Squares' }
+                });
+                
+                logDiagnostic('✅ Human vs AI game initialized');
+                
+                // Test interaction state
+                setTimeout(() => {
+                    checkInteractionState();
+                }, 1000);
+                
+            } catch (error) {
+                logDiagnostic('❌ Human vs AI test failed:', error.message);
+                console.error(error);
+            }
+        };
+
+        window.checkInteractionState = function() {
+            try {
+                if (!testGame || !testGame.gameManager) {
+                    logDiagnostic('❌ No test game available');
+                    return;
+                }
+
+                const gameManager = testGame.gameManager;
+                const state = gameManager.getState();
+                const interactionManager = gameManager.getInteractionManager();
+                
+                logDiagnostic('🔧 Interaction State Check:', {
+                    isGameActive: gameManager.isGameActive,
+                    isPaused: gameManager.isPaused,
+                    currentPlayer: gameManager.currentPlayer?.type + ' (' + gameManager.currentPlayer?.id + ')',
+                    gamePhase: state?.gamePhase,
+                    setupTurn: state?.setupTurn,
+                    interactionEnabled: interactionManager?.isEnabled(),
+                    hasInteractionCallbacks: {
+                        moveIntentCallback: !!interactionManager?.moveIntentCallback,
+                        hoverCallback: !!interactionManager?.hoverCallback,
+                        selectCallback: !!interactionManager?.selectCallback
+                    }
+                });
+
+                // Check if canvas has event listeners
+                const canvas = testGame.gameCanvas?.canvas;
+                if (canvas) {
+                    // Check for event listeners properly - addEventListener doesn't set onclick
+                    const hasListeners = canvas._listeners || canvas.hasAttribute('data-has-listeners');
+                    logDiagnostic('📊 Canvas Event Listeners:', {
+                        hasClickListener: hasListeners || typeof canvas.onclick === 'function',
+                        canvasElement: canvas.tagName,
+                        canvasSize: canvas.width + 'x' + canvas.height,
+                        note: 'addEventListener listeners may not be detectable'
+                    });
+                } else {
+                    logDiagnostic('❌ No canvas found');
+                }
+                
+            } catch (error) {
+                logDiagnostic('❌ Interaction state check failed:', error.message);
+            }
+        };
+
+        window.simulateCanvasClick = function() {
+            try {
+                if (!testGame || !testGame.gameCanvas) {
+                    logDiagnostic('❌ No test game or canvas available');
+                    return;
+                }
+
+                const canvas = testGame.gameCanvas.canvas;
+                const rect = canvas.getBoundingClientRect();
+                
+                logDiagnostic('🖱️ Canvas details before click:', {
+                    tagName: canvas.tagName,
+                    id: canvas.id,
+                    width: canvas.width,
+                    height: canvas.height,
+                    clientWidth: canvas.clientWidth,
+                    clientHeight: canvas.clientHeight,
+                    style_pointerEvents: canvas.style.pointerEvents,
+                    rect: {
+                        left: rect.left,
+                        top: rect.top,
+                        width: rect.width,
+                        height: rect.height
+                    }
+                });
+                
+                // Add a temporary direct event listener to test if events reach the canvas
+                let eventReceived = false;
+                const tempListener = (e) => {
+                    eventReceived = true;
+                    logDiagnostic('✅ Direct canvas listener received click event:', {
+                        clientX: e.clientX,
+                        clientY: e.clientY,
+                        target: e.target.tagName,
+                        isTrusted: e.isTrusted
+                    });
+                };
+                canvas.addEventListener('click', tempListener, { once: true });
+                
+                // Simulate click at center of canvas (should be 0,0 game coordinates)
+                const clickEvent = new MouseEvent('click', {
+                    clientX: rect.left + rect.width / 2,
+                    clientY: rect.top + rect.height / 2,
+                    bubbles: true
+                });
+
+                logDiagnostic('🖱️ Simulating canvas click at center');
+                canvas.dispatchEvent(clickEvent);
+                
+                // Check if our temporary listener received the event
+                setTimeout(() => {
+                    if (!eventReceived) {
+                        logDiagnostic('❌ Canvas click event did not reach canvas element');
+                    }
+                    canvas.removeEventListener('click', tempListener);
+                }, 100);
+                
+            } catch (error) {
+                logDiagnostic('❌ Canvas click simulation failed:', error.message);
+            }
+        };
+
+        window.testDirectInteractionManager = function() {
+            try {
+                if (!testGame || !testGame.gameManager) {
+                    logDiagnostic('❌ No test game available');
+                    return;
+                }
+
+                const interactionManager = testGame.gameManager.getInteractionManager();
+                if (!interactionManager) {
+                    logDiagnostic('❌ No interaction manager available');
+                    return;
+                }
+
+                logDiagnostic('⚡ Testing InteractionManager directly');
+                
+                // Check if we can access the canvas element
+                const canvas = testGame.gameCanvas.canvas;
+                logDiagnostic('📋 Canvas element check:', {
+                    canvasExists: !!canvas,
+                    interactionManagerEnabled: interactionManager.isEnabled()
+                });
+                
+                // Create a simulated mouse event as if it came from the canvas
+                const rect = canvas.getBoundingClientRect();
+                const simulatedEvent = new MouseEvent('click', {
+                    clientX: rect.left + rect.width / 2,
+                    clientY: rect.top + rect.height / 2,
+                    bubbles: true
+                });
+                
+                // Try to call the InteractionManager's handleClick method directly
+                // Note: This is accessing a private method for debugging
+                logDiagnostic('⚡ Attempting to call InteractionManager handleClick directly...');
+                
+                // We can't call private methods directly, so let's dispatch the event
+                // but first add some logging to see if the InteractionManager receives it
+                logDiagnostic('⚡ Dispatching event to canvas with InteractionManager listeners active');
+                canvas.dispatchEvent(simulatedEvent);
+                
+            } catch (error) {
+                logDiagnostic('❌ Direct InteractionManager test failed:', error.message);
+            }
+        };
+
+        window.inspectCanvasListeners = function() {
+            try {
+                if (!testGame || !testGame.gameCanvas) {
+                    logDiagnostic('❌ No test game or canvas available');
+                    return;
+                }
+
+                const canvas = testGame.gameCanvas.canvas;
+                
+                logDiagnostic('🔍 Canvas listener inspection:', {
+                    canvasId: canvas.id,
+                    canvasTagName: canvas.tagName,
+                    hasEventListeners: {
+                        // Check for common event listener patterns
+                        hasClickAttribute: canvas.onclick !== null,
+                        hasClickEventData: !!canvas._events || !!canvas.__events,
+                        // Try to get event listener count (not reliable cross-browser)
+                        hasListeners: typeof getEventListeners !== 'undefined' ? getEventListeners(canvas) : 'getEventListeners not available'
+                    },
+                    style: {
+                        pointerEvents: canvas.style.pointerEvents,
+                        position: canvas.style.position,
+                        zIndex: canvas.style.zIndex
+                    },
+                    computed: {
+                        pointerEvents: window.getComputedStyle(canvas).pointerEvents
+                    }
+                });
+
+                // Test if we can manually add a listener and have it work
+                let testListenerWorked = false;
+                const testListener = () => {
+                    testListenerWorked = true;
+                    logDiagnostic('✅ Manual test listener received event');
+                };
+                
+                canvas.addEventListener('click', testListener, { once: true });
+                
+                // Dispatch a test event
+                const testEvent = new MouseEvent('click', { bubbles: true });
+                canvas.dispatchEvent(testEvent);
+                
+                setTimeout(() => {
+                    logDiagnostic('🔍 Manual listener test result:', {
+                        testListenerWorked: testListenerWorked
+                    });
+                    
+                    // Force recreation of InteractionManager event listeners
+                    logDiagnostic('🔄 Attempting to force re-setup of InteractionManager...');
+                    const interactionManager = testGame.gameManager.getInteractionManager();
+                    if (interactionManager) {
+                        // We can't call private methods directly, but we can check if it's enabled
+                        logDiagnostic('🔄 InteractionManager enabled:', interactionManager.isEnabled());
+                        
+                        // Try reinitializing event listeners
+                        if (typeof interactionManager.reinitializeEventListeners === 'function') {
+                            interactionManager.reinitializeEventListeners();
+                            logDiagnostic('🔄 InteractionManager event listeners reinitialized!');
+                        } else {
+                            logDiagnostic('❌ reinitializeEventListeners method not available');
+                        }
+                    }
+                }, 100);
+
+            } catch (error) {
+                logDiagnostic('❌ Canvas listener inspection failed:', error.message);
+            }
+        };
+
+        window.testMoveIntentFlow = function() {
+            try {
+                if (!testGame || !testGame.gameManager) {
+                    logDiagnostic('❌ No test game available');
+                    return;
+                }
+
+                // Create a test move intent
+                const testMoveIntent = {
+                    coords: [0, 8], // Valid position for circles in setup
+                    type: 'click',
+                    meta: {
+                        source: 'debug-test',
+                        timestamp: Date.now()
+                    }
+                };
+
+                logDiagnostic('🔄 Testing move intent flow with:', testMoveIntent);
+                
+                // Call the move intent handler directly
+                testGame.gameManager.handleMoveIntent(testMoveIntent);
+                
+                logDiagnostic('✅ Move intent sent to game manager');
+                
+            } catch (error) {
+                logDiagnostic('❌ Move intent flow test failed:', error.message);
+            }
+        };
+
+        window.logGameState = function() {
+            try {
+                if (!testGame || !testGame.gameManager) {
+                    log('game-debug', '❌ No test game available');
+                    return;
+                }
+
+                const state = testGame.gameManager.getState();
+                log('game-debug', '📊 Current Game State:', state);
+                
+            } catch (error) {
+                log('game-debug', '❌ Failed to log game state:', error.message);
+            }
+        };
+
+        window.logInteractionManager = function() {
+            try {
+                const interactionManager = testGame?.gameManager?.getInteractionManager();
+                if (!testGame || !testGame.gameManager || !interactionManager) {
+                    log('game-debug', '❌ No interaction manager available');
+                    return;
+                }
+
+                const im = interactionManager;
+                log('game-debug', '🔧 InteractionManager State:', {
+                    enabled: im.isEnabled(),
+                    selectedCoords: im.getSelectedCoords(),
+                    canvasElement: im.canvasElement?.tagName || 'unknown'
+                });
+                
+            } catch (error) {
+                log('game-debug', '❌ Failed to log interaction manager:', error.message);
+            }
+        };
+
+        window.copyResults = function() {
+            try {
+                const diagnosticResults = document.getElementById('diagnostic-results');
+                const resultText = diagnosticResults.textContent || diagnosticResults.innerText;
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(resultText).then(() => {
+                        alert('Results copied to clipboard!');
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                        fallbackCopy(resultText);
+                    });
+                } else {
+                    fallbackCopy(resultText);
+                }
+            } catch (error) {
+                alert('Failed to copy results: ' + error.message);
+            }
+        };
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('Results copied to clipboard!');
+            } catch (err) {
+                alert('Copy failed. Please manually select and copy the results.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Auto-ready message
+        setTimeout(() => {
+            logDiagnostic('🔧 Setup Phase Interaction Debug tool ready.');
+            logDiagnostic('Click "Test Human vs Human Setup" to begin diagnosis.');
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -134,5 +134,17 @@
   {
     "globs": ["tests/**/*.html", "debug/**/*.html"],
     "rule": "Token Optimization: All error reporting must include selective copy buttons. Provide summary reports, detailed logs, and issue templates. Filter output by severity/component. Minimize context in error reports to essential data only."
+  },
+  {
+    "globs": ["tests/debug/**/*.html"],
+    "rule": "Debug Tool Integration: All debug tools must be integrated into main test suite navigation (tests.html). Include proper navigation bars with 'Back to Test Hub' and 'Back to Game' links. Fix canvas/display issues before integration. Test canvas sizing: container should accommodate full 800x800 canvas with proper scaling."
+  },
+  {
+    "globs": ["**/*"],
+    "rule": "LLM Testing Protocol: Before creating tests, run 'npm test' to check existing coverage. ALL tests must integrate with unified suite via consolidated-test-runner.js. Archive redundant tests to tests/.archived-tests/. Maintain 100% test score."
+  },
+  {
+    "globs": ["**/*"],
+    "rule": "Code Optimization: Review existing implementations before adding features. Prefer simple solutions over complex ones. Remove unused code regularly. Clean up backup files (.bak, .backup). Follow established patterns consistently."
   }
 ]

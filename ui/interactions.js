@@ -17,18 +17,26 @@ export class InteractionManager {
         // State
         this.selectedCoords = null;
         this.hoveredCoords = null;
+        logger.debug('InteractionManager constructor: initializing with canvas element');
         this.canvasElement = canvasElement;
         this.board = board;
         this.boundHandleClick = this.handleClick.bind(this);
         this.boundHandleMouseMove = this.handleMouseMove.bind(this);
         this.boundHandleMouseLeave = this.handleMouseLeave.bind(this);
-        this.setupEventListeners();
+        try {
+            this.setupEventListeners();
+        }
+        catch (error) {
+            logger.error('InteractionManager constructor: setupEventListeners failed:', error);
+        }
+        logger.debug('InteractionManager constructor: initialization complete');
     }
     /**
      * Set callback for move intents
      * @param callback - Callback function
      */
     setMoveIntentCallback(callback) {
+        logger.debug('InteractionManager.setMoveIntentCallback: Setting callback');
         this.moveIntentCallback = callback;
     }
     /**
@@ -49,6 +57,10 @@ export class InteractionManager {
      * Set up event listeners
      */
     setupEventListeners() {
+        logger.debug('InteractionManager.setupEventListeners: setting up event listeners on canvas', {
+            canvasId: this.canvasElement.id,
+            canvasTag: this.canvasElement.tagName
+        });
         this.canvasElement.addEventListener('click', this.boundHandleClick);
         this.canvasElement.addEventListener('mousemove', this.boundHandleMouseMove);
         this.canvasElement.addEventListener('mouseleave', this.boundHandleMouseLeave);
@@ -59,8 +71,15 @@ export class InteractionManager {
      * @param event - Click event
      */
     handleClick(event) {
-        if (!this.enabled)
+        logger.debug('InteractionManager.handleClick: received click event', {
+            targetId: event.target?.id,
+            canvasId: this.canvasElement.id,
+            enabled: this.enabled
+        });
+        if (!this.enabled) {
+            logger.debug('InteractionManager.handleClick: interactions disabled, ignoring click');
             return;
+        }
         // Convert canvas coordinates to game coordinates
         const rect = this.canvasElement.getBoundingClientRect();
         const scaleX = this.canvasElement.width / rect.width;
@@ -80,13 +99,24 @@ export class InteractionManager {
             coords: coords,
             type: 'click',
             meta: {
-                event: event,
-                timestamp: Date.now()
+                source: 'canvas-click',
+                timestamp: Date.now(),
+                clientX: event.clientX,
+                clientY: event.clientY
             }
         };
         // Emit move intent
         if (this.moveIntentCallback) {
-            this.moveIntentCallback(moveIntent);
+            logger.debug('InteractionManager.handleClick: calling moveIntentCallback with moveIntent:', moveIntent);
+            try {
+                this.moveIntentCallback(moveIntent);
+            }
+            catch (error) {
+                logger.error('InteractionManager.handleClick: moveIntentCallback failed:', error);
+            }
+        }
+        else {
+            logger.warn('InteractionManager.handleClick: no moveIntentCallback set');
         }
         // Handle selection
         this.handleSelection(coords);
@@ -217,13 +247,16 @@ export class InteractionManager {
      * @param enabled - Whether interactions are enabled
      */
     setEnabled(enabled) {
+        logger.debug('InteractionManager.setEnabled: setting enabled to', enabled);
         this.enabled = enabled;
         if (enabled) {
             this.canvasElement.style.pointerEvents = 'auto';
+            logger.debug('InteractionManager.setEnabled: pointer events set to auto');
         }
         else {
             this.canvasElement.style.pointerEvents = 'none';
             this.clearSelection();
+            logger.debug('InteractionManager.setEnabled: pointer events set to none');
         }
         logger.debug('Interactions enabled:', enabled);
     }
@@ -233,6 +266,19 @@ export class InteractionManager {
      */
     isEnabled() {
         return this.enabled;
+    }
+    /**
+     * Re-initialize event listeners (for debugging)
+     */
+    reinitializeEventListeners() {
+        console.log('🔄 InteractionManager.reinitializeEventListeners: removing and re-adding event listeners');
+        // Remove existing listeners
+        this.canvasElement.removeEventListener('click', this.boundHandleClick);
+        this.canvasElement.removeEventListener('mousemove', this.boundHandleMouseMove);
+        this.canvasElement.removeEventListener('mouseleave', this.boundHandleMouseLeave);
+        // Re-add listeners
+        this.setupEventListeners();
+        console.log('🔄 Event listeners reinitialized');
     }
     /**
      * Get intersection at coordinates

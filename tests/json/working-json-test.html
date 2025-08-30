@@ -101,7 +101,7 @@
     <div class="nav-bar">
         <div class="nav-content">
             <div class="nav-left">
-                <a href="../unified-test-navigation.html" class="nav-link">
+                <a href="../../tests.html" class="nav-link">
                     🏠 Back to Test Hub
                 </a>
             </div>
@@ -216,21 +216,23 @@
             const workingFiles = [
                 { path: '/data/board-data.json', name: 'Board Data' },
                 { path: '/data/piece-definitions.json', name: 'Piece Definitions' },
-                { path: '/game-rules/golden_lines.json', name: 'Golden Lines' },
-                { path: '/game-rules/board_positions.json', name: 'Board Positions' },
-                { path: '/game-rules/starting_positions.json', name: 'Starting Positions' },
-                { path: '/game-rules/piece_definitions.json', name: 'Game Rules Piece Definitions' }
+                { path: '/data/game-rules/golden_lines.json', name: 'Golden Lines' },
+                { path: '/data/game-rules/board_positions.json', name: 'Board Positions' },
+                { path: '/data/game-rules/starting_positions.json', name: 'Starting Positions' },
+                { path: '/data/game-rules/piece_definitions.json', name: 'Game Rules Piece Definitions' }
             ];
             
             totalTests = workingFiles.length;
             
+            // Add cache busting to ensure fresh loads
+            const cacheBust = Date.now();
             for (const file of workingFiles) {
-                await testJsonFile(file.path, file.name);
+                const cacheBustedPath = `${file.path}?v=${cacheBust}`;
+                await testJsonFile(cacheBustedPath, file.name);
             }
             
-            // Test amalgam_complete_rules with cache busting
-            const cacheBust = Date.now();
-            await testJsonFile(`/game-rules/amalgam_complete_rules.json?v=${cacheBust}`, 'Game Rules (cache busted)');
+            // Test amalgam_complete_rules with same cache buster
+            await testJsonFile(`/data/game-rules/amalgam_complete_rules.json?v=${cacheBust}`, 'Game Rules (cache busted)');
             totalTests++;
             
             addResult('Test Complete', 'info', 'All working JSON tests completed');

@@ -111,8 +111,8 @@ class PatchedGameManager extends GameManager {
 /**
  * Main game application class
  */
-class AmalgamGame {
-    private gameManager: PatchedGameManager | null = null;
+export class AmalgamGame {
+    public gameManager: PatchedGameManager | null = null;
     private boardData: BoardData | null = null;
     private pieceDefs: PieceDefinitions | null = null;
     private gameCanvas: CanvasContext | null = null;
@@ -139,8 +139,10 @@ class AmalgamGame {
             // Create game manager
             this.createGameManager();
             
-            // Start default game
-            this.startDefaultGame();
+            // Start default game (skip if we're in a test environment)
+            if (!window.location.pathname.includes('/tests/')) {
+                this.startDefaultGame();
+            }
             
             logger.info('Amalgam game initialized successfully');
         } catch (error) {
@@ -157,14 +159,14 @@ class AmalgamGame {
         
         try {
             // Load board data
-            const boardResponse = await fetch('./data/board-data.json');
+            const boardResponse = await fetch('/data/board-data.json');
             if (!boardResponse.ok) {
                 throw new Error(`Failed to load board data: ${boardResponse.statusText}`);
             }
             this.boardData = await boardResponse.json();
 
             // Load valid board positions and merge into boardData
-            const positionsResponse = await fetch('./game-rules/board_positions.json');
+            const positionsResponse = await fetch('/game-rules/board_positions.json');
             if (positionsResponse.ok) {
                 const positionsData = await positionsResponse.json();
                 if (positionsData && positionsData.board_positions) {
@@ -175,7 +177,7 @@ class AmalgamGame {
             }
             
             // Load piece definitions
-            const pieceResponse = await fetch('./data/piece-definitions.json');
+            const pieceResponse = await fetch('/data/piece-definitions.json');
             if (!pieceResponse.ok) {
                 throw new Error(`Failed to load piece definitions: ${pieceResponse.statusText}`);
             }
@@ -451,11 +453,9 @@ class AmalgamGame {
      */
     private showGameOptions(): void {
         const options: GameOption[] = [
-            { id: 'human-vs-human', label: 'Human vs Human', p1: 'human', p2: 'human' },
-            { id: 'human-vs-random', label: 'Human vs Random AI', p1: 'human', p2: 'random' },
-            { id: 'human-vs-heuristic', label: 'Human vs Heuristic AI', p1: 'human', p2: 'heuristic' },
-            { id: 'random-vs-random', label: 'Random AI vs Random AI', p1: 'random', p2: 'random' },
-            { id: 'heuristic-vs-heuristic', label: 'Heuristic AI vs Heuristic AI', p1: 'heuristic', p2: 'heuristic' }
+            { id: 'human-vs-human', label: '2 Player Hotseat (Human vs Human)', p1: 'human', p2: 'human' },
+            { id: 'human-vs-ai', label: 'Play against AI', p1: 'human', p2: 'heuristic' },
+            { id: 'ai-vs-ai', label: 'Watch AI match (AI vs AI)', p1: 'heuristic', p2: 'heuristic' }
         ];
         
         // Create modal dialog
@@ -534,6 +534,34 @@ class AmalgamGame {
             .modal-close:hover {
                 background: #5a6268;
             }
+            .ai-setup-status {
+                text-align: center;
+                padding: 1rem;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border: 2px solid #e9ecef;
+            }
+            .ai-setup-status h3 {
+                margin: 0 0 0.5rem 0;
+                color: #495057;
+                font-size: 1.1em;
+            }
+            .ai-setup-status p {
+                margin: 0 0 1rem 0;
+                color: #6c757d;
+                font-size: 0.9em;
+            }
+            .ai-progress {
+                background: #e9ecef;
+                border-radius: 4px;
+                height: 8px;
+                overflow: hidden;
+            }
+            .progress-bar {
+                background: linear-gradient(90deg, #007bff, #0056b3);
+                height: 100%;
+                transition: width 0.3s ease;
+            }
         `;
         document.head.appendChild(style);
         
@@ -565,7 +593,7 @@ class AmalgamGame {
     /**
      * Start game with selected option
      */
-    private startGameByOption(option: GameOption): void {
+    public startGameByOption(option: GameOption): void {
         logger.debug('Starting game with option:', option);
         
         if (!this.gameManager) {
@@ -761,9 +789,32 @@ class AmalgamGame {
     private renderPieceSelectionPanel(state: GameState): void {
         if (!this.pieceSelectionPanel || !this.gameManager || !this.pieceDefs) return;
         
-        // Only show during setup phase and for human player
-        if (!state || state.gamePhase !== 'setup' || (this.gameManager as any).currentPlayer?.type !== 'human') {
+        // Only show during setup phase
+        if (!state || state.gamePhase !== 'setup') {
             this.pieceSelectionPanel.innerHTML = '';
+            return;
+        }
+        
+        // Check if current player is AI
+        const isAIPlayer = (this.gameManager as any).currentPlayer?.type !== 'human';
+        
+        if (isAIPlayer) {
+            // Show AI setup progress
+            const player = state.currentPlayer;
+            const pieceDefs = this.pieceDefs.piece_definitions[player === 'circles' ? 'circles_pieces' : 'squares_pieces'];
+            const placedPieces = Object.keys(state.pieces);
+            const unplaced = Object.entries(pieceDefs)
+                .filter(([id, def]) => !placedPieces.includes(id) && def.placement === 'setup_phase');
+            
+            this.pieceSelectionPanel.innerHTML = `
+                <div class="ai-setup-status">
+                    <h3>${player === 'circles' ? 'Circles' : 'Squares'} AI is setting up...</h3>
+                    <p>Pieces remaining: ${unplaced.length}</p>
+                    <div class="ai-progress">
+                        <div class="progress-bar" style="width: ${((16 - unplaced.length) / 16) * 100}%"></div>
+                    </div>
+                </div>
+            `;
             return;
         }
         

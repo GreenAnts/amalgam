@@ -361,7 +361,7 @@
         </div>
 
         <div class="navigation">
-            <a href="../unified-test-navigation.html" class="nav-btn">🏠 Back to Test Hub</a>
+            <a href="../../tests.html" class="nav-btn">🏠 Back to Test Hub</a>
             <a href="../debug/data-inspector.html" class="nav-btn">🔍 Data Inspector</a>
             <a href="../debug/comparison-tool.html" class="nav-btn">⚖️ Comparison Tool</a>
         </div>
@@ -387,13 +387,13 @@
             try {
                 // Test critical files
                 const criticalFiles = [
-                    'data/board-data.json',
-                    'data/piece-definitions.json',
-                    'core/board.js',
-                    'core/rules.js',
-                    'game/gameManager.js',
-                    'ui/graphics.js',
-                    'ui/interactions.js'
+                    '../../data/board-data.json',
+                    '../../data/piece-definitions.json',
+                    '../../core/board.js',
+                    '../../core/rules.js',
+                    '../../game/gameManager.js',
+                    '../../ui/graphics.js',
+                    '../../ui/interactions.js'
                 ];
 
                 let passed = 0;
@@ -442,11 +442,11 @@
             try {
                 // Test module imports
                 const modules = [
-                    { name: 'GameManager', path: './game/gameManager.js' },
-                    { name: 'Board', path: './core/board.js' },
-                    { name: 'Rules', path: './core/rules.js' },
-                    { name: 'Graphics', path: './ui/graphics.js' },
-                    { name: 'Interactions', path: './ui/interactions.js' }
+                    { name: 'GameManager', path: '../../game/gameManager.js' },
+                    { name: 'Board', path: '../../core/board.js' },
+                    { name: 'Rules', path: '../../core/rules.js' },
+                    { name: 'Graphics', path: '../../ui/graphics.js' },
+                    { name: 'Interactions', path: '../../ui/interactions.js' }
                 ];
 
                 let passed = 0;
@@ -501,12 +501,12 @@
             try {
                 // Check for TypeScript files and their compiled JS counterparts
                 const tsFiles = [
-                    'core/board.ts',
-                    'core/rules.ts',
-                    'core/types.ts',
-                    'game/gameManager.ts',
-                    'ui/graphics.ts',
-                    'ui/interactions.ts'
+                    '../../core/board.ts',
+                    '../../core/rules.ts',
+                    '../../core/types.ts',
+                    '../../game/gameManager.ts',
+                    '../../ui/graphics.ts',
+                    '../../ui/interactions.ts'
                 ];
 
                 let passed = 0;
@@ -762,7 +762,7 @@
             
             try {
                 // Test starting area data
-                const response = await fetch('data/board-data.json');
+                const response = await fetch('../../data/board-data.json');
                 if (response.ok) {
                     const boardData = await response.json();
                     

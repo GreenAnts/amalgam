@@ -89,7 +89,7 @@ export function createInitialState(board, boardData) {
             shape: 'circle',
             outerColor: '#5B4E7A',
             innerColor: '#8D7EA9',
-            size: 10
+            size: 12
         }
     };
     pieces['C_Amalgam'] = {

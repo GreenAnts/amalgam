@@ -275,7 +275,7 @@
 
         <div class="navigation">
             <a href="setup-phase-test.html" class="nav-btn">🧪 Back to Test Suite</a>
-            <a href="../unified-test-navigation.html" class="nav-btn">🏠 Test Hub</a>
+            <a href="../../tests.html" class="nav-btn">🏠 Test Hub</a>
             <a href="../debug/data-inspector.html" class="nav-btn">🔍 Data Inspector</a>
         </div>
     </div>
@@ -667,7 +667,55 @@
             logToElement('validationLog', 'info', 'Validation debug ready');
             logToElement('gameManagerLog', 'info', 'GameManager debug ready');
             logToElement('errorLog', 'info', 'Error simulation ready');
+
+            // Initialize canvases to make them visible
+            initializeCanvases();
         });
+
+        // Initialize canvases with basic content to make them visible
+        function initializeCanvases() {
+            // Initialize test canvas
+            const testCanvas = document.getElementById('testCanvas');
+            if (testCanvas) {
+                const ctx = testCanvas.getContext('2d');
+                
+                // Clear and set background
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, testCanvas.width, testCanvas.height);
+                
+                // Draw border
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, testCanvas.width, testCanvas.height);
+                
+                // Add text
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click "Test Canvas Events" to initialize', testCanvas.width/2, testCanvas.height/2);
+            }
+
+            // Initialize highlight canvas
+            const highlightCanvas = document.getElementById('highlightCanvas');
+            if (highlightCanvas) {
+                const ctx = highlightCanvas.getContext('2d');
+                
+                // Clear and set background
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+                
+                // Draw border
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+                
+                // Add text
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click "Test Highlighting" to initialize', highlightCanvas.width/2, highlightCanvas.height/2);
+            }
+        }
     </script>
 </body>
 </html>

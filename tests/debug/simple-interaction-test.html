@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Interaction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            border: 2px solid #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .canvas-container {
+            border: 2px solid #007bff;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: #f8f9fa;
+        }
+        .debug-output {
+            background: #f8f9fa;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Simple Interaction Test</h1>
+        <p>This test simulates the interaction flow without module dependencies.</p>
+        
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="testCanvasClick()">Test Canvas Click</button>
+            <button onclick="testEventListeners()">Test Event Listeners</button>
+            <button onclick="testCallbackChain()">Test Callback Chain</button>
+            <button onclick="clearOutput()">Clear Output</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Canvas</h3>
+            <div class="canvas-container">
+                <canvas id="testCanvas" width="300" height="300" style="border: 1px solid #ccc;"></canvas>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Debug Output</h3>
+            <div id="debug-output" class="debug-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simple logging function
+        function log(message, data = null) {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
+            output.textContent += logEntry;
+            output.scrollTop = output.scrollHeight;
+            console.log(message, data);
+        }
+        
+        // Test variables
+        let callbackCalled = false;
+        let callbackData = null;
+        let eventListenerAdded = false;
+        
+        // Test 1: Canvas Click
+        window.testCanvasClick = function() {
+            log('🧪 Test 1: Canvas Click');
+            
+            const canvas = document.getElementById('testCanvas');
+            
+            // Reset callback tracking
+            callbackCalled = false;
+            callbackData = null;
+            
+            log('📋 Canvas details:', {
+                tagName: canvas.tagName,
+                id: canvas.id,
+                width: canvas.width,
+                height: canvas.height,
+                style_pointerEvents: canvas.style.pointerEvents
+            });
+            
+            // Add a simple click listener
+            const clickListener = (event) => {
+                callbackCalled = true;
+                callbackData = {
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    target: event.target.tagName
+                };
+                log('🎯 Canvas click listener called:', callbackData);
+            };
+            
+            canvas.addEventListener('click', clickListener, { once: true });
+            eventListenerAdded = true;
+            
+            // Simulate click
+            const rect = canvas.getBoundingClientRect();
+            const clickEvent = new MouseEvent('click', {
+                clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2,
+                bubbles: true
+            });
+            
+            log('🖱️ Dispatching click event...');
+            canvas.dispatchEvent(clickEvent);
+            
+            // Check result
+            setTimeout(() => {
+                log('📋 Click test result:', {
+                    callbackCalled: callbackCalled,
+                    callbackData: callbackData
+                });
+                
+                if (callbackCalled) {
+                    log('✅ Canvas click test successful');
+                } else {
+                    log('❌ Canvas click test failed');
+                }
+            }, 100);
+        };
+        
+        // Test 2: Event Listeners
+        window.testEventListeners = function() {
+            log('🧪 Test 2: Event Listeners');
+            
+            const canvas = document.getElementById('testCanvas');
+            
+            // Test if we can add and remove event listeners
+            let testListenerCalled = false;
+            const testListener = () => {
+                testListenerCalled = true;
+                log('🎯 Test listener called');
+            };
+            
+            canvas.addEventListener('click', testListener);
+            log('✅ Event listener added');
+            
+            // Dispatch test event
+            const testEvent = new MouseEvent('click', { bubbles: true });
+            canvas.dispatchEvent(testEvent);
+            
+            setTimeout(() => {
+                log('📋 Event listener test result:', {
+                    testListenerCalled: testListenerCalled
+                });
+                
+                if (testListenerCalled) {
+                    log('✅ Event listener test successful');
+                } else {
+                    log('❌ Event listener test failed');
+                }
+                
+                // Clean up
+                canvas.removeEventListener('click', testListener);
+                log('✅ Event listener removed');
+            }, 100);
+        };
+        
+        // Test 3: Callback Chain
+        window.testCallbackChain = function() {
+            log('🧪 Test 3: Callback Chain');
+            
+            // Simulate the interaction flow
+            let step1Complete = false;
+            let step2Complete = false;
+            let step3Complete = false;
+            
+            // Step 1: Create move intent
+            setTimeout(() => {
+                const moveIntent = {
+                    coords: [0, 0],
+                    type: 'click',
+                    meta: {
+                        source: 'test',
+                        timestamp: Date.now()
+                    }
+                };
+                
+                log('📋 Step 1: Move intent created:', moveIntent);
+                step1Complete = true;
+                
+                // Step 2: Call callback
+                setTimeout(() => {
+                    if (typeof window.testCallback === 'function') {
+                        window.testCallback(moveIntent);
+                        log('📋 Step 2: Callback called');
+                        step2Complete = true;
+                    } else {
+                        log('❌ Step 2: No callback function available');
+                    }
+                    
+                    // Step 3: Process result
+                    setTimeout(() => {
+                        log('📋 Step 3: Processing complete');
+                        step3Complete = true;
+                        
+                        log('📋 Callback chain test result:', {
+                            step1Complete: step1Complete,
+                            step2Complete: step2Complete,
+                            step3Complete: step3Complete
+                        });
+                        
+                        if (step1Complete && step2Complete && step3Complete) {
+                            log('✅ Callback chain test successful');
+                        } else {
+                            log('❌ Callback chain test failed');
+                        }
+                    }, 50);
+                }, 50);
+            }, 50);
+        };
+        
+        // Clear output
+        window.clearOutput = function() {
+            document.getElementById('debug-output').textContent = '';
+        };
+        
+        // Test callback function (simulates GameManager.handleMoveIntent)
+        window.testCallback = function(moveIntent) {
+            log('🎯 Test callback received moveIntent:', moveIntent);
+            return true;
+        };
+        
+        // Initialize
+        log('🔧 Simple Interaction Test ready');
+        log('This test simulates the interaction flow to identify where the issue occurs');
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaction Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            border: 2px solid #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .canvas-container {
+            border: 2px solid #007bff;
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            background: #f8f9fa;
+        }
+        .debug-output {
+            background: #f8f9fa;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .success { background: #28a745; }
+        .success:hover { background: #218838; }
+        .warning { background: #ffc107; color: #212529; }
+        .warning:hover { background: #e0a800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Interaction Flow Test</h1>
+        <p>This test focuses on debugging the interaction flow issue step by step.</p>
+        
+        <div class="test-section">
+            <h3>Test Controls</h3>
+            <button onclick="testInteractionManagerCreation()">1. Test InteractionManager Creation</button>
+            <button onclick="testCallbackSetup()">2. Test Callback Setup</button>
+            <button onclick="testEnableState()">3. Test Enable State</button>
+            <button onclick="testClickHandling()">4. Test Click Handling</button>
+            <button onclick="testFullFlow()">5. Test Full Flow</button>
+            <button onclick="clearOutput()">Clear Output</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Canvas</h3>
+            <div class="canvas-container">
+                <canvas id="testCanvas" width="400" height="400" style="border: 1px solid #ccc;"></canvas>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Debug Output</h3>
+            <div id="debug-output" class="debug-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the modules we need to test
+        import { createInteractionManager } from '../../ui/interactions.js';
+        import { createBoard } from '../../core/board.js';
+        
+        let testInteractionManager = null;
+        let testBoard = null;
+        let callbackCalled = false;
+        let callbackData = null;
+        
+        // Simple logging function
+        function log(message, data = null) {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
+            output.textContent += logEntry;
+            output.scrollTop = output.scrollHeight;
+            console.log(message, data);
+        }
+        
+        // Test 1: InteractionManager Creation
+        window.testInteractionManagerCreation = function() {
+            log('🧪 Test 1: InteractionManager Creation');
+            
+            try {
+                // Create a simple board
+                testBoard = {
+                    width: 800,
+                    height: 800,
+                    coordinateScale: 25,
+                    centerOffset: [400, 400],
+                    intersections: []
+                };
+                
+                const canvas = document.getElementById('testCanvas');
+                log('📋 Canvas element:', {
+                    tagName: canvas.tagName,
+                    id: canvas.id,
+                    width: canvas.width,
+                    height: canvas.height
+                });
+                
+                // Create InteractionManager
+                testInteractionManager = createInteractionManager(canvas, testBoard);
+                log('✅ InteractionManager created successfully');
+                
+                // Check initial state
+                log('📋 Initial InteractionManager state:', {
+                    enabled: testInteractionManager.isEnabled(),
+                    hasMoveIntentCallback: !!testInteractionManager.moveIntentCallback
+                });
+                
+            } catch (error) {
+                log('❌ InteractionManager creation failed:', error.message);
+            }
+        };
+        
+        // Test 2: Callback Setup
+        window.testCallbackSetup = function() {
+            log('🧪 Test 2: Callback Setup');
+            
+            if (!testInteractionManager) {
+                log('❌ No InteractionManager available. Run Test 1 first.');
+                return;
+            }
+            
+            try {
+                // Set up a test callback
+                testInteractionManager.setMoveIntentCallback((moveIntent) => {
+                    callbackCalled = true;
+                    callbackData = moveIntent;
+                    log('🎯 CALLBACK CALLED with moveIntent:', moveIntent);
+                });
+                
+                log('✅ Callback set successfully');
+                log('📋 InteractionManager state after callback setup:', {
+                    enabled: testInteractionManager.isEnabled(),
+                    hasMoveIntentCallback: !!testInteractionManager.moveIntentCallback
+                });
+                
+            } catch (error) {
+                log('❌ Callback setup failed:', error.message);
+            }
+        };
+        
+        // Test 3: Enable State
+        window.testEnableState = function() {
+            log('🧪 Test 3: Enable State');
+            
+            if (!testInteractionManager) {
+                log('❌ No InteractionManager available. Run Test 1 first.');
+                return;
+            }
+            
+            try {
+                log('📋 Current enabled state:', testInteractionManager.isEnabled());
+                
+                // Enable the InteractionManager
+                testInteractionManager.setEnabled(true);
+                log('✅ InteractionManager enabled');
+                
+                log('📋 Enabled state after setEnabled(true):', testInteractionManager.isEnabled());
+                
+            } catch (error) {
+                log('❌ Enable state test failed:', error.message);
+            }
+        };
+        
+        // Test 4: Click Handling
+        window.testClickHandling = function() {
+            log('🧪 Test 4: Click Handling');
+            
+            if (!testInteractionManager) {
+                log('❌ No InteractionManager available. Run Test 1 first.');
+                return;
+            }
+            
+            try {
+                const canvas = document.getElementById('testCanvas');
+                
+                // Reset callback tracking
+                callbackCalled = false;
+                callbackData = null;
+                
+                log('🖱️ Simulating canvas click...');
+                
+                // Create and dispatch a click event
+                const rect = canvas.getBoundingClientRect();
+                const clickEvent = new MouseEvent('click', {
+                    clientX: rect.left + rect.width / 2,
+                    clientY: rect.top + rect.height / 2,
+                    bubbles: true
+                });
+                
+                canvas.dispatchEvent(clickEvent);
+                
+                // Check if callback was called
+                setTimeout(() => {
+                    log('📋 Click handling result:', {
+                        callbackCalled: callbackCalled,
+                        callbackData: callbackData
+                    });
+                    
+                    if (callbackCalled) {
+                        log('✅ Click handling successful - callback was called');
+                    } else {
+                        log('❌ Click handling failed - callback was not called');
+                    }
+                }, 100);
+                
+            } catch (error) {
+                log('❌ Click handling test failed:', error.message);
+            }
+        };
+        
+        // Test 5: Full Flow
+        window.testFullFlow = function() {
+            log('🧪 Test 5: Full Flow');
+            
+            try {
+                // Run all tests in sequence
+                log('🔄 Running full flow test...');
+                
+                // Reset
+                testInteractionManager = null;
+                testBoard = null;
+                callbackCalled = false;
+                callbackData = null;
+                
+                // Step 1: Create InteractionManager
+                testInteractionManagerCreation();
+                
+                setTimeout(() => {
+                    // Step 2: Set up callback
+                    testCallbackSetup();
+                    
+                    setTimeout(() => {
+                        // Step 3: Enable
+                        testEnableState();
+                        
+                        setTimeout(() => {
+                            // Step 4: Test click
+                            testClickHandling();
+                            
+                            setTimeout(() => {
+                                log('🎉 Full flow test completed');
+                            }, 200);
+                        }, 100);
+                    }, 100);
+                }, 100);
+                
+            } catch (error) {
+                log('❌ Full flow test failed:', error.message);
+            }
+        };
+        
+        // Clear output
+        window.clearOutput = function() {
+            document.getElementById('debug-output').textContent = '';
+        };
+        
+        // Initialize
+        log('🔧 Interaction Flow Test ready');
+        log('Click the test buttons in order to debug the interaction flow');
+    </script>
+</body>
+</html>

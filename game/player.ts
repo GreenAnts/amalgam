@@ -69,15 +69,18 @@ export class HumanPlayer extends Player {
      * @param moveIntent - Move intent from UI
      */
     setMoveIntent(moveIntent: Move | null): void {
+        logger.debug(`HumanPlayer.setMoveIntent called with move:`, moveIntent);
         this.pendingMove = moveIntent;
         
         // Resolve any waiting promises
+        logger.debug(`HumanPlayer.setMoveIntent: resolving ${this.moveResolvers.length} waiting promises`);
         while (this.moveResolvers.length > 0) {
             const resolve = this.moveResolvers.shift()!;
             resolve(this.pendingMove);
         }
         
         this.pendingMove = null;
+        logger.debug('HumanPlayer.setMoveIntent: completed');
     }
 
     /**
@@ -91,16 +94,19 @@ export class HumanPlayer extends Player {
             throw new Error('Not this player\'s turn');
         }
 
+        logger.debug('HumanPlayer.getMove: creating new Promise');
         return new Promise((resolve) => {
             // If we already have a pending move, resolve immediately
             if (this.pendingMove) {
                 const move = this.pendingMove;
                 this.pendingMove = null;
+                logger.debug('HumanPlayer.getMove: resolving immediately with pending move');
                 resolve(move);
                 return;
             }
             
             // Otherwise, wait for move input
+            logger.debug('HumanPlayer.getMove: adding resolver to queue, waiting for move input');
             this.moveResolvers.push(resolve);
         });
     }

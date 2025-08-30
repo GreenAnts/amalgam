@@ -127,7 +127,11 @@ export class GameManager {
         
         // Set up interaction callbacks
         this.interactionManager.setMoveIntentCallback((moveIntent: MoveIntent) => {
-            this.handleMoveIntent(moveIntent);
+            try {
+                this.handleMoveIntent(moveIntent);
+            } catch (error) {
+                logger.error('GameManager.initialize: handleMoveIntent failed:', error);
+            }
         });
         
         this.interactionManager.setHoverCallback((coords: Vector2 | null) => {
@@ -141,6 +145,9 @@ export class GameManager {
         // Draw initial board
         this.gameCanvas.drawBoard();
         
+        // Enable interactions immediately
+        this.interactionManager.setEnabled(true);
+        
         logger.debug('GameManager initialized');
     }
 
@@ -149,7 +156,18 @@ export class GameManager {
      * @param playerConfig - Player configuration
      */
     startNewGame(playerConfig: PlayerConfig = {}): void {
-        logger.info('Starting new game with config:', playerConfig);
+        logger.info('=== STARTING NEW GAME ===');
+        logger.info('Config:', playerConfig);
+        logger.info('Current isGameActive:', this.isGameActive);
+        
+        // Stop any existing game loop
+        logger.info('Stopping any existing game loop...');
+        this.isGameActive = false;
+        
+        // Give the previous game loop a moment to stop
+        setTimeout(() => {
+            logger.info('Previous game loop should be stopped now');
+        }, 100);
         
         if (!this.board) {
             throw new Error('Board not initialized');
@@ -187,15 +205,19 @@ export class GameManager {
             selectedCurrentPlayer: this.currentPlayer.id
         });
         
-        // Enable interactions
-        this.interactionManager?.setEnabled(true);
-        
         // Update display
         this.updateDisplay();
         
         // Start game loop
         this.isGameActive = true;
-        this.gameLoop();
+        logger.info('Starting game loop...');
+        this.gameLoop().catch(error => {
+            logger.error('Game loop error:', error);
+            this.handleError(error as Error);
+        });
+        
+        // Update interaction state based on current player
+        this.updateInteractionState();
         
         // Notify callbacks
         if (this.callbacks.onStateChange) {
@@ -209,29 +231,45 @@ export class GameManager {
      * Main game loop
      */
     private async gameLoop(): Promise<void> {
+        logger.info('Game loop started');
+        
         while (this.isGameActive && !this.isPaused) {
+            logger.debug(`Game loop iteration: isGameActive=${this.isGameActive}, isPaused=${this.isPaused}`);
+            
             if (!this.state || !this.currentPlayer) {
+                logger.warn('Game loop: no state or current player, breaking');
                 break;
             }
             
             // Check for game end
             if (this.state.winner) {
+                logger.info('Game loop: game ended, breaking');
                 this.handleGameEnd();
                 break;
             }
             
             // Check if current player has legal moves
-            if (!hasLegalMoves(this.state, this.currentPlayer.id, this.pieceDefs)) {
+            const legalMovesCheck = hasLegalMoves(this.state, this.currentPlayer.id, this.pieceDefs);
+            logger.debug(`Game loop: legal moves check for ${this.currentPlayer.id}: ${legalMovesCheck}`);
+            
+            if (!legalMovesCheck) {
                 logger.warn(`No legal moves for ${this.currentPlayer.id}, skipping turn`);
                 this.switchPlayer();
                 continue;
             }
             
+            logger.debug(`Game loop: ${this.currentPlayer.type} player's turn (${this.currentPlayer.id})`);
+            
             // Get move from current player
             try {
+                logger.debug(`Game loop: getting move from ${this.currentPlayer.type} player (${this.currentPlayer.id})`);
                 const move = await this.getPlayerMove();
+                logger.debug(`Game loop: received move from ${this.currentPlayer.type} player:`, move);
+                
                 if (move) {
+                    logger.debug(`Game loop: processing move for ${this.currentPlayer.id}`);
                     await this.processMove(move);
+                    logger.debug(`Game loop: move processed successfully for ${this.currentPlayer.id}`);
                 } else {
                     logger.warn('Player returned null move, skipping turn');
                     this.switchPlayer();
@@ -244,7 +282,12 @@ export class GameManager {
             
             // Small delay to prevent blocking
             await new Promise(resolve => setTimeout(resolve, 10));
+            
+            logger.debug('Game loop: completed iteration, continuing...');
+            logger.debug(`Game loop: next iteration check - isGameActive=${this.isGameActive}, isPaused=${this.isPaused}`);
         }
+        
+        logger.info('Game loop ended');
     }
 
     /**
@@ -253,17 +296,35 @@ export class GameManager {
      */
     private async getPlayerMove(): Promise<Move | null> {
         if (!this.currentPlayer || !this.state) {
+            logger.warn('getPlayerMove: no current player or state');
             return null;
         }
         
+        logger.debug(`getPlayerMove: ${this.currentPlayer.type} player (${this.currentPlayer.id})`);
+        
         if (this.currentPlayer.type === 'human') {
             // Human player - wait for UI interaction
+            logger.debug('getPlayerMove: waiting for human player move');
             return new Promise((resolve) => {
+                logger.debug('getPlayerMove: setting up move callback for human player');
                 this.currentPlayer!.setMoveCallback(resolve);
+                logger.debug('getPlayerMove: move callback set up, waiting for move input');
             });
         } else {
-            // AI player - get move immediately
-            return this.currentPlayer.getMove(this.state, this.pieceDefs);
+            // AI player - get move immediately, but add delay during setup phase for visibility
+            logger.debug('getPlayerMove: getting AI move');
+            const move = await this.currentPlayer.getMove(this.state, this.pieceDefs);
+            
+            logger.debug(`getPlayerMove: AI returned move:`, move);
+            
+            // Add a small delay during setup phase to make AI moves more visible
+            if (this.state.gamePhase === 'setup') {
+                logger.debug('getPlayerMove: adding setup phase delay');
+                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+            }
+            
+            logger.debug(`getPlayerMove: returning move:`, move);
+            return move;
         }
     }
 
@@ -272,17 +333,23 @@ export class GameManager {
      * @param move - Move to process
      */
     private async processMove(move: Move): Promise<void> {
-        if (!this.state || !this.currentPlayer) {
-            return;
-        }
-        
-        logger.info('Processing move:', {
-            move: move,
-            currentPlayer: this.currentPlayer.id,
-            stateCurrentPlayer: this.state.currentPlayer,
-            gamePhase: this.state.gamePhase,
-            setupTurn: this.state.setupTurn
-        });
+        try {
+            if (!this.state || !this.currentPlayer) {
+                return;
+            }
+            
+            logger.info('Processing move:', {
+                move: move,
+                currentPlayer: this.currentPlayer.id,
+                stateCurrentPlayer: this.state.currentPlayer,
+                gamePhase: this.state.gamePhase,
+                setupTurn: this.state.setupTurn
+            });
+            
+            // Add stack trace to see where this is being called from
+            logger.debug('processMove called from:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
+            
+            logger.debug('processMove: starting move processing');
         
         // Validate move
         const validation = isValidMove(this.state, move, this.pieceDefs);
@@ -302,13 +369,17 @@ export class GameManager {
         
         // Update state
         this.state = result.nextState!;
+        logger.debug('processMove: state updated');
         
         // Store in history
         this.moveHistory.push(move);
         this.stateHistory.push(cloneState(this.state));
+        logger.debug('processMove: history updated');
         
         // Handle animations
+        logger.debug('processMove: handling animations');
         await this.handleMoveAnimations(move, result);
+        logger.debug('processMove: animations completed');
         
         // Switch players (but not for setup moves since applyMove handles it)
         if (this.state.gamePhase !== 'setup') {
@@ -321,18 +392,36 @@ export class GameManager {
                 this.currentPlayer = this.player2;
             }
         }
+        logger.debug('processMove: player sync completed');
         
         // Update display
+        logger.debug('processMove: updating display');
         this.updateDisplay();
         
+        // Update interaction state based on current player
+        logger.debug('processMove: updating interaction state');
+        this.updateInteractionState();
+        
         // Notify callbacks
+        logger.debug('processMove: notifying callbacks');
         if (this.callbacks.onStateChange) {
-            this.callbacks.onStateChange(this.state, move);
+            try {
+                this.callbacks.onStateChange(this.state, move);
+                logger.debug('processMove: callbacks completed');
+            } catch (error) {
+                logger.error('processMove: callback error:', error);
+            }
         }
         
         // Check for game end
         if (this.state.winner) {
             this.handleGameEnd();
+        }
+        
+        logger.debug('processMove: completed');
+        } catch (error) {
+            logger.error('processMove: error:', error);
+            throw error;
         }
     }
 
@@ -431,20 +520,35 @@ export class GameManager {
      * @param moveIntent - Move intent from UI
      */
     public handleMoveIntent(moveIntent: MoveIntent): void {
-        logger.debug('Handling move intent:', moveIntent);
+        logger.debug('GameManager.handleMoveIntent: received move intent:', moveIntent);
         
         if (!this.isGameActive || this.isPaused) {
+            logger.debug('handleMoveIntent: game not active or paused, ignoring');
+            return;
+        }
+        
+        // Only process move intents when it's the human player's turn
+        if (!this.currentPlayer || this.currentPlayer.type !== 'human') {
+            logger.debug('Ignoring move intent - not human player\'s turn');
             return;
         }
         
         // Convert move intent to move
         const move = this.convertMoveIntentToMove(moveIntent);
+        logger.debug('handleMoveIntent: converted move intent to move:', move);
+        
         if (move) {
-            // Process move asynchronously
-            this.processMove(move).catch(error => {
-                logger.error('Error processing move:', error);
-                this.handleError(error as Error);
-            });
+            // Set the move for the human player to resolve the pending promise
+            // The game loop will handle processing the move
+            if (this.currentPlayer && this.currentPlayer.type === 'human') {
+                logger.debug('handleMoveIntent: calling setMoveIntent on human player');
+                (this.currentPlayer as any).setMoveIntent(move);
+                logger.debug('handleMoveIntent: setMoveIntent completed');
+            } else {
+                logger.warn('handleMoveIntent: current player is not human:', this.currentPlayer?.type);
+            }
+        } else {
+            logger.warn('handleMoveIntent: could not convert move intent to move');
         }
     }
 
@@ -454,27 +558,31 @@ export class GameManager {
      * @returns Move object or null if invalid
      */
     protected convertMoveIntentToMove(moveIntent: MoveIntent): Move | null {
+        logger.debug('convertMoveIntentToMove: converting move intent:', moveIntent);
+        
         if (!moveIntent || !moveIntent.coords || !this.state || !this.currentPlayer) {
+            logger.warn('convertMoveIntentToMove: missing required data');
             return null;
         }
         
         const coords = moveIntent.coords;
-        logger.info('Converting move intent:', {
-            coords: coords,
-            gamePhase: this.state.gamePhase,
-            currentPlayer: this.currentPlayer.id
-        });
+        logger.debug('convertMoveIntentToMove: processing coords:', coords, 'gamePhase:', this.state.gamePhase);
         
         // Handle setup phase
         if (this.state.gamePhase === 'setup') {
             const unplacedPieces = this.getUnplacedPieces();
+            logger.debug('convertMoveIntentToMove: setup phase, unplaced pieces:', unplacedPieces);
             if (unplacedPieces.length > 0) {
-                return {
+                const move: Move = {
                     type: 'place',
                     pieceId: unplacedPieces[0],
                     toCoords: coords,
                     playerId: this.currentPlayer.id
                 };
+                logger.debug('convertMoveIntentToMove: created place move:', move);
+                return move;
+            } else {
+                logger.warn('convertMoveIntentToMove: no unplaced pieces available');
             }
         }
         
@@ -642,6 +750,20 @@ export class GameManager {
         
         // Draw UI overlays
         this.drawUIOverlays();
+    }
+    
+    /**
+     * Update interaction state based on current player
+     */
+    private updateInteractionState(): void {
+        if (!this.interactionManager || !this.currentPlayer) {
+            return;
+        }
+        
+        // Always enable interactions, but handle turn validation in handleMoveIntent
+        this.interactionManager.setEnabled(true);
+        
+        logger.debug(`Interaction manager enabled for ${this.currentPlayer.type} player`);
     }
     
     /**
@@ -1032,6 +1154,14 @@ export class GameManager {
      */
     getState(): GameState | null {
         return this.state;
+    }
+
+    /**
+     * Get interaction manager (for debugging)
+     * @returns Interaction manager instance
+     */
+    getInteractionManager(): InteractionManager | null {
+        return this.interactionManager;
     }
 
     /**

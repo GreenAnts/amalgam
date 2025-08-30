@@ -1,0 +1,193 @@
+{
+    "LLM_Debugging_Methods": {
+      "Implementation_Requirements": {
+        "Mandatory_Testing_&_Debugging_Standards": {
+          "Pre_Implementation_Testing": [
+            "Run `npm test` before starting",
+            "Document current system state",
+            "Plan test coverage for new feature",
+            "Ensure existing functionality remains intact",
+            "Check for known issues",
+            "Validate setup phase functionality"
+          ],
+          "Implementation_Testing_Requirements": [
+            "Create unit tests for new functions and classes",
+            "Add integration tests for new features",
+            "Include error handling tests for edge cases",
+            "Test data validation for new data structures",
+            "Verify TypeScript compilation",
+            "Add performance benchmarks",
+            "Include security validation",
+            "Test browser compatibility"
+          ],
+          "Post_Implementation_Validation": [
+            "Run full test suite (`npm test`)",
+            "Verify no regressions",
+            "Test new features through web interface (`npm run test:web`)",
+            "Document any new debugging patterns",
+            "Validate performance impact",
+            "Test error recovery and graceful degradation",
+            "Validate setup phase integration"
+          ],
+          "Debugging_Tools_Integration": [
+            "Add console logging for complex operations",
+            "Include debug mode for new features",
+            "Create debug HTML pages for visual testing",
+            "Add data inspection tools for new data structures",
+            "Implement error simulation tools",
+            "Add performance monitoring for critical operations"
+          ],
+          "Code_Quality_Standards": [
+            "Follow existing patterns in codebase",
+            "Include JSDoc comments",
+            "Maintain TypeScript definitions",
+            "Use proper error handling with try-catch",
+            "Implement input validation and sanitization",
+            "Add comprehensive error messages"
+          ],
+          "File_and_Code_Organization_Standards": {
+            "directory_structure": {
+              "core": ["core/*"],
+              "game": ["game/*"],
+              "ui": ["ui/*"],
+              "utils": ["utils/*"],
+              "data": ["data/*"],
+              "tests": ["tests/*"]
+            },
+            "naming_conventions": {
+              "source_files": "camelCase.js and camelCase.ts",
+              "test_files": "[feature-name]-test.html",
+              "data_files": "kebab-case.json"
+            },
+            "module_boundaries": [
+              "Single responsibility per module",
+              "Clear import/export interfaces",
+              "Minimal cross-module dependencies"
+            ],
+            "imports": {
+              "external_libraries_first": true,
+              "internal_modules_grouped_by_directory": true,
+              "relative_imports_for_local_files": true
+            }
+          }
+        },
+        "System_Validation_Protocol": {
+          "Primary_Debugging_Command": "npm test",
+          "Unified_Testing_Approach": {
+            "file_system_tests": "Critical file existence validation",
+            "data_integrity_tests": "JSON structure and content validation",
+            "module_syntax_tests": "ES6 module syntax validation",
+            "path_resolution_tests": "File path and resolution validation",
+            "game_initialization_tests": "Game startup validation",
+            "typescript_compilation_tests": "Build system validation",
+            "setup_phase_tests": "Setup phase functionality validation"
+          },
+          "test_consolidation_requirements": {
+            "NEVER_create_isolated_test_files": "All tests must integrate with unified test suite",
+            "use_existing_test_infrastructure": "Extend consolidated-test-runner.js for new tests",
+            "archive_redundant_tests": "Move obsolete tests to tests/.archived-tests/",
+            "maintain_100_percent_score": "System must maintain 100% test score"
+          },
+          "additional_testing_options": {
+            "web_interface": "npm run test:web - Opens centralized tests.html landing page",
+            "setup_phase_tests": "Included in main npm test command",
+            "debug_interface": "All testing tools accessible via root tests.html"
+          },
+          "Advanced_Test_Categories": [
+            "Setup Phase Tests",
+            "Performance Tests",
+            "Security Tests",
+            "Integration Tests",
+            "Error Simulation",
+            "Browser Compatibility",
+            "Accessibility Tests"
+          ]
+        }
+      },
+      "Test_Folder_Structure": {
+        "tests": {
+          "[feature-name]": [
+            "[feature-name]-test.html",
+            "[feature-name]-debug.html",
+            "[feature-name]-data-inspector.html",
+            "[feature-name]-performance.html",
+            "[feature-name]-security.html"
+          ],
+          "json": [
+            "[feature-name]-json-test.html"
+          ],
+          "integration": [
+            "[feature-name]-integration-test.html"
+          ],
+          "performance": [
+            "[feature-name]-benchmark.html"
+          ],
+          "security": [
+            "[feature-name]-security-test.html"
+          ]
+        }
+      },
+      "Web_Testing_Protocol": {
+        "interactive_testing": "npm run test:web",
+        "navigation_structure": "Start at `tests/unified-test-navigation.html`",
+        "advanced_web_testing": [
+          "Performance profiling with browser dev tools",
+          "Security testing for XSS and injection vulnerabilities",
+          "Accessibility testing with screen readers and keyboard navigation",
+          "Cross-browser testing"
+        ]
+      },
+      "Test_Documentation_Standards": {
+        "test_purpose": "Clear description of what each test validates",
+        "expected_behavior": "Document expected outcomes",
+        "debugging_instructions": "How to troubleshoot test failures",
+        "integration_notes": "How tests fit into the overall system",
+        "performance_baselines": "Expected performance metrics",
+        "security_considerations": "Potential security implications"
+      },
+      "LLM_Code_Organization_Rules": {
+        "CRITICAL_DO_NOT_CREATE_REDUNDANT_TESTS": {
+          "rule": "Before creating ANY test file, verify it doesn't duplicate existing functionality",
+          "check_existing_tests": "Always run 'npm test' first and review root tests.html landing page",
+          "archive_instead_of_delete": "Move outdated tests to tests/.archived-tests/ for safety"
+        },
+        "maintain_test_consolidation": {
+          "rule": "All tests must be accessible via centralized interface",
+          "primary_entry_point": "npm test for CLI, root tests.html for web interface",
+          "extend_not_duplicate": "Add to existing test runners, don't create new ones"
+        },
+        "prevent_code_bloat": {
+          "check_before_coding": "Review existing implementations before adding new features",
+          "simplicity_over_complexity": "Prefer simple solutions over complex architectures",
+          "remove_unused_code": "Regularly clean up unused imports, functions, and files"
+        }
+      },
+      "Common_Issues_&_Solutions": {
+        "missing_ui/animations.js": {
+          "issue": "Optional file, test handles this correctly",
+          "solution": "No action needed - animations are optional"
+        },
+        "json_structure_issues": {
+          "issue": "Invalid JSON causing parsing errors",
+          "solution": "Validate JSON files for syntax errors"
+        },
+        "path_resolution_problems": {
+          "issue": "Relative vs absolute path confusion",
+          "solution": "Check path resolution in affected modules"
+        },
+        "typescript_compilation_issues": {
+          "issue": "TypeScript files not compiled",
+          "solution": "Run npm run build to compile TypeScript"
+        },
+        "performance_issues": {
+          "issue": "Slow execution or high memory usage",
+          "solution": "Profile code and optimize algorithms"
+        },
+        "security_vulnerabilities": {
+          "issue": "Unvalidated user input or data injection",
+          "solution": "Implement proper input validation and sanitization"
+        }
+      }
+    }
+  }
+  

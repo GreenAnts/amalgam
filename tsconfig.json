@@ -23,6 +23,7 @@
     "node_modules",
     "dist",
     "Reference Files",
+    "tests",
     "analyze_golden_lines.js",
     "generate_complete_golden_lines.js"
   ]

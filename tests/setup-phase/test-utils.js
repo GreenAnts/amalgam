@@ -207,9 +207,9 @@ export function initializeTestSuite() {
     
     // Auto-run basic tests on page load
     setTimeout(() => {
-        runFileSystemTest();
-        runModuleLoadingTest();
-        runTypeScriptTest();
+        if (window.runFileSystemTest) window.runFileSystemTest();
+        if (window.runModuleLoadingTest) window.runModuleLoadingTest();
+        if (window.runTypeScriptTest) window.runTypeScriptTest();
     }, 500);
 }
 
