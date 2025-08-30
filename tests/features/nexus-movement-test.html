@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔗 Nexus Movement Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #2c1810;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f9f6f0;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+        }
+
+        /* Navigation Header */
+        .nav-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d4c4a8;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: #d2b48c;
+            color: #2c1810;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 2px solid #8B4513;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: #c19a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-header h1 {
+            color: #8B4513;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.1);
+        }
+
+        .test-header p {
+            color: #5d3a1a;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .test-item {
+            background: rgba(230, 215, 195, 0.3);
+            border: 2px solid #d4c4a8;
+            border-radius: 10px;
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .test-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.2);
+        }
+
+        .test-name {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #8B4513;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #d4c4a8;
+            padding-bottom: 5px;
+        }
+
+        .test-desc {
+            color: #5d3a1a;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .test-details {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            border-left: 3px solid #8B4513;
+        }
+
+        .test-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: 2px solid;
+        }
+
+        .test-status.pending { 
+            background: #f4e4bc; 
+            color: #8B4513; 
+            border-color: #d4c4a8; 
+        }
+        .test-status.passed { 
+            background: #d4edda; 
+            color: #155724; 
+            border-color: #c3e6cb; 
+        }
+        .test-status.failed { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border-color: #f1c2c7; 
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(230, 215, 195, 0.3);
+            border-radius: 10px;
+            border: 2px solid #d4c4a8;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid #8B4513;
+            border-radius: 8px;
+            background: #d2b48c;
+            color: #2c1810;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+
+        .btn:hover {
+            background: #c19a6b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3);
+        }
+
+        .results {
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid #d4c4a8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .results h3 {
+            color: #8B4513;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #d4c4a8;
+        }
+
+        .summary-item.total { background: #f4e4bc; }
+        .summary-item.passed { background: #d4edda; }
+        .summary-item.failed { background: #f8d7da; }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #8B4513;
+        }
+
+        .summary-label {
+            color: #5d3a1a;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        #debug-output {
+            background: #2c1810;
+            color: #f9f6f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #8B4513;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+            <a href="movement-test.html" class="nav-btn">⚡ Movement Tests</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>🔗 Nexus Movement Tests</h1>
+            <p>Testing movement adjacent to Pearl + Amber formations<br>
+            <strong>Nexus Formation:</strong> Pearl + Amber | Pearl + Amalgam | Amber + Amalgam (adjacent pieces)</p>
+        </div>
+
+        <div class="controls">
+            <button onclick="runAllTests()" class="btn">🚀 Run All Tests</button>
+            <button onclick="runDebugMode()" class="btn">🔍 Debug Mode</button>
+            <button onclick="clearResults()" class="btn">🧹 Clear Results</button>
+        </div>
+
+        <div class="test-grid" id="test-grid">
+            <!-- Test items will be populated by JavaScript -->
+        </div>
+
+        <div class="results" id="results" style="display: none;">
+            <h3>📊 Test Results</h3>
+            <div class="summary">
+                <div class="summary-item total">
+                    <div class="summary-number" id="total-tests">0</div>
+                    <div class="summary-label">Total Tests</div>
+                </div>
+                <div class="summary-item passed">
+                    <div class="summary-number" id="passed-tests">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-item failed">
+                    <div class="summary-number" id="failed-tests">0</div>
+                    <div class="summary-label">Failed</div>
+                </div>
+            </div>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test data structure for nexus movement
+        const nexusTests = [
+            {
+                name: "Basic Pearl + Amber Nexus",
+                description: "Test movement adjacent to a Pearl + Amber formation",
+                details: "Pearl at [0,0], Amber at [1,0], moving piece at [-1,0] → [2,0]",
+                testFunction: testBasicNexus
+            },
+            {
+                name: "Pearl + Amalgam Nexus",
+                description: "Test movement using Pearl + Amalgam nexus formation",
+                details: "Pearl at [0,0], Amalgam at [0,1], moving piece at [1,0] → [-1,1]",
+                testFunction: testPearlAmalgamNexus
+            },
+            {
+                name: "Amber + Amalgam Nexus",
+                description: "Test movement using Amber + Amalgam nexus formation",
+                details: "Amber at [0,0], Amalgam at [1,1], moving piece at [0,1] → [1,0]",
+                testFunction: testAmberAmalgamNexus
+            },
+            {
+                name: "Multiple Nexus Options",
+                description: "Test movement when multiple nexus formations exist",
+                details: "Multiple valid nexus formations provide movement options",
+                testFunction: testMultipleNexus
+            },
+            {
+                name: "Invalid - No Nexus Formation",
+                description: "Test that nexus movement fails without valid formation",
+                details: "Should fail when no Pearl/Amber/Amalgam adjacency exists",
+                testFunction: testNoNexusFormation
+            },
+            {
+                name: "Invalid - Not Adjacent to Nexus",
+                description: "Test movement fails when piece not adjacent to nexus",
+                details: "Moving piece must be adjacent to at least one nexus piece",
+                testFunction: testNotAdjacentToNexus
+            },
+            {
+                name: "Invalid - Destination Not Adjacent",
+                description: "Test movement fails when destination not adjacent to nexus",
+                details: "Destination must be adjacent to at least one nexus piece",
+                testFunction: testDestinationNotAdjacent
+            },
+            {
+                name: "Invalid - Occupied Destination", 
+                description: "Test nexus movement fails to occupied intersection",
+                details: "Cannot move to intersection already containing a piece",
+                testFunction: testOccupiedDestination
+            },
+            {
+                name: "Multiple Adjacency Options",
+                description: "Test movement with multiple valid destinations",
+                details: "Nexus formation provides multiple valid movement targets",
+                testFunction: testMultipleDestinations
+            },
+            {
+                name: "Diagonal Nexus Formation",
+                description: "Test nexus movement with diagonally adjacent formation",
+                details: "Pearl at [0,0], Amber at [1,1] (diagonal adjacency)",
+                testFunction: testDiagonalNexus
+            },
+            {
+                name: "🐛 Bug Fix: Piece Cannot Use Itself as Nexus",
+                description: "Test that pieces that are part of nexus formation cannot use themselves",
+                details: "Pearl at [0,0], Amber at [1,0] - Pearl cannot move using its own nexus",
+                testFunction: testPieceCannotUseSelfAsNexus
+            }
+        ];
+
+        let testResults = {};
+
+        // Import game modules
+        let GameModules = {};
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadGameModules();
+            populateTestGrid();
+        });
+
+        async function loadGameModules() {
+            try {
+                GameModules.rules = await import('../../core/rules.js');
+                GameModules.board = await import('../../core/board.js');
+                GameModules.types = await import('../../core/types.js');
+                
+                // Load test data
+                const boardResponse = await fetch('../../data/board-data.json');
+                GameModules.boardData = await boardResponse.json();
+                
+                const pieceResponse = await fetch('../../data/piece-definitions.json');
+                GameModules.pieceDefs = await pieceResponse.json();
+
+                console.log('✅ Game modules loaded successfully');
+                debug('Game modules and data loaded successfully');
+            } catch (error) {
+                console.error('❌ Failed to load game modules:', error);
+                debug(`Failed to load game modules: ${error.message}`);
+            }
+        }
+
+        function populateTestGrid() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '';
+
+            nexusTests.forEach((test, index) => {
+                const testItem = document.createElement('div');
+                testItem.className = 'test-item';
+                testItem.innerHTML = `
+                    <div class="test-name">${test.name}</div>
+                    <div class="test-desc">${test.description}</div>
+                    <div class="test-details">${test.details}</div>
+                    <div class="test-status pending" id="status-${index}">Pending</div>
+                    <button onclick="runSingleTest(${index})" class="btn" style="margin-top: 10px; font-size: 0.9rem; padding: 8px 16px;">Run Test</button>
+                `;
+                grid.appendChild(testItem);
+            });
+        }
+
+        async function runAllTests() {
+            debug('🚀 Starting nexus movement test suite...');
+            const startTime = Date.now();
+            
+            for (let i = 0; i < nexusTests.length; i++) {
+                await runSingleTest(i);
+                // Small delay to make progress visible
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const duration = Date.now() - startTime;
+            updateSummary();
+            showResults();
+            
+            debug(`✅ All tests completed in ${duration}ms`);
+        }
+
+        async function runSingleTest(index) {
+            const test = nexusTests[index];
+            const statusElement = document.getElementById(`status-${index}`);
+            
+            try {
+                debug(`🧪 Running: ${test.name}`);
+                statusElement.textContent = 'Running...';
+                statusElement.className = 'test-status pending';
+                
+                const result = await test.testFunction();
+                
+                if (result.passed) {
+                    statusElement.textContent = 'Passed ✅';
+                    statusElement.className = 'test-status passed';
+                    debug(`✅ ${test.name} - PASSED`);
+                } else {
+                    statusElement.textContent = `Failed ❌`;
+                    statusElement.className = 'test-status failed';
+                    debug(`❌ ${test.name} - FAILED: ${result.error}`);
+                }
+                
+                testResults[index] = result;
+                
+            } catch (error) {
+                statusElement.textContent = `Error ⚠️`;
+                statusElement.className = 'test-status failed';
+                testResults[index] = { passed: false, error: error.message };
+                debug(`⚠️ ${test.name} - ERROR: ${error.message}`);
+            }
+        }
+
+        function runDebugMode() {
+            debug('🔍 Debug mode activated - running detailed diagnostics...');
+            
+            // Test game module availability
+            debug('📋 Module availability check:');
+            debug(`- Rules module: ${GameModules.rules ? '✅' : '❌'}`);
+            debug(`- Board module: ${GameModules.board ? '✅' : '❌'}`);
+            debug(`- Board data: ${GameModules.boardData ? '✅' : '❌'}`);
+            debug(`- Piece definitions: ${GameModules.pieceDefs ? '✅' : '❌'}`);
+            
+            if (GameModules.rules && GameModules.board) {
+                // Test nexus formation detection
+                const testState = createTestGameState();
+                debug('\n🔗 Nexus formation detection test:');
+                
+                try {
+                    // Add test pieces for nexus
+                    testState.pieces['test_pearl'] = {
+                        id: 'test_pearl',
+                        type: 'Pearl',
+                        player: 'circles',
+                        coords: [0, 0]
+                    };
+                    testState.pieces['test_amber'] = {
+                        id: 'test_amber', 
+                        type: 'Amber',
+                        player: 'circles',
+                        coords: [1, 0]
+                    };
+                    
+                    debug(`- Test state created with Pearl at [0,0] and Amber at [1,0]`);
+                    debug(`- Checking nexus formation detection...`);
+                    
+                } catch (error) {
+                    debug(`❌ Nexus formation test failed: ${error.message}`);
+                }
+            }
+        }
+
+        function clearResults() {
+            testResults = {};
+            populateTestGrid();
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('debug-output').innerHTML = '';
+            debug('🧹 Results cleared');
+        }
+
+        function updateSummary() {
+            const total = nexusTests.length;
+            const passed = Object.values(testResults).filter(r => r.passed).length;
+            const failed = total - passed;
+            
+            document.getElementById('total-tests').textContent = total;
+            document.getElementById('passed-tests').textContent = passed;
+            document.getElementById('failed-tests').textContent = failed;
+        }
+
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function debug(message) {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Test helper functions
+        function createTestGameState() {
+            const board = GameModules.board.createBoard(GameModules.boardData);
+            return {
+                gamePhase: 'gameplay',
+                currentPlayer: 'circles',
+                pieces: {},
+                board: board,
+                moveHistory: [],
+                winner: null,
+                setupTurn: 17
+            };
+        }
+
+        // Helper to add piece to both state.pieces and board intersection
+        function addPieceToState(state, pieceId, type, player, coords) {
+            // Add to pieces collection
+            state.pieces[pieceId] = {
+                id: pieceId,
+                type: type,
+                player: player,
+                coords: coords
+            };
+            
+            // Place on board intersection
+            state.board = GameModules.board.placePiece(state.board, coords, pieceId);
+        }
+
+        // Test implementations
+        async function testBasicNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Pearl + Amber nexus
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [-1, 0]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [-1, 0],
+                    toCoords: [2, 0]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                
+                if (result.ok) {
+                    return { passed: true };
+                } else {
+                    return { passed: false, error: `Validation failed: ${result.reason}` };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPearlAmalgamNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Pearl + Amalgam nexus
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amalgam', 'Amalgam', 'circles', [0, 1]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [1, 0]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [1, 0],
+                    toCoords: [-1, 1]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testAmberAmalgamNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up Amber + Amalgam nexus
+                addPieceToState(state, 'amber', 'Amber', 'circles', [0, 0]);
+                addPieceToState(state, 'amalgam', 'Amalgam', 'circles', [1, 1]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 1]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [0, 1],
+                    toCoords: [1, 0]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testMultipleNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up multiple nexus formations
+                addPieceToState(state, 'pearl1', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber1', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'pearl2', 'Pearl', 'circles', [0, 2]);
+                addPieceToState(state, 'amalgam', 'Amalgam', 'circles', [0, 3]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 1]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [0, 1],
+                    toCoords: [2, 0] // Adjacent to first nexus
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testNoNexusFormation() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up pieces without nexus formation
+                addPieceToState(state, 'ruby1', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(state, 'ruby2', 'Ruby', 'circles', [1, 0]);
+                addPieceToState(state, 'jade', 'Jade', 'circles', [-1, 0]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [-1, 0],
+                    toCoords: [2, 0]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                
+                // Should fail because no nexus formation exists
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testNotAdjacentToNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up nexus but moving piece not adjacent
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [3, 3]); // Far away
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [3, 3],
+                    toCoords: [2, 0]
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                
+                // Should fail because moving piece not adjacent to nexus
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testDestinationNotAdjacent() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up nexus and adjacent moving piece
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [-1, 0]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [-1, 0],
+                    toCoords: [5, 5] // Far from nexus
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                
+                // Should fail because destination not adjacent to nexus
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testOccupiedDestination() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up nexus and pieces
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [-1, 0]);
+                addPieceToState(state, 'jade', 'Jade', 'squares', [2, 0]); // Occupying destination
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [-1, 0],
+                    toCoords: [2, 0] // Occupied
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                
+                // Should fail because destination occupied
+                return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testMultipleDestinations() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up L-shaped nexus with multiple valid destinations
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [1, 1]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 2]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [0, 1]);
+                
+                // Test one valid destination
+                const move1 = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [0, 1],
+                    toCoords: [2, 1] // Adjacent to pearl
+                };
+                
+                const result1 = GameModules.rules.isValidMove(state, move1, GameModules.pieceDefs);
+                
+                // Test another valid destination  
+                const move2 = {
+                    type: 'nexus',
+                    playerId: 'circles', 
+                    fromCoords: [0, 1],
+                    toCoords: [0, 2] // Adjacent to amber
+                };
+                
+                const result2 = GameModules.rules.isValidMove(state, move2, GameModules.pieceDefs);
+                
+                return { 
+                    passed: result1.ok && result2.ok, 
+                    error: !result1.ok ? result1.reason : !result2.ok ? result2.reason : null 
+                };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testDiagonalNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up diagonal nexus formation
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 1]);
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [-1, 0]);
+                
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [-1, 0],
+                    toCoords: [2, 1] // Adjacent to amber
+                };
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                return { passed: result.ok, error: result.reason };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        async function testPieceCannotUseSelfAsNexus() {
+            try {
+                const state = createTestGameState();
+                
+                // Set up nexus formation: Pearl at [0,0], Amber at [1,0]
+                addPieceToState(state, 'pearl', 'Pearl', 'circles', [0, 0]);
+                addPieceToState(state, 'amber', 'Amber', 'circles', [1, 0]);
+                
+                // Try to move Pearl (which is part of the nexus) using nexus movement
+                const move = {
+                    type: 'nexus',
+                    playerId: 'circles',
+                    fromCoords: [0, 0], // Pearl trying to move
+                    toCoords: [2, 0]    // Adjacent to Amber
+                };
+                
+                console.log('🐛 Testing Pearl self-nexus bug fix...');
+                console.log('- Pearl at [0,0], Amber at [1,0]');
+                console.log('- Pearl trying to move to [2,0]');
+                
+                const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
+                console.log('- Result:', result);
+                
+                // Should fail because Pearl is part of the nexus it's trying to use
+                return { 
+                    passed: !result.ok, 
+                    error: result.ok ? 'Pearl should not be able to use itself as nexus - bug not fixed!' : `Fixed! Reason: ${result.reason}` 
+                };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        // Make functions globally available
+        window.runAllTests = runAllTests;
+        window.runSingleTest = runSingleTest;
+        window.runDebugMode = runDebugMode;
+        window.clearResults = clearResults;
+    </script>
+</body>
+</html>

@@ -38,6 +38,12 @@ export function isValidMove(state, move, pieceDefs) {
  * @returns Validation result
  */
 function validateSetupMove(state, move, pieceDefs) {
+    logger.debug('validateSetupMove: Starting setup move validation', {
+        move: move,
+        gamePhase: state.gamePhase,
+        setupTurn: state.setupTurn,
+        currentPlayer: state.currentPlayer
+    });
     if (move.type !== 'place') {
         return { ok: false, reason: 'Only placement moves allowed during setup' };
     }
@@ -45,45 +51,57 @@ function validateSetupMove(state, move, pieceDefs) {
     if (!pieceId || !toCoords) {
         return { ok: false, reason: 'Missing piece ID or coordinates' };
     }
+    // Validate turn order - ensure it's actually this player's turn
+    if (move.playerId !== state.currentPlayer) {
+        return { ok: false, reason: `Not ${move.playerId}'s turn (current: ${state.currentPlayer})` };
+    }
     // Check if piece exists and belongs to player
-    const pieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][pieceId];
+    const playerPieces = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'];
+    const pieceDef = playerPieces[pieceId];
     if (!pieceDef) {
-        return { ok: false, reason: 'Invalid piece ID' };
+        return { ok: false, reason: `Invalid piece ID: ${pieceId}` };
+    }
+    // Check if this is a setup phase piece
+    if (pieceDef.placement !== 'setup_phase') {
+        return { ok: false, reason: `Piece ${pieceId} cannot be placed during setup phase` };
     }
     // Check if piece is already placed
     if (state.pieces[pieceId]) {
-        return { ok: false, reason: 'Piece already placed' };
+        return { ok: false, reason: `Piece ${pieceId} already placed` };
+    }
+    // Validate piece type limits (max 2 of each gem type)
+    const existingPiecesOfType = Object.values(state.pieces).filter(p => p.player === move.playerId && p.type === pieceDef.type);
+    if (existingPiecesOfType.length >= 2) {
+        return { ok: false, reason: `Already placed maximum pieces of type ${pieceDef.type}` };
     }
     // Check if coordinates are in valid starting area
+    if (!pieceDefs.board_data?.starting_areas) {
+        return { ok: false, reason: 'Starting areas not defined in piece definitions' };
+    }
     const startingArea = move.playerId === 'circles' ?
         pieceDefs.board_data.starting_areas.circles_starting_area.positions :
         pieceDefs.board_data.starting_areas.squares_starting_area.positions;
-    logger.debug('Validating coordinates:', {
+    logger.debug('Validating coordinates against starting area:', {
         playerId: move.playerId,
         toCoords: toCoords,
-        startingAreaType: move.playerId === 'circles' ? 'circles' : 'squares',
         startingAreaSize: startingArea.length,
-        sampleStartingPositions: startingArea.slice(0, 5)
+        sampleStartingPositions: startingArea.slice(0, 3)
     });
     const isValidStartingPosition = startingArea.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1]);
     if (!isValidStartingPosition) {
-        logger.info('Invalid starting position check:', {
+        logger.warn('Invalid starting position:', {
             playerId: move.playerId,
-            stateCurrentPlayer: state.currentPlayer,
             toCoords: toCoords,
-            toCoordsString: `[${toCoords[0]}, ${toCoords[1]}]`,
-            startingAreaSize: startingArea.length,
-            samplePositions: startingArea.slice(0, 3),
-            sampleStrings: startingArea.slice(0, 3).map(pos => `[${pos[0]}, ${pos[1]}]`),
-            isInCirclesArea: pieceDefs.board_data.starting_areas.circles_starting_area.positions.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1]),
-            isInSquaresArea: pieceDefs.board_data.starting_areas.squares_starting_area.positions.some(pos => pos[0] === toCoords[0] && pos[1] === toCoords[1])
+            startingAreaType: move.playerId === 'circles' ? 'circles' : 'squares',
+            reason: 'Coordinates not found in starting area'
         });
-        return { ok: false, reason: 'Invalid starting area position' };
+        return { ok: false, reason: `Position [${toCoords[0]}, ${toCoords[1]}] not in ${move.playerId} starting area` };
     }
     // Check if position is empty
     if (!isEmptyIntersection(state.board, toCoords)) {
-        return { ok: false, reason: 'Position already occupied' };
+        return { ok: false, reason: `Position [${toCoords[0]}, ${toCoords[1]}] already occupied` };
     }
+    logger.debug('validateSetupMove: Setup move validation passed');
     return { ok: true };
 }
 /**
@@ -169,8 +187,17 @@ function validateNexusMove(state, move, pieceDefs) {
     if (nexusFormations.length === 0) {
         return { ok: false, reason: 'No valid nexus formation exists' };
     }
-    // Check if source is adjacent to any nexus
-    const isAdjacentToNexus = nexusFormations.some(formation => formation.pieces.some(nexusCoords => areAdjacent(fromCoords, nexusCoords)));
+    // Check if source is adjacent to any nexus (but cannot use formations it's part of)
+    const isAdjacentToNexus = nexusFormations.some(formation => {
+        // First check if the moving piece is part of this specific formation
+        const isPartOfThisFormation = formation.pieces.some(nexusCoords => fromCoords[0] === nexusCoords[0] && fromCoords[1] === nexusCoords[1]);
+        // If piece is part of this formation, it cannot use this formation
+        if (isPartOfThisFormation) {
+            return false;
+        }
+        // Check if piece is adjacent to any piece in this formation
+        return formation.pieces.some(nexusCoords => areAdjacent(fromCoords, nexusCoords));
+    });
     if (!isAdjacentToNexus) {
         return { ok: false, reason: 'Source not adjacent to nexus formation' };
     }
@@ -202,8 +229,12 @@ function validatePortalSwapMove(state, move, pieceDefs) {
     if (!fromIntersection || !fromIntersection.piece) {
         return { ok: false, reason: 'No piece at source position' };
     }
-    const sourcePieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][fromIntersection.piece];
-    if (!sourcePieceDef || sourcePieceDef.type === 'Portal') {
+    // Get piece from state.pieces collection
+    const sourcePiece = state.pieces[fromIntersection.piece];
+    if (!sourcePiece || sourcePiece.player !== move.playerId) {
+        return { ok: false, reason: 'Source piece does not belong to player' };
+    }
+    if (sourcePiece.type === 'Portal') {
         return { ok: false, reason: 'Source piece must be non-Portal' };
     }
     // Check if source is on golden line
@@ -215,8 +246,11 @@ function validatePortalSwapMove(state, move, pieceDefs) {
     if (!toIntersection || !toIntersection.piece) {
         return { ok: false, reason: 'No piece at destination position' };
     }
-    const destPieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][toIntersection.piece];
-    if (!destPieceDef || destPieceDef.type !== 'Portal') {
+    const destPiece = state.pieces[toIntersection.piece];
+    if (!destPiece || destPiece.player !== move.playerId) {
+        return { ok: false, reason: 'Destination piece does not belong to player' };
+    }
+    if (destPiece.type !== 'Portal') {
         return { ok: false, reason: 'Destination must have Portal piece' };
     }
     return { ok: true };
@@ -238,8 +272,11 @@ function validatePortalLineMove(state, move, pieceDefs) {
     if (!fromIntersection || !fromIntersection.piece) {
         return { ok: false, reason: 'No piece at source position' };
     }
-    const pieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][fromIntersection.piece];
-    if (!pieceDef || pieceDef.type !== 'Portal') {
+    const piece = state.pieces[fromIntersection.piece];
+    if (!piece || piece.player !== move.playerId) {
+        return { ok: false, reason: 'Source piece does not belong to player' };
+    }
+    if (piece.type !== 'Portal') {
         return { ok: false, reason: 'Source must have Portal piece' };
     }
     // Check if path exists along golden lines
@@ -273,8 +310,11 @@ function validatePortalStandardMove(state, move, pieceDefs) {
     if (!fromIntersection || !fromIntersection.piece) {
         return { ok: false, reason: 'No piece at source position' };
     }
-    const pieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][fromIntersection.piece];
-    if (!pieceDef || pieceDef.type !== 'Portal') {
+    const piece = state.pieces[fromIntersection.piece];
+    if (!piece || piece.player !== move.playerId) {
+        return { ok: false, reason: 'Source piece does not belong to player' };
+    }
+    if (piece.type !== 'Portal') {
         return { ok: false, reason: 'Source must have Portal piece' };
     }
     // Check if destination is adjacent
@@ -308,12 +348,12 @@ function validatePortalPhasingMove(state, move, pieceDefs) {
     if (!fromIntersection || !fromIntersection.piece) {
         return { ok: false, reason: 'No piece at source position' };
     }
-    const pieceDef = pieceDefs.piece_definitions[move.playerId === 'circles' ? 'circles_pieces' : 'squares_pieces'][fromIntersection.piece];
-    if (!pieceDef) {
-        return { ok: false, reason: 'Invalid piece' };
+    const piece = state.pieces[fromIntersection.piece];
+    if (!piece || piece.player !== move.playerId) {
+        return { ok: false, reason: 'Source piece does not belong to player' };
     }
     // Check if path is straight line
-    const path = findPhasingPath(state.board, fromCoords, toCoords, pieceDef.type === 'Portal');
+    const path = findPhasingPath(state.board, fromCoords, toCoords, piece.type === 'Portal', state.pieces);
     if (!path) {
         return { ok: false, reason: 'Invalid phasing path' };
     }
@@ -322,7 +362,7 @@ function validatePortalPhasingMove(state, move, pieceDefs) {
         return { ok: false, reason: 'Destination occupied' };
     }
     // Check Portal restrictions - Portal pieces can only move to golden line intersections
-    if (pieceDef.type === 'Portal' && !isGoldenLineIntersection(state.board, toCoords)) {
+    if (piece.type === 'Portal' && !isGoldenLineIntersection(state.board, toCoords)) {
         return { ok: false, reason: 'Portal pieces can only move to golden line intersections' };
     }
     return { ok: true };
@@ -396,10 +436,7 @@ export function applyMove(state, move, pieceDefs) {
             }
             newState.board = movePiece(newState.board, move.fromCoords, move.toCoords);
             newState.pieces[sourcePieceId].coords = move.toCoords;
-            // Handle automatic attacks
-            const attackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
-            newState.board = attackResult.board;
-            newState.pieces = attackResult.pieces;
+            // Handle automatic attacks will be done after move processing
             // Switch players
             newState.currentPlayer = newState.currentPlayer === 'circles' ? 'squares' : 'circles';
             break;
@@ -436,10 +473,7 @@ export function applyMove(state, move, pieceDefs) {
             }
             newState.board = movePiece(newState.board, move.fromCoords, move.toCoords);
             newState.pieces[linePieceId].coords = move.toCoords;
-            // Handle automatic attacks
-            const lineAttackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
-            newState.board = lineAttackResult.board;
-            newState.pieces = lineAttackResult.pieces;
+            // Handle automatic attacks will be done after move processing
             newState.currentPlayer = newState.currentPlayer === 'circles' ? 'squares' : 'circles';
             break;
     }
@@ -454,10 +488,18 @@ export function applyMove(state, move, pieceDefs) {
     if (newState.gamePhase === 'gameplay') {
         availableAbilities = findAvailableAbilities(newState, move.playerId, pieceDefs);
     }
+    // Track destroyed pieces from the attack result
+    let destroyedPieces = [];
+    if (move.type !== 'place' && move.type !== 'portal_swap' && move.toCoords) {
+        const attackResult = performAutomaticAttack(newState, move.toCoords, pieceDefs);
+        newState.board = attackResult.board;
+        newState.pieces = attackResult.pieces;
+        destroyedPieces = attackResult.destroyedPieces || [];
+    }
     return {
         ok: true,
         nextState: newState,
-        destroyedPieces: [], // TODO: Track destroyed pieces
+        destroyedPieces: destroyedPieces,
         availableAbilities: availableAbilities
     };
 }
@@ -472,11 +514,11 @@ function performAutomaticAttack(state, coords, pieceDefs) {
     const newState = { board: { ...state.board, intersections: [...state.board.intersections] }, pieces: { ...state.pieces } };
     const movedPiece = getIntersectionByCoords(newState.board, coords);
     if (!movedPiece || !movedPiece.piece) {
-        return newState;
+        return { ...newState, destroyedPieces: [] };
     }
     const pieceDef = pieceDefs.piece_definitions[movedPiece.piece.startsWith('C_') ? 'circles_pieces' : 'squares_pieces'][movedPiece.piece];
     if (!pieceDef) {
-        return newState;
+        return { ...newState, destroyedPieces: [] };
     }
     const adjacentIntersections = getAdjacentIntersections(newState.board, coords);
     const destroyedPieces = [];
@@ -492,12 +534,13 @@ function performAutomaticAttack(state, coords, pieceDefs) {
         // Check if attack is valid based on piece types
         if (canAttack(pieceDef, adjacentPieceDef)) {
             // Remove attacked piece
+            const pieceToRemove = adjacent.piece;
             adjacent.piece = null;
-            delete newState.pieces[adjacent.piece];
-            destroyedPieces.push(adjacent.piece);
+            delete newState.pieces[pieceToRemove];
+            destroyedPieces.push(pieceToRemove);
         }
     }
-    return newState;
+    return { ...newState, destroyedPieces };
 }
 /**
  * Check if one piece can attack another
@@ -626,35 +669,43 @@ function findGoldenLinePath(board, fromCoords, toCoords) {
  * @param fromCoords - Source coordinates
  * @param toCoords - Target coordinates
  * @param isPortal - Whether moving piece is Portal
+ * @param pieces - Pieces collection for type checking
  * @returns Path coordinates or null if no path
  */
-function findPhasingPath(board, fromCoords, toCoords, isPortal) {
+function findPhasingPath(board, fromCoords, toCoords, isPortal, pieces) {
     const [fromX, fromY] = fromCoords;
     const [toX, toY] = toCoords;
-    // Check if path is straight line
-    if (fromX !== toX && fromY !== toY && Math.abs(fromX - toX) !== Math.abs(fromY - toY)) {
+    // Check if path is straight line (horizontal, vertical, or diagonal)
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    // Must be horizontal, vertical, or diagonal
+    if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) {
         return null;
     }
     // Calculate direction vector
-    const dx = toX > fromX ? 1 : toX < fromX ? -1 : 0;
-    const dy = toY > fromY ? 1 : toY < fromY ? -1 : 0;
+    const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+    const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
     const path = [];
-    let currentX = fromX;
-    let currentY = fromY;
+    let currentX = fromX + stepX;
+    let currentY = fromY + stepY;
+    // Walk along the path
     while (currentX !== toX || currentY !== toY) {
-        currentX += dx;
-        currentY += dy;
-        path.push([currentX, currentY]);
         // Check if we hit a blocking piece
         const intersection = getIntersectionByCoords(board, [currentX, currentY]);
         if (intersection && intersection.piece) {
-            const pieceType = intersection.piece.split('_')[1];
-            if (pieceType === 'Portal' && !isPortal) {
+            const piece = pieces[intersection.piece];
+            if (piece && piece.type === 'Portal' && !isPortal) {
                 // Non-Portal can move through Portal
+                path.push([currentX, currentY]);
+                currentX += stepX;
+                currentY += stepY;
                 continue;
             }
             else if (isPortal) {
                 // Portal can move through anything
+                path.push([currentX, currentY]);
+                currentX += stepX;
+                currentY += stepY;
                 continue;
             }
             else {
@@ -662,7 +713,15 @@ function findPhasingPath(board, fromCoords, toCoords, isPortal) {
                 return null;
             }
         }
+        else {
+            // Empty space
+            path.push([currentX, currentY]);
+            currentX += stepX;
+            currentY += stepY;
+        }
     }
+    // Add the final destination to the path
+    path.push([toX, toY]);
     return path;
 }
 /**
@@ -814,7 +873,7 @@ function getValidSetupPositions(state, playerId, pieceDefs) {
  * @param pieceDefs - Piece definitions
  * @returns Array of legal moves
  */
-function getLegalMovesForPiece(state, piece, pieceDefs) {
+export function getLegalMovesForPiece(state, piece, pieceDefs) {
     const moves = [];
     const pieceDef = pieceDefs.piece_definitions[piece.player === 'circles' ? 'circles_pieces' : 'squares_pieces'][piece.id];
     if (!pieceDef)
@@ -835,7 +894,169 @@ function getLegalMovesForPiece(state, piece, pieceDefs) {
             });
         }
     }
-    // Other movement types would be added here...
+    // Nexus movement - for all piece types
+    const nexusFormations = findNexusFormations(state, piece.player);
+    if (nexusFormations.length > 0) {
+        // Check if this piece is adjacent to any nexus formation (but cannot use formations it's part of)
+        const isAdjacentToNexus = nexusFormations.some(formation => {
+            // First check if the piece is part of this specific formation
+            const isPartOfThisFormation = formation.pieces.some(nexusCoords => piece.coords[0] === nexusCoords[0] && piece.coords[1] === nexusCoords[1]);
+            // If piece is part of this formation, it cannot use this formation
+            if (isPartOfThisFormation) {
+                return false;
+            }
+            // Check if piece is adjacent to any piece in this formation
+            return formation.pieces.some(nexusCoords => areAdjacent(piece.coords, nexusCoords));
+        });
+        if (isAdjacentToNexus) {
+            // Find all valid nexus destinations
+            const nexusDestinations = new Set();
+            for (const formation of nexusFormations) {
+                for (const nexusCoords of formation.pieces) {
+                    const adjacentToNexus = getAdjacentCoords(nexusCoords);
+                    for (const dest of adjacentToNexus) {
+                        if (isValidCoords(state.board, dest) && isEmptyIntersection(state.board, dest)) {
+                            // For Portal pieces, destination must be on golden line
+                            if (pieceDef.type === 'Portal' && !isGoldenLineIntersection(state.board, dest)) {
+                                continue;
+                            }
+                            const destKey = `${dest[0]},${dest[1]}`;
+                            if (!nexusDestinations.has(destKey)) {
+                                nexusDestinations.add(destKey);
+                                moves.push({
+                                    type: 'nexus',
+                                    fromCoords: piece.coords,
+                                    toCoords: dest,
+                                    pieceId: piece.id,
+                                    playerId: piece.player
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Portal-specific movements
+    if (pieceDef.type === 'Portal') {
+        // Portal standard movement (already handled above with golden line restriction)
+        // Portal line movement
+        const connections = getGoldenLineConnections(state.board, piece.coords);
+        for (const connection of connections) {
+            if (isEmptyIntersection(state.board, connection)) {
+                // Check if path is clear
+                const path = findGoldenLinePath(state.board, piece.coords, connection);
+                if (path && path.length > 0) {
+                    const isPathClear = path.every(pathCoords => areAdjacent(pathCoords, piece.coords) || isEmptyIntersection(state.board, pathCoords));
+                    if (isPathClear) {
+                        moves.push({
+                            type: 'portal_line',
+                            fromCoords: piece.coords,
+                            toCoords: connection,
+                            pieceId: piece.id,
+                            playerId: piece.player
+                        });
+                    }
+                }
+            }
+        }
+        // Portal phasing - Portal can phase through any piece
+        const directions = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ];
+        for (const [dx, dy] of directions) {
+            let currentPos = [piece.coords[0], piece.coords[1]];
+            let phaseFound = false;
+            // Continue while there are pieces to phase through
+            while (true) {
+                const nextPos = [currentPos[0] + dx, currentPos[1] + dy];
+                if (!isValidCoords(state.board, nextPos)) {
+                    break; // Out of bounds
+                }
+                const pieceAtNext = Object.values(state.pieces).find(p => p.coords[0] === nextPos[0] && p.coords[1] === nextPos[1]);
+                if (pieceAtNext) {
+                    // Portal can phase through any piece
+                    currentPos = nextPos;
+                    phaseFound = true;
+                }
+                else {
+                    // Empty intersection - this is our destination
+                    if (phaseFound && isGoldenLineIntersection(state.board, nextPos)) {
+                        moves.push({
+                            type: 'portal_phasing',
+                            fromCoords: piece.coords,
+                            toCoords: nextPos,
+                            pieceId: piece.id,
+                            playerId: piece.player
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+        // Portal swap
+        const playerPieces = Object.values(state.pieces).filter(p => p.player === piece.player);
+        for (const otherPiece of playerPieces) {
+            if (otherPiece.id !== piece.id &&
+                pieceDefs.piece_definitions[piece.player === 'circles' ? 'circles_pieces' : 'squares_pieces'][otherPiece.id]?.type !== 'Portal' &&
+                isGoldenLineIntersection(state.board, otherPiece.coords)) {
+                moves.push({
+                    type: 'portal_swap',
+                    fromCoords: otherPiece.coords, // Non-Portal piece initiates swap
+                    toCoords: piece.coords, // Portal piece position
+                    pieceId: otherPiece.id,
+                    playerId: piece.player
+                });
+            }
+        }
+    }
+    // Non-Portal phasing - can only phase through Portal pieces
+    if (pieceDef.type !== 'Portal') {
+        const directions = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1, 0], [1, 0],
+            [-1, 1], [0, 1], [1, 1]
+        ];
+        for (const [dx, dy] of directions) {
+            let currentPos = [piece.coords[0], piece.coords[1]];
+            let phaseFound = false;
+            // Continue while there are Portal pieces to phase through
+            while (true) {
+                const nextPos = [currentPos[0] + dx, currentPos[1] + dy];
+                if (!isValidCoords(state.board, nextPos)) {
+                    break; // Out of bounds
+                }
+                const pieceAtNext = Object.values(state.pieces).find(p => p.coords[0] === nextPos[0] && p.coords[1] === nextPos[1]);
+                if (pieceAtNext) {
+                    // Non-Portal can only phase through Portal pieces
+                    const nextPieceDef = pieceDefs.piece_definitions[pieceAtNext.player === 'circles' ? 'circles_pieces' : 'squares_pieces'][pieceAtNext.id];
+                    if (nextPieceDef?.type === 'Portal') {
+                        currentPos = nextPos;
+                        phaseFound = true;
+                    }
+                    else {
+                        // Hit a non-Portal piece - can't phase through
+                        break;
+                    }
+                }
+                else {
+                    // Empty intersection - this is our destination
+                    if (phaseFound) {
+                        moves.push({
+                            type: 'portal_phasing',
+                            fromCoords: piece.coords,
+                            toCoords: nextPos,
+                            pieceId: piece.id,
+                            playerId: piece.player
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+    }
     return moves;
 }
 /**
