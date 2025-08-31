@@ -528,24 +528,63 @@ function performAutomaticAttack(state, coords, pieceDefs) {
     if (!pieceDef) {
         return { ...newState, destroyedPieces: [] };
     }
-    const adjacentIntersections = getAdjacentIntersections(newState.board, coords);
     const destroyedPieces = [];
-    for (const adjacent of adjacentIntersections) {
-        if (!adjacent.piece)
-            continue;
-        const adjacentPieceDef = pieceDefs.piece_definitions[adjacent.piece.startsWith('C_') ? 'circles_pieces' : 'squares_pieces'][adjacent.piece];
-        if (!adjacentPieceDef)
-            continue;
-        // Check if pieces are from different players
-        if (pieceDef.player === adjacentPieceDef.player)
-            continue;
-        // Check if attack is valid based on piece types
-        if (canAttack(pieceDef, adjacentPieceDef)) {
-            // Remove attacked piece
-            const pieceToRemove = adjacent.piece;
-            adjacent.piece = null;
-            delete newState.pieces[pieceToRemove];
-            destroyedPieces.push(pieceToRemove);
+    if (pieceDef.type === 'Portal') {
+        // Portal combat: attack adjacent portals + distant portals via golden line connections
+        // 1. Attack adjacent portals
+        const adjacentIntersections = getAdjacentIntersections(newState.board, coords);
+        for (const adjacent of adjacentIntersections) {
+            if (!adjacent.piece)
+                continue;
+            const adjacentPieceDef = pieceDefs.piece_definitions[adjacent.piece.startsWith('C_') ? 'circles_pieces' : 'squares_pieces'][adjacent.piece];
+            if (!adjacentPieceDef)
+                continue;
+            // Check if pieces are from different players and target is a Portal
+            if (pieceDef.player !== adjacentPieceDef.player && adjacentPieceDef.type === 'Portal') {
+                const pieceToRemove = adjacent.piece;
+                adjacent.piece = null;
+                delete newState.pieces[pieceToRemove];
+                destroyedPieces.push(pieceToRemove);
+            }
+        }
+        // 2. Attack distant portals via golden line connections
+        const goldenConnections = getGoldenLineConnections(newState.board, coords);
+        for (const connection of goldenConnections) {
+            const connectedIntersection = getIntersectionByCoords(newState.board, connection);
+            if (!connectedIntersection || !connectedIntersection.piece)
+                continue;
+            const connectedPieceDef = pieceDefs.piece_definitions[connectedIntersection.piece.startsWith('C_') ? 'circles_pieces' : 'squares_pieces'][connectedIntersection.piece];
+            if (!connectedPieceDef)
+                continue;
+            // Check if pieces are from different players and target is a Portal
+            if (pieceDef.player !== connectedPieceDef.player && connectedPieceDef.type === 'Portal') {
+                const pieceToRemove = connectedIntersection.piece;
+                connectedIntersection.piece = null;
+                delete newState.pieces[pieceToRemove];
+                destroyedPieces.push(pieceToRemove);
+            }
+        }
+    }
+    else {
+        // Standard combat: attack adjacent valid targets
+        const adjacentIntersections = getAdjacentIntersections(newState.board, coords);
+        for (const adjacent of adjacentIntersections) {
+            if (!adjacent.piece)
+                continue;
+            const adjacentPieceDef = pieceDefs.piece_definitions[adjacent.piece.startsWith('C_') ? 'circles_pieces' : 'squares_pieces'][adjacent.piece];
+            if (!adjacentPieceDef)
+                continue;
+            // Check if pieces are from different players
+            if (pieceDef.player === adjacentPieceDef.player)
+                continue;
+            // Check if attack is valid based on piece types
+            if (canAttack(pieceDef, adjacentPieceDef)) {
+                // Remove attacked piece
+                const pieceToRemove = adjacent.piece;
+                adjacent.piece = null;
+                delete newState.pieces[pieceToRemove];
+                destroyedPieces.push(pieceToRemove);
+            }
         }
     }
     return { ...newState, destroyedPieces };
