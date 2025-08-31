@@ -96,7 +96,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#E63960",
-          "size": 8
+          "size": 18
         }
       },
       "C_Ruby2": {
@@ -107,7 +107,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#E63960",
-          "size": 8
+          "size": 18
         }
       },
       "C_Pearl1": {
@@ -118,7 +118,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F8F6DA",
-          "size": 8
+          "size": 18
         }
       },
       "C_Pearl2": {
@@ -129,7 +129,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F8F6DA",
-          "size": 8
+          "size": 18
         }
       },
       "C_Amber1": {
@@ -140,7 +140,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F6C13F",
-          "size": 8
+          "size": 18
         }
       },
       "C_Amber2": {
@@ -151,7 +151,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#F6C13F",
-          "size": 8
+          "size": 18
         }
       },
       "C_Jade1": {
@@ -162,7 +162,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#A9E886",
-          "size": 8
+          "size": 18
         }
       },
       "C_Jade2": {
@@ -173,7 +173,7 @@
         "graphics": {
           "shape": "circle",
           "color": "#A9E886",
-          "size": 8
+          "size": 18
         }
       },
       "C_Amalgam": {
@@ -240,7 +240,7 @@
         "graphics": {
           "shape": "square",
           "color": "#E63960",
-          "size": 8
+          "size": 18
         }
       },
       "S_Ruby2": {
@@ -251,7 +251,7 @@
         "graphics": {
           "shape": "square",
           "color": "#E63960",
-          "size": 8
+          "size": 18
         }
       },
       "S_Pearl1": {
@@ -262,7 +262,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F8F6DA",
-          "size": 8
+          "size": 18
         }
       },
       "S_Pearl2": {
@@ -273,7 +273,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F8F6DA",
-          "size": 8
+          "size": 18
         }
       },
       "S_Amber1": {
@@ -284,7 +284,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F6C13F",
-          "size": 8
+          "size": 18
         }
       },
       "S_Amber2": {
@@ -295,7 +295,7 @@
         "graphics": {
           "shape": "square",
           "color": "#F6C13F",
-          "size": 8
+          "size": 18
         }
       },
       "S_Jade1": {
@@ -306,7 +306,7 @@
         "graphics": {
           "shape": "square",
           "color": "#A9E886",
-          "size": 8
+          "size": 18
         }
       },
       "S_Jade2": {
@@ -317,7 +317,7 @@
         "graphics": {
           "shape": "square",
           "color": "#A9E886",
-          "size": 8
+          "size": 18
         }
       },
       "S_Amalgam": {

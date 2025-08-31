@@ -88,10 +88,10 @@ export class InteractionManager {
         const scaleY = this.canvasElement.height / rect.height;
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
-        // Convert to game coordinates using grid system (25px grid, canvas center at 400,400)
-        const originX = this.canvasElement.width / 2;
-        const originY = this.canvasElement.height / 2;
-        const gridSize = 25;
+        // Convert to game coordinates using board data center offset
+        const originX = 600; // Use board data center offset
+        const originY = 600; // Use board data center offset
+        const gridSize = 45; // Use the same coordinate scale as board data
         const gameX = Math.round((mouseX - originX) / gridSize);
         const gameY = Math.round((originY - mouseY) / gridSize);
         const coords = [gameX, gameY];
@@ -136,10 +136,10 @@ export class InteractionManager {
         const scaleY = this.canvasElement.height / rect.height;
         const mouseX = (event.clientX - rect.left) * scaleX;
         const mouseY = (event.clientY - rect.top) * scaleY;
-        // Convert to game coordinates
-        const originX = this.canvasElement.width / 2;
-        const originY = this.canvasElement.height / 2;
-        const gridSize = 25;
+        // Convert to game coordinates using board data center offset
+        const originX = 600; // Use board data center offset
+        const originY = 600; // Use board data center offset
+        const gridSize = 45; // Use the same coordinate scale as board data
         const gameX = Math.round((mouseX - originX) / gridSize);
         const gameY = Math.round((originY - mouseY) / gridSize);
         const coords = [gameX, gameY];

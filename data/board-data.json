@@ -5,12 +5,12 @@
   "coordinate_system": "Vector2 integer coordinates with center at [0,0]",
   "total_intersections": 457,
   "board": {
-    "width": 800,
-    "height": 800,
-    "coordinate_scale": 25,
-    "center_offset": [400, 400],
-    "intersectionRadius": 12,
-    "pieceRadius": 10
+    "width": 1200,
+    "height": 1200,
+    "coordinate_scale": 45,
+    "center_offset": [600, 600],
+    "intersectionRadius": 8,
+    "pieceRadius": 18
   },
   "coordinate_ranges": {
     "x_range": [-12, 12],

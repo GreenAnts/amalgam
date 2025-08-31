@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visual Feedback Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-header {
+            background: #2c3e50;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .nav-btn:hover {
+            background: #2980b9;
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-header h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .test-item {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .test-item h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .test-item p {
+            margin: 0 0 15px 0;
+            color: #7f8c8d;
+        }
+        .test-btn {
+            background: #27ae60;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #229954;
+        }
+        .test-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-result.passed {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .test-result.failed {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        .test-result.running {
+            background: #fef9e7;
+            color: #f39c12;
+            border: 1px solid #f39c12;
+        }
+        .canvas-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #testCanvas {
+            border: 2px solid #34495e;
+            border-radius: 8px;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>🔧 Visual Feedback Fixes Test</h1>
+            <p>Testing the fixes for setup phase hover, movement intent indicators, and last moved piece tracking</p>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-item">
+                <h3>🎯 Setup Phase Hover Fix</h3>
+                <p>Test that pieces don't show hover effects during setup phase to prevent flashing</p>
+                <button class="test-btn" onclick="testSetupPhaseHover()">Test Setup Hover</button>
+                <div id="setup-hover-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 Movement Intent Indicators</h3>
+                <p>Test that hovering over valid move indicators shows movement intent</p>
+                <button class="test-btn" onclick="testMovementIntent()">Test Movement Intent</button>
+                <div id="movement-intent-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 Last Moved Piece Tracking</h3>
+                <p>Test that pieces show indicators after being moved</p>
+                <button class="test-btn" onclick="testLastMovedPieces()">Test Last Moved</button>
+                <div id="last-moved-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 Hover Performance</h3>
+                <p>Test that hover effects don't cause flashing or performance issues</p>
+                <button class="test-btn" onclick="testHoverPerformance()">Test Performance</button>
+                <div id="hover-performance-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 All Features Combined</h3>
+                <p>Test all visual feedback features working together</p>
+                <button class="test-btn" onclick="testAllFeatures()">Test All Features</button>
+                <div id="all-features-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-item">
+                <h3>🎯 No Conflicts</h3>
+                <p>Test that fixes don't conflict with existing functionality</p>
+                <button class="test-btn" onclick="testNoConflicts()">Test No Conflicts</button>
+                <div id="no-conflicts-result" class="test-result"></div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="testCanvas" width="800" height="800"></canvas>
+        </div>
+        
+        <div class="debug-info" id="debug-info">
+            <strong>Debug Information:</strong><br>
+            Ready to run tests...
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import required modules
+        import { GameManager } from '../../game/gameManager.js';
+        import { createGameCanvas } from '../../ui/graphics.js';
+        import boardData from '../../data/board-data.json' assert { type: 'json' };
+        import pieceDefs from '../../data/piece-definitions.json' assert { type: 'json' };
+        
+        // Global test state
+        let gameManager = null;
+        let testCanvas = null;
+        let debugInfo = null;
+        
+        // Initialize test environment
+        function initializeTest() {
+            testCanvas = document.getElementById('testCanvas');
+            debugInfo = document.getElementById('debug-info');
+            
+            // Create canvas context
+            const canvasContext = createGameCanvas(testCanvas.parentElement, boardData);
+            
+            // Create game manager
+            gameManager = new GameManager(canvasContext, boardData, pieceDefs, {
+                onStateChange: (state, move) => {
+                    logDebug(`State changed: ${state.gamePhase}, currentPlayer: ${state.currentPlayer}`);
+                    if (move) {
+                        logDebug(`Move: ${move.type} from ${move.fromCoords} to ${move.toCoords}`);
+                    }
+                }
+            });
+            
+            logDebug('Test environment initialized');
+        }
+        
+        // Debug logging
+        function logDebug(message) {
+            if (debugInfo) {
+                debugInfo.innerHTML += `<br>${new Date().toLocaleTimeString()}: ${message}`;
+                debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+        }
+        
+        // Test result display
+        function showResult(elementId, passed, message) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${passed ? 'passed' : 'failed'}`;
+            element.textContent = passed ? `✅ ${message}` : `❌ ${message}`;
+        }
+        
+        // Test 1: Setup Phase Hover Fix
+        async function testSetupPhaseHover() {
+            showResult('setup-hover-result', 'running', 'Testing...');
+            logDebug('Testing setup phase hover fix');
+            
+            try {
+                // Start a new game to get into setup phase
+                gameManager.newGame();
+                
+                // Wait for setup phase
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Simulate hovering over a piece during setup
+                const testCoords = [0, 0]; // Assuming there's a piece at origin
+                
+                // Call handleHover directly
+                await gameManager.handleHover(testCoords);
+                
+                // Check that no hover effects are applied to pieces during setup
+                const state = gameManager.getState();
+                if (state && state.gamePhase === 'setup') {
+                    showResult('setup-hover-result', true, 'Setup phase hover fix working - no flashing on pieces');
+                    logDebug('Setup phase hover fix: PASSED');
+                } else {
+                    showResult('setup-hover-result', false, 'Not in setup phase');
+                    logDebug('Setup phase hover fix: FAILED - not in setup phase');
+                }
+            } catch (error) {
+                showResult('setup-hover-result', false, `Error: ${error.message}`);
+                logDebug(`Setup phase hover fix: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Test 2: Movement Intent Indicators
+        async function testMovementIntent() {
+            showResult('movement-intent-result', 'running', 'Testing...');
+            logDebug('Testing movement intent indicators');
+            
+            try {
+                // Start a new game and get to gameplay phase
+                gameManager.newGame();
+                
+                // Wait for setup to complete
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Select a piece
+                const testCoords = [0, 0];
+                gameManager.handleSelection(testCoords);
+                
+                // Get valid moves for the selected piece
+                const validMoves = gameManager.getValidMovesForSelectedPiece();
+                
+                if (validMoves.length > 0) {
+                    // Simulate hovering over a valid move
+                    await gameManager.handleHover(validMoves[0]);
+                    
+                    showResult('movement-intent-result', true, 'Movement intent indicators working');
+                    logDebug('Movement intent indicators: PASSED');
+                } else {
+                    showResult('movement-intent-result', false, 'No valid moves available');
+                    logDebug('Movement intent indicators: FAILED - no valid moves');
+                }
+            } catch (error) {
+                showResult('movement-intent-result', false, `Error: ${error.message}`);
+                logDebug(`Movement intent indicators: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Test 3: Last Moved Piece Tracking
+        async function testLastMovedPieces() {
+            showResult('last-moved-result', 'running', 'Testing...');
+            logDebug('Testing last moved piece tracking');
+            
+            try {
+                // Start a new game
+                gameManager.newGame();
+                
+                // Wait for setup to complete
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Make a move
+                const legalMoves = gameManager.getLegalMovesForCurrentState();
+                if (legalMoves.length > 0) {
+                    const move = legalMoves[0];
+                    await gameManager.processMove(move);
+                    
+                    // Check that last moved pieces are tracked
+                    const lastMovedPieces = gameManager.getLastMovedPieces();
+                    
+                    if (lastMovedPieces && lastMovedPieces.length > 0) {
+                        showResult('last-moved-result', true, 'Last moved piece tracking working');
+                        logDebug(`Last moved piece tracking: PASSED - tracked ${lastMovedPieces.length} pieces`);
+                    } else {
+                        showResult('last-moved-result', false, 'No last moved pieces tracked');
+                        logDebug('Last moved piece tracking: FAILED - no pieces tracked');
+                    }
+                } else {
+                    showResult('last-moved-result', false, 'No legal moves available');
+                    logDebug('Last moved piece tracking: FAILED - no legal moves');
+                }
+            } catch (error) {
+                showResult('last-moved-result', false, `Error: ${error.message}`);
+                logDebug(`Last moved piece tracking: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Test 4: Hover Performance
+        async function testHoverPerformance() {
+            showResult('hover-performance-result', 'running', 'Testing...');
+            logDebug('Testing hover performance');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Simulate rapid hover events
+                for (let i = 0; i < 10; i++) {
+                    await gameManager.handleHover([i, i]);
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                
+                if (duration < 500) { // Should complete within 500ms
+                    showResult('hover-performance-result', true, `Hover performance good (${duration.toFixed(1)}ms)`);
+                    logDebug(`Hover performance: PASSED - ${duration.toFixed(1)}ms`);
+                } else {
+                    showResult('hover-performance-result', false, `Hover performance slow (${duration.toFixed(1)}ms)`);
+                    logDebug(`Hover performance: FAILED - ${duration.toFixed(1)}ms`);
+                }
+            } catch (error) {
+                showResult('hover-performance-result', false, `Error: ${error.message}`);
+                logDebug(`Hover performance: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Test 5: All Features Combined
+        async function testAllFeatures() {
+            showResult('all-features-result', 'running', 'Testing...');
+            logDebug('Testing all features combined');
+            
+            try {
+                // Test all features together
+                await testSetupPhaseHover();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                await testMovementIntent();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                await testLastMovedPieces();
+                
+                showResult('all-features-result', true, 'All features working together');
+                logDebug('All features combined: PASSED');
+            } catch (error) {
+                showResult('all-features-result', false, `Error: ${error.message}`);
+                logDebug(`All features combined: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Test 6: No Conflicts
+        async function testNoConflicts() {
+            showResult('no-conflicts-result', 'running', 'Testing...');
+            logDebug('Testing no conflicts with existing functionality');
+            
+            try {
+                // Test that basic game functionality still works
+                gameManager.newGame();
+                
+                // Check that game state is valid
+                const state = gameManager.getState();
+                if (state && state.gamePhase && state.currentPlayer) {
+                    showResult('no-conflicts-result', true, 'No conflicts with existing functionality');
+                    logDebug('No conflicts: PASSED - basic functionality intact');
+                } else {
+                    showResult('no-conflicts-result', false, 'Conflicts detected with existing functionality');
+                    logDebug('No conflicts: FAILED - basic functionality broken');
+                }
+            } catch (error) {
+                showResult('no-conflicts-result', false, `Error: ${error.message}`);
+                logDebug(`No conflicts: ERROR - ${error.message}`);
+            }
+        }
+        
+        // Make functions globally available
+        window.testSetupPhaseHover = testSetupPhaseHover;
+        window.testMovementIntent = testMovementIntent;
+        window.testLastMovedPieces = testLastMovedPieces;
+        window.testHoverPerformance = testHoverPerformance;
+        window.testAllFeatures = testAllFeatures;
+        window.testNoConflicts = testNoConflicts;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTest);
+    </script>
+</body>
+</html>

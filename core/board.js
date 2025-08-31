@@ -98,7 +98,7 @@ export function createInitialState(board, boardData) {
             shape: 'circle',
             outerColor: '#5B4E7A',
             innerColor: '#8D7EA9',
-            size: 12
+            size: boardData?.board?.pieceRadius || 18
         }
     };
     pieces['C_Amalgam'] = {
@@ -110,7 +110,7 @@ export function createInitialState(board, boardData) {
         graphics: {
             shape: 'circle',
             colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
-            size: 10,
+            size: boardData?.board?.pieceRadius || 18,
             rotation: Math.PI // Face toward origin
         }
     };
@@ -124,7 +124,7 @@ export function createInitialState(board, boardData) {
             shape: 'circle',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 6
+            size: (boardData?.board?.pieceRadius || 18) * 0.7
         }
     };
     pieces['C_Portal2'] = {
@@ -137,7 +137,7 @@ export function createInitialState(board, boardData) {
             shape: 'circle',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 6
+            size: (boardData?.board?.pieceRadius || 18) * 0.7
         }
     };
     // Squares pre-placed pieces
@@ -151,7 +151,7 @@ export function createInitialState(board, boardData) {
             shape: 'square',
             outerColor: '#5B4E7A',
             innerColor: '#8D7EA9',
-            size: 10
+            size: boardData?.board?.pieceRadius || 18
         }
     };
     pieces['S_Amalgam'] = {
@@ -163,7 +163,7 @@ export function createInitialState(board, boardData) {
         graphics: {
             shape: 'square',
             colors: ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'],
-            size: 10,
+            size: boardData?.board?.pieceRadius || 18,
             rotation: Math.PI / 2 // Face toward origin
         }
     };
@@ -177,7 +177,7 @@ export function createInitialState(board, boardData) {
             shape: 'square',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 6
+            size: (boardData?.board?.pieceRadius || 18) * 0.7
         }
     };
     pieces['S_Portal2'] = {
@@ -190,7 +190,7 @@ export function createInitialState(board, boardData) {
             shape: 'square',
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6',
-            size: 6
+            size: (boardData?.board?.pieceRadius || 18) * 0.7
         }
     };
     // Place pre-placed pieces on the board

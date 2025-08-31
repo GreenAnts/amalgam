@@ -113,7 +113,7 @@
             <button class="btn btn-warning" onclick="testHoverEffect()">Test Hover Effect</button>
         </div>
 
-        <canvas id="demo-canvas" class="demo-canvas" width="400" height="400"></canvas>
+        <canvas id="demo-canvas" class="demo-canvas" width="600" height="600"></canvas>
 
         <div class="status" id="status">
 Click the buttons above to test different visual feedback features.
@@ -131,7 +131,7 @@ The main game now includes these enhancements for better user experience.
             ctx: ctx,
             originX: 200,
             originY: 200,
-            gridSize: 25
+            gridSize: 45
         };
 
         function clearCanvas() {
@@ -141,14 +141,14 @@ The main game now includes these enhancements for better user experience.
             ctx.strokeStyle = '#ddd';
             ctx.lineWidth = 1;
             
-            for (let x = 25; x < canvas.width; x += 25) {
+            for (let x = 45; x < canvas.width; x += 45) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
                 ctx.stroke();
             }
             
-            for (let y = 25; y < canvas.height; y += 25) {
+            for (let y = 45; y < canvas.height; y += 45) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
                 ctx.lineTo(canvas.width, y);
@@ -170,8 +170,8 @@ The main game now includes these enhancements for better user experience.
             
             samplePieces.forEach(coords => {
                 const [x, y] = coords;
-                const pixelX = 200 + x * 25;
-                const pixelY = 200 - y * 25;
+                const pixelX = 200 + x * 45;
+                const pixelY = 200 - y * 45;
                 
                 ctx.fillStyle = '#666';
                 ctx.beginPath();

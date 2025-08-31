@@ -13,9 +13,9 @@ export interface RenderContext {
 }
 
 // Board rendering constants
-const GRID_SIZE = 25; // Spacing between intersections
-const GOLDEN_RADIUS = 4;
-const DIAMOND_SIZE = 3;
+const GRID_SIZE = 25; // Spacing between intersections (will be overridden by board data)
+const GOLDEN_RADIUS = 5;
+const DIAMOND_SIZE = 4;
 const GOLDEN_COLOR = '#FFD700';
 const STANDARD_COLOR = '#000000';
 const GOLDEN_LINE_COLOR = '#FFD700';
@@ -69,21 +69,21 @@ export function createGameCanvas(container: HTMLElement, boardData: BoardData): 
     // Clear the container
     container.innerHTML = '';
     
-    // Create canvas element
+    // Create canvas element using board data dimensions
     const canvas = document.createElement('canvas');
     canvas.id = 'gameCanvas';
-    canvas.width = 800;
-    canvas.height = 800;
+    canvas.width = boardData.board.width;
+    canvas.height = boardData.board.height;
     
     const ctx = canvas.getContext('2d');
     if (!ctx) {
         throw new Error('Could not get 2D rendering context');
     }
     
-    // Calculate board dimensions
-    const boardSize = Math.min(canvas.width, canvas.height);
-    const originX = boardSize / 2;
-    const originY = boardSize / 2;
+    // Use board data for origin and grid size
+    const originX = boardData.board.center_offset[0];
+    const originY = boardData.board.center_offset[1];
+    const gridSize = boardData.board.coordinate_scale;
     
     container.appendChild(canvas);
     
@@ -107,9 +107,9 @@ export function createGameCanvas(container: HTMLElement, boardData: BoardData): 
         goldenConnections,
         drawBoard: () => drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardData),
         drawPieces: (pieces: Record<IntersectionId, any>, selectedCoord?: Vector2 | null) => 
-            drawPieces(ctx, originX, originY, pieces, selectedCoord),
+            drawPieces(ctx, originX, originY, pieces, selectedCoord || null, gridSize, boardData),
         getCoordinatesFromPixel: (mouseX: number, mouseY: number) => 
-            getCoordinatesFromPixel(mouseX, mouseY, originX, originY)
+            getCoordinatesFromPixel(mouseX, mouseY, originX, originY, boardData.board.coordinate_scale)
     };
 }
 
@@ -175,27 +175,29 @@ function drawBoard(
     goldenConnections: Set<string>,
     boardData: BoardData
 ): void {
+    const gridSize = boardData.board.coordinate_scale;
+    
     // Clear canvas with white background
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     
     // Draw background polygons (board shape)
-    drawBackgroundPolygons(ctx, originX, originY);
+    drawBackgroundPolygons(ctx, originX, originY, gridSize);
     
     // Draw black lines first, behind golden lines
-    drawStandardLines(ctx, originX, originY, boardDict, goldenConnections);
+    drawStandardLines(ctx, originX, originY, boardDict, goldenConnections, gridSize);
     
     // Draw golden lines on top
-    drawGoldenLines(ctx, originX, originY, boardData.golden_lines.golden_lines_dict);
+    drawGoldenLines(ctx, originX, originY, boardData.golden_lines.golden_lines_dict, gridSize);
     
     // Draw intersections on top of lines
-    drawIntersections(ctx, originX, originY, boardDict);
+    drawIntersections(ctx, originX, originY, boardDict, gridSize, boardData);
 }
 
 /**
  * Draw background polygon shapes
  */
-function drawBackgroundPolygons(ctx: CanvasRenderingContext2D, originX: number, originY: number): void {
+function drawBackgroundPolygons(ctx: CanvasRenderingContext2D, originX: number, originY: number, gridSize: number): void {
     // Define polygon sets
     const polygonsToDraw1: PolygonPoint[][] = [
         [{x: 0, y: 12}, {x: 5, y: 11}, {x: 8, y: 9}, {x: 6, y: 6}, {x: 0, y: 6}],
@@ -231,9 +233,9 @@ function drawBackgroundPolygons(ctx: CanvasRenderingContext2D, originX: number, 
     ];
     
     // Draw polygon sets with different colors
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, POLYGON_FILL_COLOR_1);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, POLYGON_FILL_COLOR_2);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, POLYGON_FILL_COLOR_3);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, POLYGON_FILL_COLOR_1, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, POLYGON_FILL_COLOR_2, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, POLYGON_FILL_COLOR_3, gridSize);
 }
 
 /**
@@ -244,14 +246,15 @@ function drawPolygonSet(
     originX: number, 
     originY: number, 
     polygons: PolygonPoint[][], 
-    fillColor: string
+    fillColor: string,
+    gridSize: number
 ): void {
     ctx.fillStyle = fillColor;
     polygons.forEach(polygon => {
         ctx.beginPath();
         polygon.forEach((point, index) => {
-            const pixelX = originX + point.x * GRID_SIZE;
-            const pixelY = originY - point.y * GRID_SIZE;
+            const pixelX = originX + point.x * gridSize;
+            const pixelY = originY - point.y * gridSize;
             if (index === 0) {
                 ctx.moveTo(pixelX, pixelY);
             } else {
@@ -271,7 +274,8 @@ function drawStandardLines(
     originX: number, 
     originY: number, 
     boardDict: Record<IntersectionId, 'golden' | 'standard'>,
-    goldenConnections: Set<string>
+    goldenConnections: Set<string>,
+    gridSize: number
 ): void {
     ctx.strokeStyle = BLACK_LINE_COLOR;
     ctx.lineWidth = BLACK_LINE_WIDTH;
@@ -279,16 +283,16 @@ function drawStandardLines(
     
     for (const coordStr in boardDict) {
         const [x, y] = coordStr.split(',').map(Number);
-        const startX = originX + x * GRID_SIZE;
-        const startY = originY - y * GRID_SIZE;
+        const startX = originX + x * gridSize;
+        const startY = originY - y * gridSize;
         
         // Check horizontal neighbor
         const neighborHStr = `${x + 1},${y}`;
         if (boardDict[neighborHStr] !== undefined) {
             const key = `${Math.min(x, x + 1)},${Math.min(y, y)}-${Math.max(x, x + 1)},${Math.max(y, y)}`;
             if (!goldenConnections.has(key)) {
-                const endX = originX + (x + 1) * GRID_SIZE;
-                const endY = originY - y * GRID_SIZE;
+                const endX = originX + (x + 1) * gridSize;
+                const endY = originY - y * gridSize;
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
@@ -301,8 +305,8 @@ function drawStandardLines(
         if (boardDict[neighborVStr] !== undefined) {
             const key = `${Math.min(x, x)},${Math.min(y, y + 1)}-${Math.max(x, x)},${Math.max(y, y + 1)}`;
             if (!goldenConnections.has(key)) {
-                const endX = originX + x * GRID_SIZE;
-                const endY = originY - (y + 1) * GRID_SIZE;
+                const endX = originX + x * gridSize;
+                const endY = originY - (y + 1) * gridSize;
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
@@ -319,7 +323,8 @@ function drawGoldenLines(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    goldenLinesDict: Record<string, Array<{x: number, y: number}>>
+    goldenLinesDict: Record<string, Array<{x: number, y: number}>>,
+    gridSize: number
 ): void {
     ctx.strokeStyle = GOLDEN_LINE_COLOR;
     ctx.lineWidth = GOLDEN_LINE_WIDTH;
@@ -328,13 +333,13 @@ function drawGoldenLines(
     for (const coordStr in goldenLinesDict) {
         const connections = goldenLinesDict[coordStr];
         const parts = coordStr.split(',').map(Number);
-        const startX = originX + parts[0] * GRID_SIZE;
-        const startY = originY - parts[1] * GRID_SIZE;
+        const startX = originX + parts[0] * gridSize;
+        const startY = originY - parts[1] * gridSize;
         
         if (Array.isArray(connections)) {
             connections.forEach(target => {
-                const endX = originX + target.x * GRID_SIZE;
-                const endY = originY - target.y * GRID_SIZE;
+                const endX = originX + target.x * gridSize;
+                const endY = originY - target.y * gridSize;
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
@@ -351,25 +356,30 @@ function drawIntersections(
     ctx: CanvasRenderingContext2D, 
     originX: number, 
     originY: number, 
-    boardDict: Record<IntersectionId, 'golden' | 'standard'>
+    boardDict: Record<IntersectionId, 'golden' | 'standard'>,
+    gridSize: number,
+    boardData: BoardData
 ): void {
+    const intersectionRadius = boardData.board.intersectionRadius;
+    
     for (const coordStr in boardDict) {
         const intersectionType = boardDict[coordStr];
         const parts = coordStr.split(',').map(Number);
         const x = parts[0];
         const y = parts[1];
-        const pixelX = originX + x * GRID_SIZE;
-        const pixelY = originY - y * GRID_SIZE;
+        const pixelX = originX + x * gridSize;
+        const pixelY = originY - y * gridSize;
         
         ctx.fillStyle = intersectionType === "golden" ? GOLDEN_COLOR : STANDARD_COLOR;
         ctx.beginPath();
         if (intersectionType === "golden") {
-            ctx.arc(pixelX, pixelY, GOLDEN_RADIUS, 0, 2 * Math.PI);
+            ctx.arc(pixelX, pixelY, intersectionRadius, 0, 2 * Math.PI);
         } else { // Standard intersections are now diamonds
-            ctx.moveTo(pixelX, pixelY - DIAMOND_SIZE); // Top point
-            ctx.lineTo(pixelX + DIAMOND_SIZE, pixelY); // Right point
-            ctx.lineTo(pixelX, pixelY + DIAMOND_SIZE); // Bottom point
-            ctx.lineTo(pixelX - DIAMOND_SIZE, pixelY); // Left point
+            const diamondSize = intersectionRadius * 0.8;
+            ctx.moveTo(pixelX, pixelY - diamondSize); // Top point
+            ctx.lineTo(pixelX + diamondSize, pixelY); // Right point
+            ctx.lineTo(pixelX, pixelY + diamondSize); // Bottom point
+            ctx.lineTo(pixelX - diamondSize, pixelY); // Left point
             ctx.closePath();
         }
         ctx.fill();
@@ -384,21 +394,23 @@ function drawPieces(
     originX: number, 
     originY: number, 
     pieces: Record<IntersectionId, any>, 
-    selectedCoord?: Vector2 | null
+    selectedCoord: Vector2 | null,
+    gridSize: number,
+    boardData: BoardData
 ): void {
     for (const coordStr in pieces) {
         const piece = pieces[coordStr];
         const [x, y] = coordStr.split(',').map(Number);
         
         // Use existing graphics if available, otherwise create default graphics
-        const graphics = piece.graphics || createPieceGraphics(piece);
+        const graphics = piece.graphics || createPieceGraphics(piece, boardData);
         
         // Render the piece
         const renderContext = {
             ctx,
             originX,
             originY,
-            gridSize: GRID_SIZE
+            gridSize: gridSize
         };
         
         const pieceWithGraphics = {
@@ -412,8 +424,8 @@ function drawPieces(
     // Draw selection highlight (from reference implementation)
     if (selectedCoord) {
         const [x, y] = selectedCoord;
-        const centerPixelX = originX + x * GRID_SIZE;
-        const centerPixelY = originY - y * GRID_SIZE;
+        const centerPixelX = originX + x * gridSize;
+        const centerPixelY = originY - y * gridSize;
         
         // Find the piece at the selected coordinates
         const coordStr = `${x},${y}`;
@@ -433,11 +445,14 @@ function drawPieces(
 /**
  * Create graphics object for a piece
  */
-function createPieceGraphics(piece: any): PieceGraphics {
+function createPieceGraphics(piece: any, boardData?: BoardData): PieceGraphics {
     // If the piece already has graphics defined, use them
     if (piece.graphics) {
         return piece.graphics;
     }
+    
+    // Get default piece size from board data or use fallback
+    const defaultSize = boardData?.board.pieceRadius || 10;
     
     // Otherwise, create default graphics
     const pieceType = piece.type;
@@ -446,21 +461,21 @@ function createPieceGraphics(piece: any): PieceGraphics {
     if (pieceType === 'Amalgam') {
         return {
             shape: player === 'circles' ? 'circle' : 'square',
-            size: piece.size || 12,
+            size: piece.size || defaultSize,
             colors: AMALGAM_COLORS,
             rotation: piece.rotation || (player === 'circles' ? Math.PI : Math.PI / 2)
         };
     } else if (pieceType === 'Portal') {
         return {
             shape: player === 'circles' ? 'circle' : 'square',
-            size: piece.size || 8,
+            size: piece.size || defaultSize * 0.7,
             outerColor: '#87CEEB',
             innerColor: '#ADD8E6'
         };
     } else if (pieceType === 'Void') {
         return {
             shape: player === 'circles' ? 'circle' : 'square',
-            size: piece.size || 12,
+            size: piece.size || defaultSize,
             outerColor: '#5B4E7A',
             innerColor: '#8D7EA9'
         };
@@ -475,7 +490,7 @@ function createPieceGraphics(piece: any): PieceGraphics {
         
         return {
             shape: player === 'circles' ? 'circle' : 'square',
-            size: piece.size || 10,
+            size: piece.size || defaultSize * 0.8,
             color: colorMap[pieceType] || '#666'
         };
     }
@@ -484,9 +499,9 @@ function createPieceGraphics(piece: any): PieceGraphics {
 /**
  * Convert pixel coordinates to game coordinates
  */
-function getCoordinatesFromPixel(mouseX: number, mouseY: number, originX: number, originY: number): Vector2 {
-    const gameX = Math.round((mouseX - originX) / GRID_SIZE);
-    const gameY = Math.round((originY - mouseY) / GRID_SIZE);
+function getCoordinatesFromPixel(mouseX: number, mouseY: number, originX: number, originY: number, gridSize: number): Vector2 {
+    const gameX = Math.round((mouseX - originX) / gridSize);
+    const gameY = Math.round((originY - mouseY) / gridSize);
     return [gameX, gameY];
 }
 
@@ -504,11 +519,15 @@ export function renderSelectionHighlight(context: RenderContext, coords: Vector2
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
     
+    // Scale the selection ring based on grid size
+    const baseSize = 18;
+    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    
     // Draw selection ring
     ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, 18, 0, 2 * Math.PI);
+    ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
     ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * (gridSize / 25);
     ctx.stroke();
     
     // Add pulsing effect
@@ -517,9 +536,9 @@ export function renderSelectionHighlight(context: RenderContext, coords: Vector2
     ctx.globalAlpha = pulse;
     
     ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, 22, 0, 2 * Math.PI);
+    ctx.arc(centerPixelX, centerPixelY, scaledSize * 1.2, 0, 2 * Math.PI);
     ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1 * (gridSize / 25);
     ctx.stroke();
     
     ctx.globalAlpha = 1.0;
@@ -531,21 +550,25 @@ export function renderSelectionHighlight(context: RenderContext, coords: Vector2
 export function renderValidMoveIndicators(context: RenderContext, validMoves: Vector2[]): void {
     const { ctx, originX, originY, gridSize } = context;
     
+    // Scale the indicator size based on grid size
+    const baseSize = 8;
+    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    
     validMoves.forEach(coords => {
         const centerPixelX = originX + coords[0] * gridSize;
         const centerPixelY = originY - coords[1] * gridSize;
         
         // Draw move indicator circle
         ctx.beginPath();
-        ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+        ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
         ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
         ctx.fill();
         
         // Draw border
         ctx.beginPath();
-        ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
+        ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
         ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * (gridSize / 25);
         ctx.stroke();
     });
 }
@@ -558,11 +581,15 @@ export function renderHoverEffect(context: RenderContext, coords: Vector2): void
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
     
+    // Scale the hover ring based on grid size
+    const baseSize = 15;
+    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    
     // Draw subtle hover ring
     ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, 15, 0, 2 * Math.PI);
+    ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2 * (gridSize / 25);
     ctx.stroke();
 }
 

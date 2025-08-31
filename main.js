@@ -373,6 +373,8 @@ export class AmalgamGame {
             console.log('🔍 DEBUG: Calling showActionButtons...');
             this.showActionButtons(pieceAtLocation);
             console.log('🔍 DEBUG: showActionButtons completed');
+            // Update board display to show movement indicators
+            this.updateBoardDisplay(state);
             // Update visual feedback immediately for responsiveness
             const validMoves = this.getValidMovesForPiece(pieceAtLocation);
             this.updateVisualFeedback(coords, validMoves);
@@ -456,7 +458,7 @@ export class AmalgamGame {
         const rect = canvas.getBoundingClientRect();
         const originX = canvas.width / 2;
         const originY = canvas.height / 2;
-        const gridSize = 25;
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
         const canvasX = originX + (coords[0] * gridSize);
         const canvasY = originY - (coords[1] * gridSize);
         // Convert to screen coordinates
@@ -956,11 +958,25 @@ export class AmalgamGame {
         if (state.pieces && Object.keys(state.pieces).length > 0) {
             // Convert pieces to the format expected by the canvas renderer
             const piecesData = this.convertPiecesForCanvas(state.pieces);
-            this.gameCanvas.drawPieces(piecesData, null); // No selected piece highlight for now
+            // Get selected piece coordinates for highlighting
+            let selectedCoord = null;
+            if (this.selectedPieceId && state.pieces[this.selectedPieceId]) {
+                selectedCoord = state.pieces[this.selectedPieceId].coords;
+            }
+            this.gameCanvas.drawPieces(piecesData, selectedCoord);
         }
         // Draw valid placement positions during setup
         if (state.gamePhase === 'setup') {
             this.drawValidPlacementPositions(state);
+        }
+        // Draw movement indicators for selected piece during gameplay
+        logger.debug('Game phase check:', {
+            gamePhase: state.gamePhase,
+            selectedPieceId: this.selectedPieceId,
+            hasSelectedPiece: this.selectedPieceId && state.pieces[this.selectedPieceId]
+        });
+        if (state.gamePhase === 'gameplay' && this.selectedPieceId && state.pieces[this.selectedPieceId]) {
+            this.drawMovementIndicators(state, this.selectedPieceId);
         }
     }
     /**
@@ -969,8 +985,10 @@ export class AmalgamGame {
     drawValidPlacementPositions(state) {
         if (!this.gameCanvas || !this.pieceDefs)
             return;
-        const { ctx, originX, originY } = this.gameCanvas;
-        const gridSize = 25;
+        const { ctx } = this.gameCanvas;
+        const originX = this.boardData?.board?.center_offset?.[0] || 600;
+        const originY = this.boardData?.board?.center_offset?.[1] || 600;
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
         // Get valid positions for current player
         const startingArea = state.currentPlayer === 'circles' ?
             this.pieceDefs.board_data.starting_areas.circles_starting_area.positions :
@@ -998,6 +1016,59 @@ export class AmalgamGame {
             ctx.arc(centerPixelX, centerPixelY, 8, 0, 2 * Math.PI);
             ctx.stroke();
         }
+        ctx.restore();
+    }
+    /**
+     * Draw movement indicators for selected piece during gameplay
+     */
+    drawMovementIndicators(state, selectedPieceId) {
+        if (!this.gameCanvas || !this.gameManager)
+            return;
+        const selectedPiece = state.pieces[selectedPieceId];
+        if (!selectedPiece)
+            return;
+        // Get legal moves for the selected piece
+        const legalMoves = this.gameManager.getLegalMovesForCurrentState();
+        const validMoves = legalMoves
+            .filter(move => move.fromCoords &&
+            move.fromCoords[0] === selectedPiece.coords[0] &&
+            move.fromCoords[1] === selectedPiece.coords[1])
+            .map(move => move.toCoords)
+            .filter(Boolean);
+        // Debug logging
+        logger.debug('Movement indicators:', {
+            selectedPiece: selectedPiece.coords,
+            legalMovesCount: legalMoves.length,
+            validMovesCount: validMoves.length,
+            validMoves: validMoves.slice(0, 5) // Show first 5 moves
+        });
+        if (validMoves.length === 0)
+            return;
+        // Use proper graphics functions for movement indicators
+        const { ctx } = this.gameCanvas;
+        const originX = this.boardData?.board?.center_offset?.[0] || 600;
+        const originY = this.boardData?.board?.center_offset?.[1] || 600;
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
+        // Scale the indicator size based on grid size
+        const baseSize = 8;
+        const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+        // Draw movement indicators directly
+        ctx.save();
+        ctx.strokeStyle = '#00FF00';
+        ctx.lineWidth = 2 * (gridSize / 25);
+        validMoves.forEach(coords => {
+            const centerPixelX = originX + coords[0] * gridSize;
+            const centerPixelY = originY - coords[1] * gridSize;
+            // Draw move indicator circle
+            ctx.beginPath();
+            ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+            ctx.fill();
+            // Draw border
+            ctx.beginPath();
+            ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
+            ctx.stroke();
+        });
         ctx.restore();
     }
     /**

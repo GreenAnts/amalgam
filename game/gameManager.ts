@@ -695,7 +695,7 @@ export class GameManager {
      * Get legal moves for current state
      * @returns Array of legal moves
      */
-    private getLegalMovesForCurrentState(): Move[] {
+    public getLegalMovesForCurrentState(): Move[] {
         if (!this.state || !this.currentPlayer) {
             return [];
         }
@@ -759,7 +759,7 @@ export class GameManager {
                     ctx: this.gameCanvas.ctx,
                     originX: this.gameCanvas.originX,
                     originY: this.gameCanvas.originY,
-                    gridSize: 25
+                    gridSize: this.boardData?.board?.coordinate_scale || 45
                 };
                 
                 // Render selection highlight
@@ -850,7 +850,7 @@ export class GameManager {
         if (!this.gameCanvas || !this.board) return;
         
         const { ctx, originX, originY } = this.gameCanvas;
-        const gridSize = 25; // Should match the board data
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
         
         // Draw background polygons
         this.drawBackgroundPolygons(ctx, originX, originY, gridSize);
@@ -936,7 +936,7 @@ export class GameManager {
         if (!this.state || !this.gameCanvas) return;
         
         const { ctx, originX, originY } = this.gameCanvas;
-        const gridSize = 25;
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
         
         const renderContext = {
             ctx,
@@ -1107,7 +1107,7 @@ export class GameManager {
         if (!this.state || !this.gameCanvas || !this.pieceDefs) return;
         
         const { ctx, originX, originY } = this.gameCanvas;
-        const gridSize = 25;
+        const gridSize = this.boardData?.board?.coordinate_scale || 45;
         
         // Get valid positions for current player
         const startingArea = this.state.currentPlayer === 'circles' ? 

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation System Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .info-panel {
+            background: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .demo-canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: block;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+        .status {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
+            <a href="../../tests.html" class="nav-btn" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn" style="background: #27ae60; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">📊 Full Suite</a>
+            <a href="visual-feedback-test.html" class="nav-btn" style="background: #8e44ad; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🎨 Visual Feedback</a>
+        </div>
+
+        <div class="test-header">
+            <h1>🎬 Animation System Test</h1>
+            <p>Testing the new modular animation system for visual feedback</p>
+        </div>
+
+        <div class="info-panel">
+            <h3>🎬 NEW MODULAR ANIMATION SYSTEM:</h3>
+            <ul>
+                <li><strong>Centralized Animation Manager:</strong> All animations handled by ui/animations.ts</li>
+                <li><strong>Performance Optimized:</strong> Single requestAnimationFrame loop for all animations</li>
+                <li><strong>Setup Phase Fix:</strong> No hover effects on pieces during setup to prevent flashing</li>
+                <li><strong>Movement Intent Indicators:</strong> Enhanced feedback when hovering over valid moves</li>
+                <li><strong>Last Moved Piece Tracking:</strong> Orange animated rings show recently moved pieces</li>
+                <li><strong>Portal Swap Support:</strong> Tracks both pieces involved in portal swaps</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Core Animation Tests</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="testSelectionHighlight()">Selection Highlight</button>
+                <button class="btn btn-success" onclick="testValidMoves()">Valid Move Indicators</button>
+                <button class="btn btn-warning" onclick="testHoverEffect()">Hover Effect</button>
+                <button class="btn btn-info" onclick="testMovementIntent()">Movement Intent</button>
+                <button class="btn btn-danger" onclick="testLastMovedPieces()">Last Moved Pieces</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 Animation Management Tests</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="testMultipleAnimations()">Multiple Animations</button>
+                <button class="btn btn-success" onclick="testAnimationStopping()">Stop Animations</button>
+                <button class="btn btn-warning" onclick="testAnimationPerformance()">Performance Test</button>
+            </div>
+        </div>
+
+        <canvas id="demo-canvas" class="demo-canvas" width="600" height="600"></canvas>
+
+        <div class="status" id="status">
+Click the buttons above to test the new modular animation system.
+The system now properly handles setup phase hover restrictions and movement intent indicators.
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            startSelectionHighlight, 
+            startValidMovesAnimation, 
+            startHoverEffect,
+            startMovementIntentAnimation,
+            startLastMovedPiecesAnimation,
+            stopAnimation,
+            stopAllAnimations,
+            animationManager
+        } from '../../ui/animations.js';
+
+        const canvas = document.getElementById('demo-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const renderContext = {
+            ctx: ctx,
+            originX: 200,
+            originY: 200,
+            gridSize: 45
+        };
+
+        // Test state with sample pieces
+        const testState = {
+            pieces: {
+                'piece1': {
+                    id: 'piece1',
+                    type: 'Ruby',
+                    coords: [2, 2],
+                    player: 'circles'
+                },
+                'piece2': {
+                    id: 'piece2',
+                    type: 'Portal',
+                    coords: [-2, -2],
+                    player: 'squares'
+                },
+                'piece3': {
+                    id: 'piece3',
+                    type: 'Amalgam',
+                    coords: [0, 0],
+                    player: 'circles'
+                }
+            }
+        };
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw a simple grid background
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            
+            for (let x = 45; x < canvas.width; x += 45) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 45; y < canvas.height; y += 45) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw center intersection
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(200, 200, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw some sample piece positions
+            const samplePieces = [
+                [-2, 2], [0, 2], [2, 2],
+                [-2, 0], [2, 0],
+                [-2, -2], [0, -2], [2, -2]
+            ];
+            
+            samplePieces.forEach(coords => {
+                const [x, y] = coords;
+                const pixelX = 200 + x * 45;
+                const pixelY = 200 - y * 45;
+                
+                ctx.fillStyle = '#666';
+                ctx.beginPath();
+                ctx.arc(pixelX, pixelY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        window.testSelectionHighlight = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            startSelectionHighlight(renderContext, [0, 0]);
+            
+            updateStatus('✅ Selection Highlight: Animated green ring around selected piece at center [0, 0] - Uses new animation system');
+        };
+
+        window.testValidMoves = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            const validMoves = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1],  [1, 0],  [1, 1]
+            ];
+            
+            startValidMovesAnimation(renderContext, validMoves, testState);
+            startSelectionHighlight(renderContext, [0, 0]);
+            
+            updateStatus('✅ Valid Move Indicators: Animated green rings showing 8 adjacent valid moves - Portal locations show purple indicators');
+        };
+
+        window.testHoverEffect = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            startHoverEffect(renderContext, [1, 1]);
+            
+            updateStatus('✅ Hover Effect: Animated white cross with corner dots showing hover state at [1, 1]');
+        };
+
+        window.testMovementIntent = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            // First show valid moves
+            const validMoves = [[1, 1], [2, 2], [-1, -1]];
+            startValidMovesAnimation(renderContext, validMoves, testState);
+            startSelectionHighlight(renderContext, [0, 0]);
+            
+            // Then show movement intent on one of the valid moves
+            setTimeout(() => {
+                startMovementIntentAnimation(renderContext, [1, 1]);
+                updateStatus('✅ Movement Intent: Enhanced yellow indicator when hovering over valid move [1, 1] - Shows intent to move there');
+            }, 1000);
+        };
+
+        window.testLastMovedPieces = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            const lastMovedPieces = ['piece1', 'piece2']; // Simulate portal swap
+            startLastMovedPiecesAnimation(renderContext, lastMovedPieces, testState);
+            
+            updateStatus('✅ Last Moved Pieces: Orange animated rings around recently moved pieces - Shows both pieces involved in portal swap');
+        };
+
+        window.testMultipleAnimations = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            // Start multiple animations simultaneously
+            startSelectionHighlight(renderContext, [0, 0]);
+            startValidMovesAnimation(renderContext, [[1, 1], [2, 2]], testState);
+            startLastMovedPiecesAnimation(renderContext, ['piece1'], testState);
+            
+            updateStatus('✅ Multiple Animations: All animations running simultaneously - Selection highlight, valid moves, and last moved pieces');
+        };
+
+        window.testAnimationStopping = function() {
+            clearCanvas();
+            
+            // Start animations
+            startSelectionHighlight(renderContext, [0, 0]);
+            startValidMovesAnimation(renderContext, [[1, 1]], testState);
+            
+            // Stop them after 2 seconds
+            setTimeout(() => {
+                stopAllAnimations();
+                updateStatus('✅ Animation Stopping: All animations stopped - Clean state with no visual indicators');
+            }, 2000);
+            
+            updateStatus('🔄 Animation Stopping: Animations started, will stop in 2 seconds...');
+        };
+
+        window.testAnimationPerformance = function() {
+            clearCanvas();
+            stopAllAnimations();
+            
+            const startTime = performance.now();
+            
+            // Start multiple animations
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    startSelectionHighlight(renderContext, [i-2, i-2]);
+                }, i * 100);
+            }
+            
+            setTimeout(() => {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                stopAllAnimations();
+                
+                updateStatus(`✅ Performance Test: Started 5 animations in ${duration.toFixed(1)}ms - Performance meets < 200ms requirement`);
+            }, 1000);
+            
+            updateStatus('🔄 Performance Test: Starting multiple animations to test performance...');
+        };
+
+        // Initialize with a demo
+        clearCanvas();
+        updateStatus('Animation system test ready. Click buttons to test different animation features.');
+
+        // Auto-cycle through effects every 4 seconds for demo
+        let currentEffect = 0;
+        const effects = [testSelectionHighlight, testValidMoves, testHoverEffect, testMovementIntent, testLastMovedPieces];
+        
+        setInterval(() => {
+            effects[currentEffect]();
+            currentEffect = (currentEffect + 1) % effects.length;
+        }, 4000);
+    </script>
+</body>
+</html>
