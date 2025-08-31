@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Particle System Tests</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .nav-header {
+            background: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .nav-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-right: 10px;
+            background: #555;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: #777;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-header h1 {
+            color: #ff6b6b;
+            margin: 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 200px;
+        }
+        
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+        
+        .control-group label {
+            display: block;
+            margin: 5px 0;
+        }
+        
+        .control-group input, .control-group select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            background: #555;
+            border: 1px solid #777;
+            color: white;
+            border-radius: 3px;
+        }
+        
+        .control-group button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .control-group button:hover {
+            background: #ff5252;
+        }
+        
+        .canvas-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #particleCanvas {
+            border: 2px solid #555;
+            border-radius: 5px;
+            background: #000;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .preset-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .preset-btn:hover {
+            background: #45a049;
+        }
+        
+        .preset-btn.active {
+            background: #ff6b6b;
+        }
+        
+        .info-panel {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .info-panel h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+        
+        .info-panel p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">Full Suite</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>Particle System Tests</h1>
+        </div>
+        
+        <!-- Preset Buttons -->
+        <div class="preset-buttons">
+            <button class="preset-btn active" data-preset="fireball">Fireball</button>
+            <button class="preset-btn" data-preset="tidalWave">Tidal Wave</button>
+            <button class="preset-btn" data-preset="sap">Sap</button>
+            <button class="preset-btn" data-preset="launch">Launch</button>
+            <button class="preset-btn" data-preset="custom">Custom</button>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <h3>Particle Settings</h3>
+                <label>Count: <span id="countValue">200</span></label>
+                <input type="range" id="countSlider" min="50" max="1000" value="200">
+                
+                <label>Speed: <span id="speedValue">2</span></label>
+                <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="2">
+                
+                <label>Size: <span id="sizeValue">3</span></label>
+                <input type="range" id="sizeSlider" min="1" max="10" value="3">
+            </div>
+            
+            <div class="control-group">
+                <h3>Visual Settings</h3>
+                <label>Shape:</label>
+                <select id="shapeSelect">
+                    <option value="circle">Circle</option>
+                    <option value="square">Square</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="line">Line</option>
+                </select>
+                
+                <label>Direction:</label>
+                <select id="directionSelect">
+                    <option value="radial">Radial</option>
+                    <option value="linear">Linear</option>
+                    <option value="spiral">Spiral</option>
+                    <option value="random">Random</option>
+                </select>
+                
+                <label>Color:</label>
+                <input type="color" id="colorPicker" value="#ff4400">
+            </div>
+            
+            <div class="control-group">
+                <h3>Interaction</h3>
+                <button id="attractBtn">Attract Particles</button>
+                <button id="repelBtn">Repel Particles</button>
+                <button id="resetBtn">Reset</button>
+                <br>
+                <label>Force Strength: <span id="forceValue">0.1</span></label>
+                <input type="range" id="forceSlider" min="0.01" max="1" step="0.01" value="0.1">
+            </div>
+        </div>
+        
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <canvas id="particleCanvas" width="800" height="600"></canvas>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <h3>Instructions</h3>
+            <p><strong>Click and drag</strong> to attract particles to your mouse position</p>
+            <p><strong>Right click</strong> to repel particles from your mouse position</p>
+            <p><strong>Use the controls</strong> to adjust particle behavior in real-time</p>
+            <p><strong>Try the presets</strong> to see different effects for game abilities</p>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { ParticleSystem, ParticlePresets } from '../../ui/animations/temp/particle-system.js';
+        
+        class ParticleSystemTest {
+            constructor() {
+                this.canvas = document.getElementById('particleCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particleSystem = null;
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.isMouseDown = false;
+                this.isRightMouseDown = false;
+                this.lastTime = 0;
+                this.currentPreset = 'fireball';
+                
+                this.initializeEventListeners();
+                this.initializeParticleSystem();
+                this.startAnimation();
+            }
+            
+            initializeEventListeners() {
+                // Mouse events
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.mouseX = e.clientX - rect.left;
+                    this.mouseY = e.clientY - rect.top;
+                });
+                
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) this.isMouseDown = true;
+                    if (e.button === 2) this.isRightMouseDown = true;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.isMouseDown = false;
+                    this.isRightMouseDown = false;
+                });
+                
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                // Preset buttons
+                document.querySelectorAll('.preset-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentPreset = e.target.dataset.preset;
+                        this.loadPreset(this.currentPreset);
+                    });
+                });
+                
+                // Control sliders
+                this.setupSlider('countSlider', 'countValue', (value) => {
+                    this.particleSystem.updateConfig({ count: parseInt(value) });
+                });
+                
+                this.setupSlider('speedSlider', 'speedValue', (value) => {
+                    this.particleSystem.updateConfig({ speed: parseFloat(value) });
+                });
+                
+                this.setupSlider('sizeSlider', 'sizeValue', (value) => {
+                    this.particleSystem.updateConfig({ size: parseInt(value) });
+                });
+                
+                this.setupSlider('forceSlider', 'forceValue', (value) => {
+                    this.forceStrength = parseFloat(value);
+                });
+                
+                // Control selects
+                document.getElementById('shapeSelect').addEventListener('change', (e) => {
+                    this.particleSystem.updateConfig({ shape: e.target.value });
+                });
+                
+                document.getElementById('directionSelect').addEventListener('change', (e) => {
+                    this.particleSystem.updateConfig({ direction: e.target.value });
+                });
+                
+                document.getElementById('colorPicker').addEventListener('change', (e) => {
+                    this.particleSystem.updateConfig({ color: e.target.value });
+                });
+                
+                // Control buttons
+                document.getElementById('attractBtn').addEventListener('click', () => {
+                    this.particleSystem.addForce(this.mouseX, this.mouseY, this.forceStrength, 'attract');
+                });
+                
+                document.getElementById('repelBtn').addEventListener('click', () => {
+                    this.particleSystem.addForce(this.mouseX, this.mouseY, this.forceStrength, 'repel');
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.loadPreset(this.currentPreset);
+                });
+            }
+            
+            setupSlider(sliderId, valueId, callback) {
+                const slider = document.getElementById(sliderId);
+                const valueDisplay = document.getElementById(valueId);
+                
+                slider.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    valueDisplay.textContent = value;
+                    callback(value);
+                });
+            }
+            
+            loadPreset(presetName) {
+                if (presetName === 'custom') {
+                    // Keep current settings
+                    return;
+                }
+                
+                const preset = ParticlePresets[presetName];
+                if (!preset) return;
+                
+                // Update UI controls
+                document.getElementById('countSlider').value = preset.count;
+                document.getElementById('countValue').textContent = preset.count;
+                document.getElementById('speedSlider').value = preset.speed;
+                document.getElementById('speedValue').textContent = preset.speed;
+                document.getElementById('sizeSlider').value = preset.size;
+                document.getElementById('sizeValue').textContent = preset.size;
+                document.getElementById('shapeSelect').value = preset.shape;
+                document.getElementById('directionSelect').value = preset.direction;
+                document.getElementById('colorPicker').value = preset.color;
+                
+                // Update particle system
+                this.particleSystem = new ParticleSystem({
+                    ...preset,
+                    bounds: { width: this.canvas.width, height: this.canvas.height }
+                });
+            }
+            
+            initializeParticleSystem() {
+                const config = {
+                    ...ParticlePresets.fireball,
+                    bounds: { width: this.canvas.width, height: this.canvas.height }
+                };
+                this.particleSystem = new ParticleSystem(config);
+                this.forceStrength = 0.1;
+            }
+            
+            startAnimation() {
+                const animate = (currentTime) => {
+                    const deltaTime = currentTime - this.lastTime;
+                    this.lastTime = currentTime;
+                    
+                    // Update particle system
+                    this.particleSystem.update(deltaTime);
+                    
+                    // Add mouse interaction forces
+                    if (this.isMouseDown) {
+                        this.particleSystem.addForce(this.mouseX, this.mouseY, this.forceStrength, 'attract');
+                    }
+                    if (this.isRightMouseDown) {
+                        this.particleSystem.addForce(this.mouseX, this.mouseY, this.forceStrength, 'repel');
+                    }
+                    
+                    // Draw
+                    this.particleSystem.draw(this.ctx);
+                    
+                    requestAnimationFrame(animate);
+                };
+                
+                requestAnimationFrame(animate);
+            }
+        }
+        
+        // Initialize the test when the page loads
+        window.addEventListener('load', () => {
+            new ParticleSystemTest();
+        });
+    </script>
+</body>
+</html>

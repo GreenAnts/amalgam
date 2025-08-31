@@ -986,8 +986,8 @@ function renderGemSquare(context: RenderContext, x: number, y: number, size: num
     ctx.restore();
 }
 
-
-
+// Particle system integration moved to ui/animations/temp/
+// Use AbilityAnimationManager for game ability effects
 
 
 export { createBoardDictionary, createGoldenConnectionsSet };

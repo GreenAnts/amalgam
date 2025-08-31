@@ -807,4 +807,6 @@ function renderGemSquare(context, x, y, size, color) {
     ctx.fillRect(-innerSize * 0.35, -innerSize * 0.35, innerSize * 0.2, innerSize * 0.2);
     ctx.restore();
 }
+// Particle system integration moved to ui/animations/temp/
+// Use AbilityAnimationManager for game ability effects
 export { createBoardDictionary, createGoldenConnectionsSet };

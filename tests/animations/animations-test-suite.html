@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<!--
+    ANIMATIONS TEST SUITE
+    =====================
+    
+    PURPOSE:
+    Comprehensive testing interface for all game ability animations in Amalgam.
+    Provides a unified platform for testing different animation types, versions,
+    formations, and ranges with proper grid-based coordinate system.
+    
+    ARCHITECTURE:
+    - Animation Type Subheaders: Main animation categories (Fireball, Tidal Wave, etc.)
+    - Version Dropdown: Different iterations of each animation type
+    - Formation Controls: Horizontal, Vertical, Diagonal piece formations
+    - Ability Type: Standard vs Amplified versions
+    - Range Controls: Game-accurate distance testing (1-9)
+    - Grid System: Matches actual game coordinate system
+    
+    IMPLEMENTATION STATUS:
+    ✅ Fireball: Fully implemented with light trail particle effects
+    ⏳ Tidal Wave: Not yet implemented
+    ⏳ Sap: Not yet implemented  
+    ⏳ Launch: Not yet implemented
+    ⏳ Portal Swap: Not yet implemented
+    ⏳ Movement: Not yet implemented
+    ⏳ Combat: Not yet implemented
+    
+    DEVELOPMENT GUIDELINES:
+    1. Add new animation types to the subheaders section
+    2. Set data-implemented="true" when ready for testing
+    3. Add version options to the dropdown when needed
+    4. Implement animation logic in castAnimation() method
+    5. Update status display and documentation
+    6. Add navigation links to tests.html hub
+    
+    COORDINATE SYSTEM:
+    - Origin: Top-left (50px from edges)
+    - Grid Size: 45px (matches game coordinate_scale)
+    - X-axis: Right direction (0, 1, 2, 3...)
+    - Y-axis: Down direction (0, 1, 2, 3...)
+    - Formations: All start from [0,0] position
+    
+    FILE STRUCTURE:
+    - tests/animations/animations-test-suite.html (this file)
+    - ui/animations/temp/fireball-animation.ts (fireball implementation)
+    - ui/animations/temp/ability-animations.ts (animation manager)
+    
+    LAST UPDATED: [Current Date]
+    VERSION: 1.0
+-->
+<html>
+<head>
+    <title>Animations Test Suite</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .nav-header {
+            background: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .nav-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-right: 10px;
+            background: #555;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: #777;
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-header h1 {
+            color: #ff6b6b;
+            margin: 0;
+        }
+        
+        .test-header p {
+            color: #ccc;
+            margin: 10px 0 0 0;
+        }
+        
+        .animation-subheaders {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .animation-subheader {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 120px;
+        }
+        
+        .animation-subheader:hover {
+            background: #555;
+        }
+        
+        .animation-subheader.active {
+            background: #ff6b6b;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+        
+        .animation-subheader.disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .animation-subheader.disabled:hover {
+            background: #333;
+        }
+        
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .controls-panel {
+            width: 250px;
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .animation-version-selector {
+            margin-bottom: 20px;
+        }
+        
+        .animation-dropdown {
+            width: 100%;
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .animation-dropdown:hover {
+            background: #666;
+        }
+        
+        .animation-dropdown:focus {
+            outline: none;
+            background: #ff6b6b;
+        }
+        
+        .canvas-panel {
+            flex: 1;
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .formation-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #444;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .formation-tab {
+            flex: 1;
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .formation-tab:hover {
+            background: #666;
+        }
+        
+        .formation-tab.active {
+            background: #ff6b6b;
+        }
+        
+        .subtype-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #444;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .subtype-tab {
+            flex: 1;
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+        
+        .subtype-tab:hover {
+            background: #666;
+        }
+        
+        .subtype-tab.active {
+            background: #ff4400;
+        }
+        
+        .range-control {
+            margin-bottom: 20px;
+        }
+        
+        .range-control h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+            font-size: 14px;
+        }
+        
+        .range-toggle {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            background: #444;
+            border-radius: 5px;
+            padding: 2px;
+        }
+        
+        .range-btn {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 6px 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 11px;
+            border-radius: 3px;
+        }
+        
+        .range-btn:hover {
+            background: #666;
+        }
+        
+        .range-btn.active {
+            background: #0088ff;
+        }
+        
+        .cast-button {
+            width: 100%;
+            background: #ff4400;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .cast-button:hover {
+            background: #ff6600;
+        }
+        
+        .cast-button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        
+        .status-display {
+            background: #444;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+        
+        .canvas-container {
+            text-align: center;
+        }
+        
+        #mainCanvas {
+            border: 2px solid #555;
+            border-radius: 5px;
+            background: #000;
+            cursor: crosshair;
+            max-width: 100%;
+        }
+        
+        .info-panel {
+            background: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        .info-panel h3 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+        
+        .info-panel p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">Full Suite</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>Animations Test Suite</h1>
+            <p>Clean, minimal interface for testing game ability animations</p>
+        </div>
+        
+        <!-- Animation Type Subheaders -->
+        <div class="animation-subheaders">
+            <button class="animation-subheader active" data-animation="fireball" data-implemented="true">Fireball</button>
+            <button class="animation-subheader disabled" data-animation="tidalwave" data-implemented="false">Tidal Wave</button>
+            <button class="animation-subheader disabled" data-animation="sap" data-implemented="false">Sap</button>
+            <button class="animation-subheader disabled" data-animation="launch" data-implemented="false">Launch</button>
+            <button class="animation-subheader disabled" data-animation="portal-swap" data-implemented="false">Portal Swap</button>
+            <button class="animation-subheader disabled" data-animation="movement" data-implemented="false">Movement</button>
+            <button class="animation-subheader disabled" data-animation="combat" data-implemented="false">Combat</button>
+        </div>
+        
+        <div class="main-container">
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <h3>Animation Version</h3>
+                <div class="animation-version-selector">
+                    <select id="animationVersion" class="animation-dropdown">
+                        <option value="v1">Version 1.0</option>
+                    </select>
+                </div>
+                
+                <h3>Formation Type</h3>
+                <div class="formation-tabs">
+                    <button class="formation-tab active" data-formation="horizontal">Horizontal</button>
+                    <button class="formation-tab" data-formation="vertical">Vertical</button>
+                    <button class="formation-tab" data-formation="diagonal">Diagonal</button>
+                </div>
+                
+                <h3>Ability Type</h3>
+                <div class="subtype-tabs">
+                    <button class="subtype-tab active" data-subtype="standard">Standard</button>
+                    <button class="subtype-tab" data-subtype="amplified">Amplified</button>
+                </div>
+                
+                <div class="range-control">
+                    <h3>Target Range</h3>
+                    <div class="range-toggle">
+                        <button class="range-btn active" data-range="1">1</button>
+                        <button class="range-btn" data-range="2">2</button>
+                        <button class="range-btn" data-range="3">3</button>
+                        <button class="range-btn" data-range="4">4</button>
+                        <button class="range-btn" data-range="5">5</button>
+                        <button class="range-btn" data-range="6">6</button>
+                        <button class="range-btn" data-range="7">7</button>
+                        <button class="range-btn" data-range="8">8</button>
+                        <button class="range-btn" data-range="9">9</button>
+                    </div>
+                </div>
+                
+                <button class="cast-button" id="castButton">Cast Fireball</button>
+                
+                <div class="status-display">
+                    <div class="status-item">
+                        <span>Active Animations:</span>
+                        <span id="activeCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Animation:</span>
+                        <span id="currentAnimation">Fireball</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Version:</span>
+                        <span id="currentVersion">V1</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Formation:</span>
+                        <span id="currentFormation">Horizontal</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Type:</span>
+                        <span id="currentType">Standard</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Range:</span>
+                        <span id="currentRange">1</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Grid Coords:</span>
+                        <span id="gridCoords">[0,0] → [1,0]</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Canvas Panel -->
+            <div class="canvas-panel">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="info-panel">
+                    <h3>Instructions</h3>
+                    <p><strong>Select animation type</strong> from the subheaders above</p>
+                    <p><strong>Choose animation version</strong> from the dropdown</p>
+                    <p><strong>Select formation type</strong> (horizontal, vertical, diagonal)</p>
+                    <p><strong>Choose ability type</strong> (standard or amplified)</p>
+                    <p><strong>Set target range</strong> (1-9 game distances)</p>
+                    <p><strong>Click cast button</strong> to trigger the animation</p>
+                    <p><strong>Click on canvas</strong> to manually set target position</p>
+                    <p><strong>Grid system</strong> matches actual game coordinate system</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import animation managers
+        import { FireballAnimationManager } from '../../ui/animations/temp/fireball-animation.js';
+        
+        /**
+         * CleanAnimationTest Class
+         * =========================
+         * 
+         * Main controller for the animations test suite.
+         * Handles all user interactions, coordinate conversions, and animation management.
+         * 
+         * Features:
+         * - Grid-based coordinate system matching the game
+         * - Dynamic animation type and version selection
+         * - Real-time status updates
+         * - Formation and targeting controls
+         * - Game piece rendering with proper colors and shapes
+         */
+        class CleanAnimationTest {
+            constructor() {
+                // Initialize canvas and rendering context
+                this.canvas = document.getElementById('mainCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.animationManager = new FireballAnimationManager(this.canvas);
+                this.lastTime = 0;
+                
+                // Game coordinate system (matching actual game)
+                this.gridSize = 45; // coordinate_scale from board data
+                this.originX = 50; // Start from left edge with margin
+                this.originY = 50; // Start from top edge with margin
+                
+                // Current settings - initialize with default values
+                this.currentAnimationType = 'fireball';
+                this.currentAnimationVersion = 'v1';
+                this.currentFormation = 'horizontal';
+                this.currentSubtype = 'standard';
+                this.currentRange = '6'; // Default to 6 intersections away
+                this.targetPosition = null;
+                this.formationPieces = null;
+                
+                // Initialize the test suite
+                this.initializeEventListeners();
+                this.setupFormation(); // Preload default formation
+                
+                // Set default active states for UI elements
+                this.setDefaultActiveStates();
+                
+                this.startAnimation();
+            }
+            
+            /**
+             * Set default active states for UI elements
+             */
+            setDefaultActiveStates() {
+                // Clear all active states first
+                document.querySelectorAll('.animation-subheader').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.formation-tab').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.subtype-tab').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+                
+                // Set fireball animation type as active
+                document.querySelector('.animation-subheader[data-animation="fireball"]').classList.add('active');
+                
+                // Set horizontal formation as active
+                document.querySelector('.formation-tab[data-formation="horizontal"]').classList.add('active');
+                
+                // Set standard subtype as active
+                document.querySelector('.subtype-tab[data-subtype="standard"]').classList.add('active');
+                
+                // Set range 6 as active
+                document.querySelector('.range-btn[data-range="6"]').classList.add('active');
+            }
+            
+            /**
+             * Convert game coordinates to pixel coordinates
+             * @param {number} gameX - Game X coordinate
+             * @param {number} gameY - Game Y coordinate
+             * @returns {Object} Pixel coordinates {x, y}
+             */
+            gameToPixel(gameX, gameY) {
+                return {
+                    x: this.originX + gameX * this.gridSize,
+                    y: this.originY + gameY * this.gridSize
+                };
+            }
+            
+            /**
+             * Convert pixel coordinates to game coordinates
+             * @param {number} pixelX - Pixel X coordinate
+             * @param {number} pixelY - Pixel Y coordinate
+             * @returns {Array} Game coordinates [x, y]
+             */
+            pixelToGame(pixelX, pixelY) {
+                const gameX = Math.round((pixelX - this.originX) / this.gridSize);
+                const gameY = Math.round((pixelY - this.originY) / this.gridSize);
+                return [gameX, gameY];
+            }
+            
+            initializeEventListeners() {
+                // Animation type subheaders
+                document.querySelectorAll('.animation-subheader').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        // Only allow clicking on implemented animations
+                        if (e.target.dataset.implemented === 'true') {
+                            document.querySelectorAll('.animation-subheader').forEach(b => b.classList.remove('active'));
+                            e.target.classList.add('active');
+                            this.currentAnimationType = e.target.dataset.animation;
+                            this.updateCastButton();
+                            this.updateStatus();
+                        }
+                    });
+                });
+                
+                // Animation version dropdown
+                document.getElementById('animationVersion').addEventListener('change', (e) => {
+                    this.currentAnimationVersion = e.target.value;
+                    this.updateCastButton();
+                    this.updateStatus();
+                });
+                
+                // Formation tabs
+                document.querySelectorAll('.formation-tab').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.formation-tab').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentFormation = e.target.dataset.formation;
+                        this.updateStatus();
+                        this.setupFormation();
+                    });
+                });
+                
+                // Subtype tabs
+                document.querySelectorAll('.subtype-tab').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.subtype-tab').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentSubtype = e.target.dataset.subtype;
+                        this.updateStatus();
+                    });
+                });
+                
+                // Range toggles
+                document.querySelectorAll('.range-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentRange = e.target.dataset.range;
+                        this.updateStatus();
+                        this.setupTarget();
+                    });
+                });
+                
+                // Cast button
+                document.getElementById('castButton').addEventListener('click', () => {
+                    this.castAnimation();
+                });
+                
+                // Canvas click for manual target
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    this.targetPosition = { x, y };
+                    this.updateStatus();
+                });
+            }
+            
+            setupFormation() {
+                // Use game coordinates for formations - all start from top-left
+                switch (this.currentFormation) {
+                    case 'horizontal':
+                        // Horizontal formation: [0,0] and [1,0]
+                        this.formationPieces = [
+                            this.gameToPixel(0, 0),
+                            this.gameToPixel(1, 0)
+                        ];
+                        break;
+                    case 'vertical':
+                        // Vertical formation: [0,0] and [0,1]
+                        this.formationPieces = [
+                            this.gameToPixel(0, 0),
+                            this.gameToPixel(0, 1)
+                        ];
+                        break;
+                    case 'diagonal':
+                        // Diagonal formation: [0,0] and [1,1] (45 degrees)
+                        this.formationPieces = [
+                            this.gameToPixel(0, 0),
+                            this.gameToPixel(1, 1)
+                        ];
+                        break;
+                }
+                
+                this.setupTarget();
+            }
+            
+            setupTarget() {
+                if (!this.formationPieces || this.formationPieces.length < 2) return;
+                
+                const rangeDistance = parseInt(this.currentRange);
+                
+                // Calculate target using game coordinates
+                let targetGameX, targetGameY;
+                
+                switch (this.currentFormation) {
+                    case 'horizontal':
+                        // Target extends horizontally: [1,0] + [range,0]
+                        targetGameX = 1 + rangeDistance;
+                        targetGameY = 0;
+                        break;
+                    case 'vertical':
+                        // Target extends vertically: [0,1] + [0,range]
+                        targetGameX = 0;
+                        targetGameY = 1 + rangeDistance;
+                        break;
+                    case 'diagonal':
+                        // Target extends diagonally: [1,1] + [range,range] (45 degrees)
+                        targetGameX = 1 + rangeDistance;
+                        targetGameY = 1 + rangeDistance;
+                        break;
+                }
+                
+                // Convert to pixel coordinates
+                this.targetPosition = this.gameToPixel(targetGameX, targetGameY);
+            }
+            
+            updateCastButton() {
+                const button = document.getElementById('castButton');
+                const animationName = this.currentAnimationType.charAt(0).toUpperCase() + this.currentAnimationType.slice(1);
+                const versionName = this.currentAnimationVersion.toUpperCase();
+                button.textContent = `Cast ${animationName} (${versionName})`;
+            }
+            
+            /**
+             * Cast the selected animation
+             * Handles different animation types and versions
+             * Currently only fireball is implemented
+             */
+            castAnimation() {
+                if (!this.formationPieces || !this.targetPosition) {
+                    this.setupFormation();
+                }
+                
+                const isAmplified = this.currentSubtype === 'amplified';
+                const sourcePieces = this.formationPieces.slice(0, 2);
+                
+                // Handle different animation types
+                switch (this.currentAnimationType) {
+                    case 'fireball':
+                        const animationId = this.animationManager.createFireballAnimation(
+                            sourcePieces,
+                            this.targetPosition,
+                            isAmplified
+                        );
+                        break;
+                    case 'tidalwave':
+                        console.log('Tidal Wave animation not yet implemented');
+                        break;
+                    case 'sap':
+                        console.log('Sap animation not yet implemented');
+                        break;
+                    case 'launch':
+                        console.log('Launch animation not yet implemented');
+                        break;
+                    case 'portal-swap':
+                        console.log('Portal Swap animation not yet implemented');
+                        break;
+                    case 'movement':
+                        console.log('Movement animation not yet implemented');
+                        break;
+                    case 'combat':
+                        console.log('Combat animation not yet implemented');
+                        break;
+                    default:
+                        console.log(`Animation type "${this.currentAnimationType}" not recognized`);
+                }
+                
+                this.updateStatus();
+            }
+            
+            updateStatus() {
+                document.getElementById('activeCount').textContent = 
+                    this.animationManager.getActiveAnimationCount();
+                document.getElementById('currentAnimation').textContent = 
+                    this.currentAnimationType.charAt(0).toUpperCase() + this.currentAnimationType.slice(1);
+                document.getElementById('currentVersion').textContent = 
+                    this.currentAnimationVersion.toUpperCase();
+                document.getElementById('currentFormation').textContent = 
+                    this.currentFormation.charAt(0).toUpperCase() + this.currentFormation.slice(1);
+                document.getElementById('currentType').textContent = 
+                    this.currentSubtype.charAt(0).toUpperCase() + this.currentSubtype.slice(1);
+                document.getElementById('currentRange').textContent = 
+                    this.currentRange;
+                
+                // Update grid coordinates display
+                if (this.formationPieces && this.targetPosition) {
+                    const formation1 = this.pixelToGame(this.formationPieces[0].x, this.formationPieces[0].y);
+                    const formation2 = this.pixelToGame(this.formationPieces[1].x, this.formationPieces[1].y);
+                    const target = this.pixelToGame(this.targetPosition.x, this.targetPosition.y);
+                    document.getElementById('gridCoords').textContent = 
+                        `[${formation1[0]},${formation1[1]}] → [${target[0]},${target[1]}]`;
+                }
+            }
+            
+            startAnimation() {
+                const animate = (currentTime) => {
+                    const deltaTime = currentTime - this.lastTime;
+                    this.lastTime = currentTime;
+                    
+                    // Clear canvas
+                    this.ctx.fillStyle = '#000';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    // Draw grid
+                    this.drawGrid();
+                    
+                    // Draw formation pieces
+                    this.drawFormationPieces();
+                    
+                    // Update and render animations
+                    this.animationManager.update(deltaTime);
+                    this.animationManager.draw(this.ctx);
+                    
+                    // Update status
+                    this.updateStatus();
+                    
+                    requestAnimationFrame(animate);
+                };
+                
+                requestAnimationFrame(animate);
+            }
+            
+            drawGrid() {
+                this.ctx.save();
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                
+                // Calculate grid coverage for entire canvas
+                const maxX = Math.ceil((this.canvas.width - this.originX) / this.gridSize);
+                const maxY = Math.ceil((this.canvas.height - this.originY) / this.gridSize);
+                
+                // Draw vertical grid lines (going right)
+                for (let x = 0; x <= maxX; x++) {
+                    const pixelX = this.originX + x * this.gridSize;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(pixelX, 0);
+                    this.ctx.lineTo(pixelX, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                
+                // Draw horizontal grid lines (going down)
+                for (let y = 0; y <= maxY; y++) {
+                    const pixelY = this.originY + y * this.gridSize;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, pixelY);
+                    this.ctx.lineTo(this.canvas.width, pixelY);
+                    this.ctx.stroke();
+                }
+                
+                // Draw coordinate labels
+                this.ctx.fillStyle = '#666';
+                this.ctx.font = '10px Arial';
+                this.ctx.textAlign = 'center';
+                
+                // X-axis labels (every grid line)
+                for (let x = 0; x <= maxX; x++) {
+                    const pixelX = this.originX + x * this.gridSize;
+                    this.ctx.fillText(x.toString(), pixelX, this.canvas.height - 5);
+                }
+                
+                // Y-axis labels (every grid line)
+                for (let y = 0; y <= maxY; y++) {
+                    const pixelY = this.originY + y * this.gridSize;
+                    this.ctx.fillText(y.toString(), 15, pixelY + 3);
+                }
+                
+                this.ctx.restore();
+            }
+            
+            drawFormationPieces() {
+                if (!this.formationPieces) return;
+                
+                // Draw formation pieces using actual game piece rendering
+                this.formationPieces.forEach((piece, index) => {
+                    this.drawGamePiece(piece.x, piece.y, 'Ruby', 'circles', index + 1);
+                });
+                
+                // Draw target piece
+                if (this.targetPosition) {
+                    this.drawGamePiece(this.targetPosition.x, this.targetPosition.y, 'Amalgam', 'squares', 'T');
+                }
+            }
+            
+            drawGamePiece(x, y, pieceType, player, label) {
+                this.ctx.save();
+                
+                const size = 15;
+                const shape = player === 'circles' ? 'circle' : 'square';
+                
+                if (pieceType === 'Ruby') {
+                    // Ruby piece - red gem
+                    const color = '#E63960';
+                    const outerColor = this.darkenColor(color, 20);
+                    
+                    if (shape === 'circle') {
+                        // Draw outer circle (darker border)
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, size * 1.2, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = outerColor;
+                        this.ctx.fill();
+                        this.ctx.closePath();
+                        
+                        // Draw inner circle (main color)
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, size, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = color;
+                        this.ctx.fill();
+                        this.ctx.closePath();
+                        
+                        // Add highlight
+                        this.ctx.beginPath();
+                        this.ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.2, 0, 2 * Math.PI);
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        this.ctx.fill();
+                        this.ctx.closePath();
+                    } else {
+                        // Square gem (rotated 45 degrees to form diamond)
+                        this.ctx.translate(x, y);
+                        this.ctx.rotate(45 * Math.PI / 180);
+                        
+                        const outerSize = size * 2.1;
+                        const innerSize = size * 1.5;
+                        
+                        // Draw outer diamond (darker border)
+                        this.ctx.fillStyle = outerColor;
+                        this.ctx.fillRect(-outerSize / 2, -outerSize / 2, outerSize, outerSize);
+                        
+                        // Draw inner diamond (main color)
+                        this.ctx.fillStyle = color;
+                        this.ctx.fillRect(-innerSize / 2, -innerSize / 2, innerSize, innerSize);
+                        
+                        // Add highlight
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        this.ctx.fillRect(-innerSize * 0.35, -innerSize * 0.35, innerSize * 0.2, innerSize * 0.2);
+                        
+                        this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+                    }
+                } else if (pieceType === 'Amalgam') {
+                    // Amalgam piece - multi-colored
+                    const colors = ['#E63960', '#87CEEB', '#F6C13F', '#A9E886']; // Ruby, Pearl, Amber, Jade
+                    const outerColors = colors.map(c => this.darkenColor(c, 20));
+                    
+                    if (shape === 'circle') {
+                        // Draw quadrants
+                        const angles = [
+                            { start: -Math.PI / 4, end: Math.PI / 4, color: colors[1] }, // Right
+                            { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top
+                            { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[2] }, // Left
+                            { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }  // Bottom
+                        ];
+                        
+                        // Draw outer quadrants
+                        angles.forEach((quadrant) => {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x, y);
+                            this.ctx.arc(x, y, size * 1.2, quadrant.start, quadrant.end);
+                            this.ctx.lineTo(x, y);
+                            this.ctx.fillStyle = this.darkenColor(quadrant.color, 20);
+                            this.ctx.fill();
+                            this.ctx.closePath();
+                        });
+                        
+                        // Draw inner quadrants
+                        angles.forEach((quadrant) => {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x, y);
+                            this.ctx.arc(x, y, size, quadrant.start, quadrant.end);
+                            this.ctx.lineTo(x, y);
+                            this.ctx.fillStyle = quadrant.color;
+                            this.ctx.fill();
+                            this.ctx.closePath();
+                        });
+                    } else {
+                        // Square amalgam
+                        this.ctx.translate(x, y);
+                        this.ctx.rotate(45 * Math.PI / 180);
+                        
+                        const outerSize = size * 2.1;
+                        const innerSize = size * 1.5;
+                        
+                        // Draw outer quadrants
+                        const halfOuter = outerSize / 2;
+                        const outerRects = [
+                            { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Top
+                            { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[1] }, // Right
+                            { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Bottom
+                            { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[2] } // Left
+                        ];
+                        
+                        outerRects.forEach(rect => {
+                            this.ctx.fillStyle = rect.color;
+                            this.ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+                        });
+                        
+                        // Draw inner quadrants
+                        const halfInner = innerSize / 2;
+                        const innerRects = [
+                            { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Top
+                            { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[1] }, // Right
+                            { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Bottom
+                            { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[2] } // Left
+                        ];
+                        
+                        innerRects.forEach(rect => {
+                            this.ctx.fillStyle = rect.color;
+                            this.ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+                        });
+                        
+                        this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+                    }
+                }
+                
+                // Draw piece label
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(label.toString(), x, y + 4);
+                
+                this.ctx.restore();
+            }
+            
+            darkenColor(hex, percent) {
+                hex = hex.replace(/^#/, '');
+                let r = parseInt(hex.substring(0, 2), 16);
+                let g = parseInt(hex.substring(2, 4), 16);
+                let b = parseInt(hex.substring(4, 6), 16);
+                r = Math.floor(r * (100 - percent) / 100);
+                g = Math.floor(g * (100 - percent) / 100);
+                b = Math.floor(b * (100 - percent) / 100);
+                const rStr = r.toString(16).padStart(2, '0');
+                const gStr = g.toString(16).padStart(2, '0');
+                const bStr = b.toString(16).padStart(2, '0');
+                return `#${rStr}${gStr}${bStr}`;
+            }
+        }
+        
+        // Initialize the test when the page loads
+        window.addEventListener('load', () => {
+            new CleanAnimationTest();
+        });
+    </script>
+</body>
+</html>
