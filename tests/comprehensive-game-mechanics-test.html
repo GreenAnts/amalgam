@@ -1647,45 +1647,296 @@
             }
         }
 
+        // Helper functions for creating test states
+        async function createTestGameState() {
+            const boardDataResponse = await fetch('../data/board-data.json');
+            if (!boardDataResponse.ok) {
+                throw new Error('Failed to load board-data.json');
+            }
+            const boardData = await boardDataResponse.json();
+            const board = GameModules.board.createBoard(boardData);
+            return {
+                gamePhase: 'gameplay',
+                currentPlayer: 'circles',
+                pieces: {},
+                board: board,
+                moveHistory: [],
+                winner: null,
+                setupTurn: 17
+            };
+        }
+        
+        async function loadPieceDefs() {
+            const pieceDefsResponse = await fetch('../data/piece-definitions.json');
+            if (!pieceDefsResponse.ok) {
+                throw new Error('Failed to load piece-definitions.json');
+            }
+            return await pieceDefsResponse.json();
+        }
+
+        function addPieceToState(state, pieceId, type, player, coords) {
+            // Add to pieces collection
+            state.pieces[pieceId] = {
+                id: pieceId,
+                type: type,
+                player: player,
+                coords: coords
+            };
+            
+            // Place on board intersection
+            state.board = GameModules.board.placePiece(state.board, coords, pieceId);
+        }
+
         async function testNexusMovement() {
             return { passed: false, error: 'Nexus movement validation not implemented' };
         }
 
         async function testPortalSwap() {
-            return { passed: false, error: 'Portal swap validation not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Portal swap scenario
+                addPieceToState(testState, 'C_Portal1', 'Portal', 'circles', [0, 6]);
+                addPieceToState(testState, 'C_Ruby1', 'Ruby', 'circles', [6, 6]);
+                
+                const move = {
+                    type: 'portal_swap',
+                    fromCoords: [6, 6], // Ruby on golden line
+                    toCoords: [0, 6],   // Portal position  
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.isValidMove(testState, move, pieceDefs);
+                return { passed: result.ok, error: result.reason || null };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testPortalLineMovement() {
-            return { passed: false, error: 'Portal line movement validation not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Portal on golden line
+                addPieceToState(testState, 'C_Portal1', 'Portal', 'circles', [0, 0]);
+                
+                const move = {
+                    type: 'portal_line',
+                    fromCoords: [0, 0],
+                    toCoords: [6, 6], // Connected via golden line
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.isValidMove(testState, move, pieceDefs);
+                return { passed: result.ok, error: result.reason || null };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testPortalStandardMovement() {
-            return { passed: false, error: 'Portal standard movement validation not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Portal on golden line
+                addPieceToState(testState, 'C_Portal1', 'Portal', 'circles', [0, 0]);
+                
+                const validMove = {
+                    type: 'portal_standard', 
+                    fromCoords: [0, 0],
+                    toCoords: [0, 1], // Adjacent golden intersection
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.isValidMove(testState, validMove, pieceDefs);
+                return { passed: result.ok, error: result.reason || null };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testPortalPhasing() {
-            return { passed: false, error: 'Portal phasing validation not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Portal and blocking piece
+                addPieceToState(testState, 'C_Portal1', 'Portal', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Ruby1', 'Ruby', 'squares', [0, 1]);
+                
+                const move = {
+                    type: 'portal_phasing',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 2], // Through the blocking piece
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.isValidMove(testState, move, pieceDefs);
+                return { passed: result.ok, error: result.reason || null };
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         // Combat system tests
         async function testStandardCombat() {
-            return { passed: false, error: 'Standard combat logic not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up combat scenario: Ruby attacks Pearl
+                addPieceToState(testState, 'C_Ruby1', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Pearl1', 'Pearl', 'squares', [0, 1]);
+                
+                const move = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [1, 0], // Move to trigger combat
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.applyMove(testState, move, pieceDefs);
+                
+                // Check if Pearl was destroyed
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.includes('S_Pearl1')) {
+                    return { passed: true, error: null };
+                } else {
+                    return { passed: false, error: 'Standard combat did not destroy adjacent enemy' };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testPortalCombat() {
-            return { passed: false, error: 'Portal combat logic not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Portal vs Portal combat
+                addPieceToState(testState, 'C_Portal1', 'Portal', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Portal1', 'Portal', 'squares', [6, 6]); // Connected via golden line
+                
+                const move = {
+                    type: 'portal_standard',
+                    fromCoords: [0, 0],
+                    toCoords: [0, 1], // Move to trigger combat
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.applyMove(testState, move, pieceDefs);
+                
+                // Check if distant Portal was attacked via golden line
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.includes('S_Portal1')) {
+                    return { passed: true, error: null };
+                } else {
+                    return { passed: false, error: 'Portal did not attack distant Portal via golden line' };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testVoidCombat() {
-            return { passed: false, error: 'Void combat logic not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Void attacking everything
+                addPieceToState(testState, 'C_Void1', 'Void', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Portal1', 'Portal', 'squares', [0, 1]);
+                
+                const move = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [1, 0], // Move to trigger combat
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.applyMove(testState, move, pieceDefs);
+                
+                // Check if Portal was destroyed (Void can attack everything)
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.includes('S_Portal1')) {
+                    return { passed: true, error: null };
+                } else {
+                    return { passed: false, error: 'Void did not attack adjacent Portal' };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testCombatImmunity() {
-            return { passed: false, error: 'Combat immunity rules not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up Standard piece vs Portal (should not attack)
+                addPieceToState(testState, 'C_Ruby1', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Portal1', 'Portal', 'squares', [0, 1]);
+                
+                const move = {
+                    type: 'standard',
+                    fromCoords: [0, 0], 
+                    toCoords: [1, 0], // Move to trigger combat
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.applyMove(testState, move, pieceDefs);
+                
+                // Check that Portal was NOT destroyed (immunity)
+                if (result.ok && (!result.destroyedPieces || !result.destroyedPieces.includes('S_Portal1'))) {
+                    return { passed: true, error: null };
+                } else {
+                    return { passed: false, error: 'Standard piece incorrectly attacked immune Portal' };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         async function testMultiTargetCombat() {
-            return { passed: false, error: 'Multi-target combat not implemented' };
+            try {
+                const testState = await createTestGameState();
+                const pieceDefs = await loadPieceDefs();
+                
+                // Set up piece with multiple valid targets
+                addPieceToState(testState, 'C_Ruby1', 'Ruby', 'circles', [0, 0]);
+                addPieceToState(testState, 'S_Pearl1', 'Pearl', 'squares', [0, 1]);
+                addPieceToState(testState, 'S_Amber1', 'Amber', 'squares', [1, 0]);
+                
+                const move = {
+                    type: 'standard',
+                    fromCoords: [0, 0],
+                    toCoords: [-1, 0], // Move to trigger combat
+                    playerId: 'circles'
+                };
+                
+                const result = GameModules.rules.applyMove(testState, move, pieceDefs);
+                
+                // Check that both pieces were destroyed
+                if (result.ok && result.destroyedPieces && 
+                    result.destroyedPieces.includes('S_Pearl1') && 
+                    result.destroyedPieces.includes('S_Amber1')) {
+                    return { passed: true, error: null };
+                } else {
+                    return { passed: false, error: 'Multi-target combat did not destroy all valid targets' };
+                }
+                
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
         }
 
         // Ability system tests

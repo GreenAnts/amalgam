@@ -285,6 +285,14 @@ function validatePortalLineMove(state, move, pieceDefs) {
     if (!isDirectlyConnected) {
         return { ok: false, reason: 'Destination not directly connected via golden line' };
     }
+    // Check if destination is empty
+    const toIntersection = getIntersectionByCoords(state.board, toCoords);
+    if (!toIntersection) {
+        return { ok: false, reason: 'Invalid destination coordinates' };
+    }
+    if (toIntersection.piece) {
+        return { ok: false, reason: 'Golden line path is blocked' };
+    }
     return { ok: true };
 }
 /**

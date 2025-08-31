@@ -657,13 +657,13 @@
                 const state = createTestGameState();
                 
                 // Set up non-Portal NOT on golden line
-                addPieceToState(state, 'ruby', 'Ruby', 'circles', [1, 1]); // Not golden line
+                addPieceToState(state, 'ruby', 'Ruby', 'circles', [2, 3]); // Not golden line
                 addPieceToState(state, 'portal', 'Portal', 'circles', [6, 6]);
                 
                 const move = {
                     type: 'portal_swap',
                     playerId: 'circles',
-                    fromCoords: [1, 1],
+                    fromCoords: [2, 3],
                     toCoords: [6, 6]
                 };
                 
@@ -782,7 +782,7 @@
                     type: 'portal_standard',
                     playerId: 'circles',
                     fromCoords: [6, 6],
-                    toCoords: [6, 7] // Adjacent golden line position
+                    toCoords: [6, 5] // Adjacent golden line position (6,5 is golden)
                 };
                 
                 const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
@@ -921,7 +921,7 @@
                     type: 'portal_phasing',
                     playerId: 'circles',
                     fromCoords: [0, 6],
-                    toCoords: [3, 3] // Not golden line
+                    toCoords: [4, 3] // Not golden line
                 };
                 
                 const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
