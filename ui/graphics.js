@@ -239,8 +239,62 @@ function drawGoldenLines(ctx, originX, originY, goldenLinesDict, gridSize) {
     ctx.strokeStyle = '#FFD700'; // Golden color
     ctx.lineWidth = graphicsConfig.getScaledLineWidth(2); // Golden line width
     ctx.lineCap = 'round';
+    // Draw connections from golden_lines_dict
     for (const coordStr in goldenLinesDict) {
         const connections = goldenLinesDict[coordStr];
+        const parts = coordStr.split(',').map(Number);
+        const startX = originX + parts[0] * gridSize;
+        const startY = originY - parts[1] * gridSize;
+        if (Array.isArray(connections)) {
+            connections.forEach(target => {
+                const endX = originX + target.x * gridSize;
+                const endY = originY - target.y * gridSize;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            });
+        }
+    }
+    // Complete reference golden lines dictionary for visual rendering
+    const referenceGoldenLinesDict = {
+        "-12,0": [{ x: -11, y: 5 }, { x: -11, y: -5 }, { x: -8, y: 3 }, { x: -8, y: -3 }, { x: 12, y: 0 }],
+        "-11,5": [{ x: -12, y: 0 }, { x: -9, y: 8 }],
+        "-9,8": [{ x: -11, y: 5 }, { x: -8, y: 3 }, { x: -6, y: 6 }, { x: -8, y: 9 }],
+        "-8,9": [{ x: -9, y: 8 }, { x: -5, y: 11 }, { x: -6, y: 6 }],
+        "-5,11": [{ x: -8, y: 9 }, { x: 0, y: 12 }, { x: 0, y: 6 }],
+        "0,12": [{ x: -5, y: 11 }, { x: 5, y: 11 }, { x: 0, y: -12 }],
+        "5,11": [{ x: 0, y: 12 }, { x: 8, y: 9 }, { x: 0, y: 6 }],
+        "8,9": [{ x: 5, y: 11 }, { x: 9, y: 8 }, { x: 6, y: 6 }],
+        "9,8": [{ x: 11, y: 5 }, { x: 8, y: 3 }, { x: 6, y: 6 }, { x: 8, y: 9 }],
+        "11,5": [{ x: 12, y: 0 }, { x: 9, y: 8 }],
+        "12,0": [{ x: 11, y: 5 }, { x: 11, y: -5 }, { x: 8, y: 3 }, { x: 8, y: -3 }, { x: -12, y: 0 }],
+        "11,-5": [{ x: 12, y: 0 }, { x: 9, y: -8 }],
+        "9,-8": [{ x: 11, y: -5 }, { x: 8, y: -3 }, { x: 6, y: -6 }, { x: 8, y: -9 }],
+        "8,-9": [{ x: 9, y: -8 }, { x: 5, y: -11 }, { x: 6, y: -6 }],
+        "5,-11": [{ x: 8, y: -9 }, { x: 0, y: -12 }, { x: 0, y: -6 }],
+        "0,-12": [{ x: 5, y: -11 }, { x: -5, y: -11 }, { x: 0, y: 12 }],
+        "-5,-11": [{ x: 0, y: -12 }, { x: -8, y: -9 }],
+        "-8,-9": [{ x: -5, y: -11 }, { x: -9, y: -8 }, { x: -6, y: -6 }],
+        "-9,-8": [{ x: -11, y: -5 }, { x: -8, y: -3 }, { x: -6, y: -6 }, { x: -8, y: -9 }],
+        "-11,-5": [{ x: -12, y: 0 }, { x: -9, y: -8 }],
+        "6,6": [{ x: 8, y: 9 }, { x: 9, y: 8 }, { x: 6, y: -6 }, { x: -6, y: 6 }, { x: 0, y: 0 }],
+        "6,-6": [{ x: 8, y: -9 }, { x: 9, y: -8 }, { x: 6, y: 6 }, { x: -6, y: -6 }, { x: 0, y: 0 }],
+        "-6,-6": [{ x: -8, y: -9 }, { x: -9, y: -8 }, { x: -6, y: 6 }, { x: 6, y: -6 }, { x: 0, y: 0 }],
+        "-6,6": [{ x: -8, y: 9 }, { x: -9, y: 8 }, { x: -6, y: -6 }, { x: 6, y: 6 }, { x: 0, y: 0 }],
+        "6,0": [{ x: 8, y: 3 }, { x: 8, y: -3 }, { x: 0, y: 6 }, { x: 0, y: -6 }],
+        "-6,0": [{ x: -8, y: 3 }, { x: -8, y: -3 }, { x: 0, y: 6 }, { x: 0, y: -6 }],
+        "0,6": [{ x: 6, y: 0 }, { x: -6, y: 0 }, { x: 5, y: 11 }, { x: -5, y: 11 }],
+        "0,-6": [{ x: 6, y: 0 }, { x: -6, y: 0 }, { x: 5, y: -11 }, { x: -5, y: -11 }],
+        "0,0": [{ x: 6, y: 6 }, { x: -6, y: 6 }, { x: -6, y: -6 }, { x: 6, y: -6 }, { x: 6, y: 0 }, { x: -6, y: 0 }, { x: 0, y: 6 }, { x: 0, y: -6 }],
+        "-8,3": [{ x: -6, y: 0 }, { x: -12, y: 0 }, { x: -9, y: 8 }],
+        "-8,-3": [{ x: -6, y: 0 }, { x: -12, y: 0 }, { x: -9, y: -8 }],
+        "8,3": [{ x: 6, y: 0 }, { x: 12, y: 0 }, { x: 9, y: 8 }],
+        "8,-3": [{ x: 6, y: 0 }, { x: 12, y: 0 }, { x: 9, y: -8 }]
+    };
+    // Draw all connections from the reference golden lines dictionary
+    for (const coordStr in referenceGoldenLinesDict) {
+        const connections = referenceGoldenLinesDict[coordStr];
         const parts = coordStr.split(',').map(Number);
         const startX = originX + parts[0] * gridSize;
         const startY = originY - parts[1] * gridSize;

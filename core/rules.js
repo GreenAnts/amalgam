@@ -122,9 +122,9 @@ function validateGameplayMove(state, move, pieceDefs) {
         case 'portal_line':
             return validatePortalLineMove(state, move, pieceDefs);
         case 'portal_standard':
-            return validatePortalStandardMove(state, move, pieceDefs);
+            return validatePortalStandardMove(state, move);
         case 'portal_phasing':
-            return validatePortalPhasingMove(state, move, pieceDefs);
+            return validatePortalPhasingMove(state, move);
         default:
             return { ok: false, reason: 'Invalid move type' };
     }
@@ -279,17 +279,11 @@ function validatePortalLineMove(state, move, pieceDefs) {
     if (piece.type !== 'Portal') {
         return { ok: false, reason: 'Source must have Portal piece' };
     }
-    // Check if path exists along golden lines
-    const path = findGoldenLinePath(state.board, fromCoords, toCoords);
-    if (!path) {
-        return { ok: false, reason: 'No valid golden line path to destination' };
-    }
-    // Check if path is blocked
-    for (const pathCoords of path) {
-        if (!isEmptyIntersection(state.board, pathCoords) &&
-            !areAdjacent(pathCoords, fromCoords)) {
-            return { ok: false, reason: 'Golden line path is blocked' };
-        }
+    // Check if destination is directly connected via golden line
+    const connections = getGoldenLineConnections(state.board, fromCoords);
+    const isDirectlyConnected = connections.some(conn => conn[0] === toCoords[0] && conn[1] === toCoords[1]);
+    if (!isDirectlyConnected) {
+        return { ok: false, reason: 'Destination not directly connected via golden line' };
     }
     return { ok: true };
 }
@@ -300,7 +294,7 @@ function validatePortalLineMove(state, move, pieceDefs) {
  * @param pieceDefs - Piece definitions
  * @returns Validation result
  */
-function validatePortalStandardMove(state, move, pieceDefs) {
+function validatePortalStandardMove(state, move) {
     const { fromCoords, toCoords } = move;
     if (!fromCoords || !toCoords) {
         return { ok: false, reason: 'Missing from or to coordinates' };
@@ -338,7 +332,7 @@ function validatePortalStandardMove(state, move, pieceDefs) {
  * @param pieceDefs - Piece definitions
  * @returns Validation result
  */
-function validatePortalPhasingMove(state, move, pieceDefs) {
+function validatePortalPhasingMove(state, move) {
     const { fromCoords, toCoords } = move;
     if (!fromCoords || !toCoords) {
         return { ok: false, reason: 'Missing from or to coordinates' };
@@ -661,42 +655,6 @@ function findNexusFormations(state, playerId) {
     return formations;
 }
 /**
- * Find golden line path between two coordinates
- * @param board - Board state
- * @param fromCoords - Source coordinates
- * @param toCoords - Target coordinates
- * @returns Path coordinates or null if no path
- */
-function findGoldenLinePath(board, fromCoords, toCoords) {
-    // Use breadth-first search to find path along golden line connections
-    const queue = [{ coords: fromCoords, path: [fromCoords] }];
-    const visited = new Set();
-    while (queue.length > 0) {
-        const current = queue.shift();
-        const coordStr = `${current.coords[0]},${current.coords[1]}`;
-        if (visited.has(coordStr)) {
-            continue;
-        }
-        visited.add(coordStr);
-        // Check if we've reached the destination
-        if (current.coords[0] === toCoords[0] && current.coords[1] === toCoords[1]) {
-            return current.path;
-        }
-        // Add connected golden line positions to queue
-        const connections = getGoldenLineConnections(board, current.coords);
-        for (const connection of connections) {
-            const connStr = `${connection[0]},${connection[1]}`;
-            if (!visited.has(connStr)) {
-                queue.push({
-                    coords: connection,
-                    path: [...current.path, connection]
-                });
-            }
-        }
-    }
-    return null; // No path found
-}
-/**
  * Find phasing path between two coordinates
  * @param board - Board state
  * @param fromCoords - Source coordinates
@@ -983,29 +941,20 @@ export function getLegalMovesForPiece(state, piece, pieceDefs) {
     // Portal-specific movements
     if (pieceDef.type === 'Portal') {
         // Portal standard movement (already handled above with golden line restriction)
-        // Portal line movement - check all golden line positions for reachability
-        const allGoldenPositions = state.board.goldenLineIntersections;
-        for (const goldenPos of allGoldenPositions) {
-            // Skip current position and occupied positions
-            if ((goldenPos[0] === piece.coords[0] && goldenPos[1] === piece.coords[1]) ||
-                !isEmptyIntersection(state.board, goldenPos)) {
+        // Portal line movement - direct golden line connections (like reference implementation)
+        const connections = getGoldenLineConnections(state.board, piece.coords);
+        for (const connectedPos of connections) {
+            // Skip if destination is occupied
+            if (!isEmptyIntersection(state.board, connectedPos)) {
                 continue;
             }
-            // Check if there's a golden line path to this position
-            const path = findGoldenLinePath(state.board, piece.coords, goldenPos);
-            if (path && path.length > 1) { // Path exists and is longer than just the starting position
-                // Check if all intermediate positions in path are clear (excluding start and end)
-                const isPathClear = path.slice(1, -1).every(pathCoords => isEmptyIntersection(state.board, pathCoords));
-                if (isPathClear) {
-                    moves.push({
-                        type: 'portal_line',
-                        fromCoords: piece.coords,
-                        toCoords: goldenPos,
-                        pieceId: piece.id,
-                        playerId: piece.player
-                    });
-                }
-            }
+            moves.push({
+                type: 'portal_line',
+                fromCoords: piece.coords,
+                toCoords: connectedPos,
+                pieceId: piece.id,
+                playerId: piece.player
+            });
         }
         // Portal phasing - Portal can phase through any piece
         const directions = [

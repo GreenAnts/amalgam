@@ -712,7 +712,7 @@
                     type: 'portal_line',
                     playerId: 'circles',
                     fromCoords: [0, 6],
-                    toCoords: [6, 6] // Connected golden line position
+                    toCoords: [6, 0] // Actually connected golden line position per board data
                 };
                 
                 const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
@@ -727,19 +727,19 @@
             try {
                 const state = createTestGameState();
                 
-                // Set up Portal and blocking piece
+                // Set up Portal and piece at destination (direct connection blocking)
                 addPieceToState(state, 'portal', 'Portal', 'circles', [0, 6]);
-                addPieceToState(state, 'blocker', 'Ruby', 'squares', [3, 6]); // Blocking path
+                addPieceToState(state, 'blocker', 'Ruby', 'squares', [6, 0]); // At destination
                 
                 const move = {
                     type: 'portal_line',
                     playerId: 'circles',
                     fromCoords: [0, 6],
-                    toCoords: [6, 6]
+                    toCoords: [6, 0] // Connected position but occupied
                 };
                 
                 const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
-                // Should fail because path is blocked
+                // Should fail because destination is occupied
                 return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
                 
             } catch (error) {
@@ -758,11 +758,11 @@
                     type: 'portal_line',
                     playerId: 'circles',
                     fromCoords: [0, 6],
-                    toCoords: [0, -12] // No direct golden line connection
+                    toCoords: [6, 6] // Not directly connected to [0,6]
                 };
                 
                 const result = GameModules.rules.isValidMove(state, move, GameModules.pieceDefs);
-                // Should fail because no golden line path exists
+                // Should fail because no direct golden line connection exists
                 return { passed: !result.ok, error: result.ok ? 'Should have failed but passed' : result.reason };
                 
             } catch (error) {

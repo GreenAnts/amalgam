@@ -478,15 +478,7 @@ export function getGoldenLineConnections(board, coords) {
     if (board.goldenLinesDict && board.goldenLinesDict[coordStr]) {
         return board.goldenLinesDict[coordStr].map(conn => [conn.x, conn.y]);
     }
-    // Use pair-wise connections for compatibility
-    const connections = [];
-    for (const connection of board.goldenLineConnections) {
-        if (connection.from[0] === coords[0] && connection.from[1] === coords[1]) {
-            connections.push(connection.to);
-        }
-        else if (connection.to[0] === coords[0] && connection.to[1] === coords[1]) {
-            connections.push(connection.from);
-        }
-    }
-    return connections;
+    // For positions not in golden_lines_dict, they have no connections
+    // This fixes the issue of showing invalid hub connections
+    return [];
 }

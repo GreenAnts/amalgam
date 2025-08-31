@@ -561,15 +561,7 @@ export function getGoldenLineConnections(board: Board, coords: Vector2): Vector2
         return board.goldenLinesDict[coordStr].map(conn => [conn.x, conn.y] as Vector2);
     }
     
-    // Use pair-wise connections for compatibility
-    const connections: Vector2[] = [];
-    for (const connection of board.goldenLineConnections) {
-        if (connection.from[0] === coords[0] && connection.from[1] === coords[1]) {
-            connections.push(connection.to);
-        } else if (connection.to[0] === coords[0] && connection.to[1] === coords[1]) {
-            connections.push(connection.from);
-        }
-    }
-    
-    return connections;
+    // For positions not in golden_lines_dict, they have no connections
+    // This fixes the issue of showing invalid hub connections
+    return [];
 }
