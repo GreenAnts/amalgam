@@ -267,14 +267,12 @@ export class InteractionManager {
      * Re-initialize event listeners (for debugging)
      */
     reinitializeEventListeners() {
-        console.log('🔄 InteractionManager.reinitializeEventListeners: removing and re-adding event listeners');
         // Remove existing listeners
         this.canvasElement.removeEventListener('click', this.boundHandleClick);
         this.canvasElement.removeEventListener('mousemove', this.boundHandleMouseMove);
         this.canvasElement.removeEventListener('mouseleave', this.boundHandleMouseLeave);
         // Re-add listeners
         this.setupEventListeners();
-        console.log('🔄 Event listeners reinitialized');
     }
     /**
      * Get intersection at coordinates

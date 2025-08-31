@@ -1,23 +1,9 @@
 /**
  * Graphics rendering system for Amalgam game pieces
  * Handles all piece types with proper colors, shapes, and visual properties
+ * Uses centralized graphics configuration for all visual parameters
  */
-// Board rendering constants
-const GRID_SIZE = 25; // Spacing between intersections (will be overridden by board data)
-const GOLDEN_RADIUS = 5;
-const DIAMOND_SIZE = 4;
-const GOLDEN_COLOR = '#FFD700';
-const STANDARD_COLOR = '#000000';
-const GOLDEN_LINE_COLOR = '#FFD700';
-const GOLDEN_LINE_WIDTH = 2;
-const BLACK_LINE_COLOR = '#000000';
-const BLACK_LINE_WIDTH = 1.5;
-// Polygon fill colors for background shapes
-const POLYGON_FILL_COLOR_1 = '#343434';
-const POLYGON_FILL_COLOR_2 = '#5A5A5A';
-const POLYGON_FILL_COLOR_3 = '#7D7D7D';
-// Amalgam piece colors
-const AMALGAM_COLORS = ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'];
+import { graphicsConfig } from './graphics-config.js';
 /**
  * Utility function to darken a hex color (from reference implementation)
  */
@@ -59,6 +45,8 @@ export function createGameCanvas(container, boardData) {
     const originX = boardData.board.center_offset[0];
     const originY = boardData.board.center_offset[1];
     const gridSize = boardData.board.coordinate_scale;
+    // Initialize graphics configuration with current grid size
+    graphicsConfig.setGridSize(gridSize);
     container.appendChild(canvas);
     // Re-append preserved elements
     elementsToPreserve.forEach(element => {
@@ -128,6 +116,8 @@ function createGoldenConnectionsSet(goldenLinesDict) {
  */
 function drawBoard(ctx, originX, originY, boardDict, goldenConnections, boardData) {
     const gridSize = boardData.board.coordinate_scale;
+    // Ensure graphics configuration is initialized with current grid size
+    graphicsConfig.setGridSize(gridSize);
     // Clear canvas with white background
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -175,10 +165,11 @@ function drawBackgroundPolygons(ctx, originX, originY, gridSize) {
         [{ x: -6, y: 0 }, { x: -6, y: -6 }, { x: -9, y: -8 }, { x: -8, y: -3 }, { x: -12, y: 0 }],
         [{ x: 6, y: 0 }, { x: 6, y: -6 }, { x: 9, y: -8 }, { x: 8, y: -3 }, { x: 12, y: 0 }]
     ];
-    // Draw polygon sets with different colors
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, POLYGON_FILL_COLOR_1, gridSize);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, POLYGON_FILL_COLOR_2, gridSize);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, POLYGON_FILL_COLOR_3, gridSize);
+    // Draw polygon sets with different colors from graphics config
+    const boardConfig = graphicsConfig.getBoardConfig();
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, boardConfig.background_colors.primary, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, boardConfig.background_colors.secondary, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, boardConfig.background_colors.tertiary, gridSize);
 }
 /**
  * Draw a set of polygons with the same fill color
@@ -205,8 +196,9 @@ function drawPolygonSet(ctx, originX, originY, polygons, fillColor, gridSize) {
  * Draw standard (black) grid lines
  */
 function drawStandardLines(ctx, originX, originY, boardDict, goldenConnections, gridSize) {
-    ctx.strokeStyle = BLACK_LINE_COLOR;
-    ctx.lineWidth = BLACK_LINE_WIDTH;
+    const boardConfig = graphicsConfig.getBoardConfig();
+    ctx.strokeStyle = boardConfig.background_colors.grid_line;
+    ctx.lineWidth = graphicsConfig.getScaledLineWidth(boardConfig.background_colors.grid_line_width);
     ctx.lineCap = 'round';
     for (const coordStr in boardDict) {
         const [x, y] = coordStr.split(',').map(Number);
@@ -244,8 +236,8 @@ function drawStandardLines(ctx, originX, originY, boardDict, goldenConnections, 
  * Draw golden lines
  */
 function drawGoldenLines(ctx, originX, originY, goldenLinesDict, gridSize) {
-    ctx.strokeStyle = GOLDEN_LINE_COLOR;
-    ctx.lineWidth = GOLDEN_LINE_WIDTH;
+    ctx.strokeStyle = '#FFD700'; // Golden color
+    ctx.lineWidth = graphicsConfig.getScaledLineWidth(2); // Golden line width
     ctx.lineCap = 'round';
     for (const coordStr in goldenLinesDict) {
         const connections = goldenLinesDict[coordStr];
@@ -276,7 +268,7 @@ function drawIntersections(ctx, originX, originY, boardDict, gridSize, boardData
         const y = parts[1];
         const pixelX = originX + x * gridSize;
         const pixelY = originY - y * gridSize;
-        ctx.fillStyle = intersectionType === "golden" ? GOLDEN_COLOR : STANDARD_COLOR;
+        ctx.fillStyle = intersectionType === "golden" ? '#FFD700' : '#000000';
         ctx.beginPath();
         if (intersectionType === "golden") {
             ctx.arc(pixelX, pixelY, intersectionRadius, 0, 2 * Math.PI);
@@ -340,16 +332,20 @@ function createPieceGraphics(piece, boardData) {
     if (piece.graphics) {
         return piece.graphics;
     }
-    // Get default piece size from board data or use fallback
+    // Get piece size from board data
     const defaultSize = boardData?.board.pieceRadius || 10;
     // Otherwise, create default graphics
     const pieceType = piece.type;
     const player = piece.player;
     if (pieceType === 'Amalgam') {
+        const pieceConfig = graphicsConfig.getPieceConfig();
+        const quadrants = pieceConfig.amalgam.quadrants;
+        // Convert quadrants to array format for backward compatibility
+        const colors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
         return {
             shape: player === 'circles' ? 'circle' : 'square',
             size: piece.size || defaultSize,
-            colors: AMALGAM_COLORS,
+            colors: colors,
             rotation: piece.rotation || (player === 'circles' ? Math.PI : Math.PI / 2)
         };
     }
@@ -405,47 +401,57 @@ export function renderSelectionHighlight(context, coords) {
     const { ctx, originX, originY, gridSize } = context;
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
-    // Scale the selection ring based on grid size
-    const baseSize = 18;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.selection_highlight.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.selection_highlight.line_width);
     // Draw selection ring
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 3 * (gridSize / 25);
+    ctx.strokeStyle = visualConfig.selection_highlight.color;
+    ctx.lineWidth = scaledLineWidth;
     ctx.stroke();
-    // Add pulsing effect
-    const time = Date.now() / 1000;
-    const pulse = 0.8 + 0.2 * Math.sin(time * 4);
-    ctx.globalAlpha = pulse;
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, scaledSize * 1.2, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 1 * (gridSize / 25);
-    ctx.stroke();
-    ctx.globalAlpha = 1.0;
+    // Add pulsing effect if enabled
+    if (visualConfig.selection_highlight.pulse_animation.enabled) {
+        const time = Date.now() / 1000;
+        const pulse = visualConfig.selection_highlight.pulse_animation.min_alpha +
+            (visualConfig.selection_highlight.pulse_animation.max_alpha - visualConfig.selection_highlight.pulse_animation.min_alpha) *
+                Math.sin(time * (2 * Math.PI / (visualConfig.selection_highlight.pulse_animation.duration_ms / 1000)));
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, scaledSize * 1.2, 0, 2 * Math.PI);
+        ctx.strokeStyle = visualConfig.selection_highlight.color;
+        ctx.lineWidth = graphicsConfig.getScaledLineWidth(1);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+    }
 }
 /**
  * Render valid move indicators
  */
 export function renderValidMoveIndicators(context, validMoves) {
     const { ctx, originX, originY, gridSize } = context;
-    // Scale the indicator size based on grid size
-    const baseSize = 8;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.valid_move_indicators.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.valid_move_indicators.line_width);
     validMoves.forEach(coords => {
         const centerPixelX = originX + coords[0] * gridSize;
         const centerPixelY = originY - coords[1] * gridSize;
         // Draw move indicator circle
         ctx.beginPath();
         ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+        ctx.fillStyle = visualConfig.valid_move_indicators.fill_color;
         ctx.fill();
         // Draw border
         ctx.beginPath();
         ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 2 * (gridSize / 25);
+        ctx.strokeStyle = visualConfig.valid_move_indicators.border_color;
+        ctx.lineWidth = scaledLineWidth;
         ctx.stroke();
     });
 }
@@ -456,14 +462,17 @@ export function renderHoverEffect(context, coords) {
     const { ctx, originX, originY, gridSize } = context;
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
-    // Scale the hover ring based on grid size
-    const baseSize = 15;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.hover_effect.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.hover_effect.line_width);
     // Draw subtle hover ring
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2 * (gridSize / 25);
+    ctx.strokeStyle = visualConfig.hover_effect.color;
+    ctx.lineWidth = scaledLineWidth;
     ctx.stroke();
 }
 export function renderPiece(context, piece, coords) {
@@ -473,11 +482,14 @@ export function renderPiece(context, piece, coords) {
     const pieceType = piece.type;
     const shape = graphics?.shape;
     if (pieceType === 'Amalgam') {
+        const pieceConfig = graphicsConfig.getPieceConfig();
+        const quadrants = pieceConfig.amalgam.quadrants;
+        const defaultColors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
         if (shape === 'circle') {
-            drawAmalgamCircle(context, x, y, graphics.size, graphics.colors || AMALGAM_COLORS, graphics.rotation || 0);
+            drawAmalgamCircle(context, x, y, graphics.size, graphics.colors || defaultColors, graphics.rotation || 0);
         }
         else {
-            drawAmalgamSquare(context, x, y, graphics.size, graphics.colors || AMALGAM_COLORS, graphics.rotation || 0);
+            drawAmalgamSquare(context, x, y, graphics.size, graphics.colors || defaultColors, graphics.rotation || 0);
         }
     }
     else if (pieceType === 'Portal') {
@@ -522,12 +534,13 @@ function drawAmalgamCircle(context, x, y, size, colors, rotation) {
     ctx.save();
     ctx.translate(centerPixelX, centerPixelY);
     ctx.rotate(rotation);
-    // Define the quadrants of the piece. Red is defined as the "top" quadrant (PI/4 to 3PI/4).
+    // Define the quadrants of the piece using the new quadrant structure
+    // colors array format: [top, right, left, bottom]
     const angles = [
-        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] }, // Right (Pale Yellow)
-        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top (Red)
-        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] }, // Left (Green)
-        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] } // Bottom (Yellow/Orange)
+        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[1] }, // Right
+        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top
+        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[2] }, // Left
+        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] } // Bottom
     ];
     // Draw the four quadrants of the outer ring
     angles.forEach((quadrant) => {
@@ -567,24 +580,26 @@ function drawAmalgamSquare(context, x, y, size, colors, rotation) {
     // The square is a diamond (rotated 45 degrees), so we add this to the orientation angle
     ctx.rotate(rotation + (45 * Math.PI / 180));
     // Draw the four quadrants of the outer diamond (a rotated square)
+    // colors array format: [top, right, left, bottom]
     const halfOuter = outerSize / 2;
     const outerRects = [
-        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Red
-        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] }, // Pale Yellow
-        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Yellow/Orange
-        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] } // Green
+        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Top
+        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[1] }, // Right
+        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Bottom
+        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[2] } // Left
     ];
     outerRects.forEach(rect => {
         ctx.fillStyle = rect.color;
         ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     });
     // Draw the four inner squares, forming the inner diamond
+    // colors array format: [top, right, left, bottom]
     const halfInner = innerSize / 2;
     const innerRects = [
-        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Red
-        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] }, // Pale Yellow
-        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Yellow/Orange
-        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] } // Green
+        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Top
+        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[1] }, // Right
+        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Bottom
+        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[2] } // Left
     ];
     innerRects.forEach(rect => {
         ctx.fillStyle = rect.color;
@@ -738,4 +753,4 @@ function renderGemSquare(context, x, y, size, color) {
     ctx.fillRect(-innerSize * 0.35, -innerSize * 0.35, innerSize * 0.2, innerSize * 0.2);
     ctx.restore();
 }
-export { AMALGAM_COLORS, GRID_SIZE, createBoardDictionary, createGoldenConnectionsSet };
+export { createBoardDictionary, createGoldenConnectionsSet };

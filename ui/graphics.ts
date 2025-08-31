@@ -1,9 +1,11 @@
 /**
  * Graphics rendering system for Amalgam game pieces
  * Handles all piece types with proper colors, shapes, and visual properties
+ * Uses centralized graphics configuration for all visual parameters
  */
 
 import type { Piece, PieceGraphics, Vector2, BoardData, CanvasContext, IntersectionId } from '../core/types.js';
+import { graphicsConfig } from './graphics-config.js';
 
 export interface RenderContext {
     ctx: CanvasRenderingContext2D;
@@ -11,25 +13,6 @@ export interface RenderContext {
     originY: number;
     gridSize: number;
 }
-
-// Board rendering constants
-const GRID_SIZE = 25; // Spacing between intersections (will be overridden by board data)
-const GOLDEN_RADIUS = 5;
-const DIAMOND_SIZE = 4;
-const GOLDEN_COLOR = '#FFD700';
-const STANDARD_COLOR = '#000000';
-const GOLDEN_LINE_COLOR = '#FFD700';
-const GOLDEN_LINE_WIDTH = 2;
-const BLACK_LINE_COLOR = '#000000';
-const BLACK_LINE_WIDTH = 1.5;
-
-// Polygon fill colors for background shapes
-const POLYGON_FILL_COLOR_1 = '#343434';
-const POLYGON_FILL_COLOR_2 = '#5A5A5A';
-const POLYGON_FILL_COLOR_3 = '#7D7D7D';
-
-// Amalgam piece colors
-const AMALGAM_COLORS = ['#E63960', '#A9E886', '#F8F6DA', '#F6C13F'];
 
 interface PolygonPoint {
     x: number;
@@ -84,6 +67,9 @@ export function createGameCanvas(container: HTMLElement, boardData: BoardData): 
     const originX = boardData.board.center_offset[0];
     const originY = boardData.board.center_offset[1];
     const gridSize = boardData.board.coordinate_scale;
+    
+    // Initialize graphics configuration with current grid size
+    graphicsConfig.setGridSize(gridSize);
     
     container.appendChild(canvas);
     
@@ -177,6 +163,9 @@ function drawBoard(
 ): void {
     const gridSize = boardData.board.coordinate_scale;
     
+    // Ensure graphics configuration is initialized with current grid size
+    graphicsConfig.setGridSize(gridSize);
+    
     // Clear canvas with white background
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -232,10 +221,11 @@ function drawBackgroundPolygons(ctx: CanvasRenderingContext2D, originX: number, 
         [{x: 6, y: 0}, {x: 6, y: -6}, {x: 9, y: -8}, {x: 8, y: -3}, {x: 12, y: 0}]
     ];
     
-    // Draw polygon sets with different colors
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, POLYGON_FILL_COLOR_1, gridSize);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, POLYGON_FILL_COLOR_2, gridSize);
-    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, POLYGON_FILL_COLOR_3, gridSize);
+    // Draw polygon sets with different colors from graphics config
+    const boardConfig = graphicsConfig.getBoardConfig();
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw1, boardConfig.background_colors.primary, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw2, boardConfig.background_colors.secondary, gridSize);
+    drawPolygonSet(ctx, originX, originY, polygonsToDraw3, boardConfig.background_colors.tertiary, gridSize);
 }
 
 /**
@@ -277,8 +267,9 @@ function drawStandardLines(
     goldenConnections: Set<string>,
     gridSize: number
 ): void {
-    ctx.strokeStyle = BLACK_LINE_COLOR;
-    ctx.lineWidth = BLACK_LINE_WIDTH;
+    const boardConfig = graphicsConfig.getBoardConfig();
+    ctx.strokeStyle = boardConfig.background_colors.grid_line;
+    ctx.lineWidth = graphicsConfig.getScaledLineWidth(boardConfig.background_colors.grid_line_width);
     ctx.lineCap = 'round';
     
     for (const coordStr in boardDict) {
@@ -326,8 +317,8 @@ function drawGoldenLines(
     goldenLinesDict: Record<string, Array<{x: number, y: number}>>,
     gridSize: number
 ): void {
-    ctx.strokeStyle = GOLDEN_LINE_COLOR;
-    ctx.lineWidth = GOLDEN_LINE_WIDTH;
+    ctx.strokeStyle = '#FFD700'; // Golden color
+    ctx.lineWidth = graphicsConfig.getScaledLineWidth(2); // Golden line width
     ctx.lineCap = 'round';
     
     for (const coordStr in goldenLinesDict) {
@@ -370,7 +361,7 @@ function drawIntersections(
         const pixelX = originX + x * gridSize;
         const pixelY = originY - y * gridSize;
         
-        ctx.fillStyle = intersectionType === "golden" ? GOLDEN_COLOR : STANDARD_COLOR;
+        ctx.fillStyle = intersectionType === "golden" ? '#FFD700' : '#000000';
         ctx.beginPath();
         if (intersectionType === "golden") {
             ctx.arc(pixelX, pixelY, intersectionRadius, 0, 2 * Math.PI);
@@ -451,7 +442,7 @@ function createPieceGraphics(piece: any, boardData?: BoardData): PieceGraphics {
         return piece.graphics;
     }
     
-    // Get default piece size from board data or use fallback
+            // Get piece size from board data
     const defaultSize = boardData?.board.pieceRadius || 10;
     
     // Otherwise, create default graphics
@@ -459,10 +450,14 @@ function createPieceGraphics(piece: any, boardData?: BoardData): PieceGraphics {
     const player = piece.player;
     
     if (pieceType === 'Amalgam') {
+        const pieceConfig = graphicsConfig.getPieceConfig();
+        const quadrants = pieceConfig.amalgam.quadrants;
+        // Convert quadrants to array format for backward compatibility
+        const colors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
         return {
             shape: player === 'circles' ? 'circle' : 'square',
             size: piece.size || defaultSize,
-            colors: AMALGAM_COLORS,
+            colors: colors,
             rotation: piece.rotation || (player === 'circles' ? Math.PI : Math.PI / 2)
         };
     } else if (pieceType === 'Portal') {
@@ -519,29 +514,37 @@ export function renderSelectionHighlight(context: RenderContext, coords: Vector2
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
     
-    // Scale the selection ring based on grid size
-    const baseSize = 18;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.selection_highlight.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.selection_highlight.line_width);
     
     // Draw selection ring
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 3 * (gridSize / 25);
+    ctx.strokeStyle = visualConfig.selection_highlight.color;
+    ctx.lineWidth = scaledLineWidth;
     ctx.stroke();
     
-    // Add pulsing effect
-    const time = Date.now() / 1000;
-    const pulse = 0.8 + 0.2 * Math.sin(time * 4);
-    ctx.globalAlpha = pulse;
-    
-    ctx.beginPath();
-    ctx.arc(centerPixelX, centerPixelY, scaledSize * 1.2, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#00FF00';
-    ctx.lineWidth = 1 * (gridSize / 25);
-    ctx.stroke();
-    
-    ctx.globalAlpha = 1.0;
+    // Add pulsing effect if enabled
+    if (visualConfig.selection_highlight.pulse_animation.enabled) {
+        const time = Date.now() / 1000;
+        const pulse = visualConfig.selection_highlight.pulse_animation.min_alpha + 
+                     (visualConfig.selection_highlight.pulse_animation.max_alpha - visualConfig.selection_highlight.pulse_animation.min_alpha) * 
+                     Math.sin(time * (2 * Math.PI / (visualConfig.selection_highlight.pulse_animation.duration_ms / 1000)));
+        ctx.globalAlpha = pulse;
+        
+        ctx.beginPath();
+        ctx.arc(centerPixelX, centerPixelY, scaledSize * 1.2, 0, 2 * Math.PI);
+        ctx.strokeStyle = visualConfig.selection_highlight.color;
+        ctx.lineWidth = graphicsConfig.getScaledLineWidth(1);
+        ctx.stroke();
+        
+        ctx.globalAlpha = 1.0;
+    }
 }
 
 /**
@@ -550,9 +553,13 @@ export function renderSelectionHighlight(context: RenderContext, coords: Vector2
 export function renderValidMoveIndicators(context: RenderContext, validMoves: Vector2[]): void {
     const { ctx, originX, originY, gridSize } = context;
     
-    // Scale the indicator size based on grid size
-    const baseSize = 8;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.valid_move_indicators.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.valid_move_indicators.line_width);
     
     validMoves.forEach(coords => {
         const centerPixelX = originX + coords[0] * gridSize;
@@ -561,14 +568,14 @@ export function renderValidMoveIndicators(context: RenderContext, validMoves: Ve
         // Draw move indicator circle
         ctx.beginPath();
         ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+        ctx.fillStyle = visualConfig.valid_move_indicators.fill_color;
         ctx.fill();
         
         // Draw border
         ctx.beginPath();
         ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 2 * (gridSize / 25);
+        ctx.strokeStyle = visualConfig.valid_move_indicators.border_color;
+        ctx.lineWidth = scaledLineWidth;
         ctx.stroke();
     });
 }
@@ -581,15 +588,19 @@ export function renderHoverEffect(context: RenderContext, coords: Vector2): void
     const centerPixelX = originX + coords[0] * gridSize;
     const centerPixelY = originY - coords[1] * gridSize;
     
-    // Scale the hover ring based on grid size
-    const baseSize = 15;
-    const scaledSize = baseSize * (gridSize / 25); // Scale relative to original 25px grid
+    // Set grid size for scaling calculations
+    graphicsConfig.setGridSize(gridSize);
+    
+    // Get visual feedback configuration
+    const visualConfig = graphicsConfig.getVisualFeedbackConfig();
+    const scaledSize = graphicsConfig.getScaledSize(visualConfig.hover_effect.base_size);
+    const scaledLineWidth = graphicsConfig.getScaledLineWidth(visualConfig.hover_effect.line_width);
     
     // Draw subtle hover ring
     ctx.beginPath();
     ctx.arc(centerPixelX, centerPixelY, scaledSize, 0, 2 * Math.PI);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2 * (gridSize / 25);
+    ctx.strokeStyle = visualConfig.hover_effect.color;
+    ctx.lineWidth = scaledLineWidth;
     ctx.stroke();
 }
 
@@ -601,12 +612,15 @@ export function renderPiece(context: RenderContext, piece: Piece, coords: Vector
     const pieceType = piece.type;
     const shape = graphics?.shape;
     
-    if (pieceType === 'Amalgam') {
-        if (shape === 'circle') {
-            drawAmalgamCircle(context, x, y, graphics.size, graphics.colors || AMALGAM_COLORS, graphics.rotation || 0);
-        } else {
-            drawAmalgamSquare(context, x, y, graphics.size, graphics.colors || AMALGAM_COLORS, graphics.rotation || 0);
-        }
+            if (pieceType === 'Amalgam') {
+            const pieceConfig = graphicsConfig.getPieceConfig();
+            const quadrants = pieceConfig.amalgam.quadrants;
+            const defaultColors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
+            if (shape === 'circle') {
+                drawAmalgamCircle(context, x, y, graphics.size, graphics.colors || defaultColors, graphics.rotation || 0);
+            } else {
+                drawAmalgamSquare(context, x, y, graphics.size, graphics.colors || defaultColors, graphics.rotation || 0);
+            }
     } else if (pieceType === 'Portal') {
         if (shape === 'circle') {
             drawPortalCircle(context, x, y, graphics.size, graphics.outerColor || '#87CEEB', graphics.innerColor || '#ADD8E6');
@@ -649,12 +663,13 @@ function drawAmalgamCircle(context: RenderContext, x: number, y: number, size: n
     ctx.translate(centerPixelX, centerPixelY);
     ctx.rotate(rotation);
 
-    // Define the quadrants of the piece. Red is defined as the "top" quadrant (PI/4 to 3PI/4).
+    // Define the quadrants of the piece using the new quadrant structure
+    // colors array format: [top, right, left, bottom]
     const angles = [
-        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[2] }, // Right (Pale Yellow)
-        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top (Red)
-        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[1] }, // Left (Green)
-        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }  // Bottom (Yellow/Orange)
+        { start: -Math.PI / 4, end: Math.PI / 4, color: colors[1] }, // Right
+        { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top
+        { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[2] }, // Left
+        { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }  // Bottom
     ];
 
     // Draw the four quadrants of the outer ring
@@ -703,12 +718,13 @@ function drawAmalgamSquare(context: RenderContext, x: number, y: number, size: n
     ctx.rotate(rotation + (45 * Math.PI / 180));
 
     // Draw the four quadrants of the outer diamond (a rotated square)
+    // colors array format: [top, right, left, bottom]
     const halfOuter = outerSize / 2;
     const outerRects = [
-        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Red
-        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[2] }, // Pale Yellow
-        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Yellow/Orange
-        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[1] } // Green
+        { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: outerColors[0] }, // Top
+        { x: 0, y: 0, w: halfOuter, h: halfOuter, color: outerColors[1] }, // Right
+        { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[3] }, // Bottom
+        { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: outerColors[2] } // Left
     ];
 
     outerRects.forEach(rect => {
@@ -717,12 +733,13 @@ function drawAmalgamSquare(context: RenderContext, x: number, y: number, size: n
     });
 
     // Draw the four inner squares, forming the inner diamond
+    // colors array format: [top, right, left, bottom]
     const halfInner = innerSize / 2;
     const innerRects = [
-        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Red
-        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[2] }, // Pale Yellow
-        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Yellow/Orange
-        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[1] } // Green
+        { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Top
+        { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[1] }, // Right
+        { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Bottom
+        { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[2] } // Left
     ];
     
     innerRects.forEach(rect => {
@@ -916,4 +933,4 @@ function renderGemSquare(context: RenderContext, x: number, y: number, size: num
 
 
 
-export { AMALGAM_COLORS, GRID_SIZE, createBoardDictionary, createGoldenConnectionsSet };
+export { createBoardDictionary, createGoldenConnectionsSet };

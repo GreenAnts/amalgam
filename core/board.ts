@@ -324,25 +324,7 @@ function generateIntersections(boardData: BoardData): Intersection[] {
             });
         });
     } else {
-        // Fallback to range-based generation
-        logger.warn('Falling back to coordinate range generation: No board positions available');
-        
-        for (let x = -12; x <= 12; x++) {
-            for (let y = -12; y <= 12; y++) {
-                if (isInBounds(x, y)) {
-                    const pixelX = boardData.board.center_offset[0] + (x * boardData.board.coordinate_scale);
-                    const pixelY = boardData.board.center_offset[1] - (y * boardData.board.coordinate_scale);
-                    
-                    intersections.push({
-                        id: `${x},${y}`,
-                        coords: [x, y],
-                        x: pixelX,
-                        y: pixelY,
-                        piece: null
-                    });
-                }
-            }
-        }
+        throw new Error('Board positions data is required but not available');
     }
     
     logger.debug(`Generated ${intersections.length} intersections`);
@@ -579,7 +561,7 @@ export function getGoldenLineConnections(board: Board, coords: Vector2): Vector2
         return board.goldenLinesDict[coordStr].map(conn => [conn.x, conn.y] as Vector2);
     }
     
-    // Fallback to pair-wise connections for compatibility
+    // Use pair-wise connections for compatibility
     const connections: Vector2[] = [];
     for (const connection of board.goldenLineConnections) {
         if (connection.from[0] === coords[0] && connection.from[1] === coords[1]) {

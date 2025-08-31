@@ -1,0 +1,149 @@
+{
+  "schema": "amalgam-graphics@1.0.0",
+  "version": "1.0.0",
+  "description": "Centralized graphics configuration for Amalgam game - all visual sizing and styling parameters",
+  
+  "board": {
+    "description": "Board rendering parameters",
+    "grid_spacing": 45,
+    "center_offset": [600, 600],
+    "intersection_radius": 8,
+    "piece_radius": 18,
+    "background_colors": {
+      "primary": "#343434",
+      "secondary": "#5A5A5A",
+      "tertiary": "#7D7D7D",
+      "grid_line": "#000000",
+      "grid_line_width": 1.5
+    }
+  },
+  
+  "pieces": {
+    "description": "Piece rendering parameters",
+    "amalgam": {
+      "size": 12,
+      "outer_ring_multiplier": 1.2,
+      "quadrants": {
+        "top": "#E63960",
+        "right": "#F8F6DA", 
+        "left": "#A9E886",
+        "bottom": "#F6C13F"
+      },
+      "darken_percent": 20
+    },
+    "portal": {
+      "size": 8,
+      "outer_color": "#87CEEB",
+      "inner_color": "#ADD8E6"
+    },
+    "void": {
+      "size": 12,
+      "outer_color": "#5B4E7A",
+      "inner_color": "#8D7EA9"
+    },
+    "gems": {
+      "ruby": {
+        "size": 10,
+        "color": "#E63960"
+      },
+      "pearl": {
+        "size": 10,
+        "color": "#F8F6DA"
+      },
+      "amber": {
+        "size": 10,
+        "color": "#F6C13F"
+      },
+      "jade": {
+        "size": 10,
+        "color": "#A9E886"
+      }
+    }
+  },
+  
+  "visual_feedback": {
+    "description": "Visual feedback indicators and effects",
+    "selection_highlight": {
+      "base_size": 15,
+      "color": "#00FF00",
+      "line_width": 3,
+      "pulse_animation": {
+        "enabled": true,
+        "min_alpha": 0.3,
+        "max_alpha": 0.8,
+        "duration_ms": 1000
+      }
+    },
+    "valid_move_indicators": {
+      "base_size": 8,
+      "fill_color": "rgba(0, 255, 0, 0.6)",
+      "border_color": "#00FF00",
+      "line_width": 2
+    },
+    "hover_effect": {
+      "base_size": 15,
+      "color": "rgba(255, 255, 255, 0.5)",
+      "line_width": 2
+    },
+    "setup_phase_highlights": {
+      "circles_color": "#FF6B6B",
+      "squares_color": "#4ECDC4",
+      "line_width": 2,
+      "dash_pattern": [5, 5],
+      "radius": 8
+    }
+  },
+  
+  "ui": {
+    "description": "User interface elements",
+    "action_panel": {
+      "width": 200,
+      "height": 300,
+      "offset_from_piece": 30,
+      "background_color": "#ffffff",
+      "border_color": "#cccccc",
+      "border_width": 1,
+      "border_radius": 8,
+      "shadow": "0 2px 10px rgba(0,0,0,0.1)"
+    },
+    "buttons": {
+      "padding": "10px 20px",
+      "border_radius": 4,
+      "font_size": "14px",
+      "font_weight": "600",
+      "transition_duration": "0.3s"
+    }
+  },
+  
+  "animations": {
+    "description": "Animation timing and easing",
+    "selection_pulse": {
+      "duration_ms": 1000,
+      "easing": "ease-in-out"
+    },
+    "move_indicator_fade": {
+      "duration_ms": 300,
+      "easing": "ease-out"
+    },
+    "piece_movement": {
+      "duration_ms": 500,
+      "easing": "ease-in-out"
+    }
+  },
+  
+  "scaling": {
+    "description": "Scaling configuration for different screen sizes",
+    "base_grid_size": 25,
+    "scale_factors": {
+      "small": 0.8,
+      "medium": 1.0,
+      "large": 1.2,
+      "xlarge": 1.5
+    },
+    "responsive_breakpoints": {
+      "small": 768,
+      "medium": 1024,
+      "large": 1440
+    }
+  }
+}

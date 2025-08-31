@@ -5,6 +5,7 @@
 
 import { logger } from './utils/logger.js';
 import { GameManager } from './game/gameManager.js';
+import { graphicsConfig } from './ui/graphics-config.js';
 import type { 
     BoardData, 
     PieceDefinitions, 
@@ -114,7 +115,7 @@ class PatchedGameManager extends GameManager {
             }
         }
         
-        // Fallback to original implementation
+
         return super.convertMoveIntentToMove(moveIntent);
     }
 
@@ -194,7 +195,7 @@ export class AmalgamGame {
             this.boardData = await boardResponse.json();
 
             // Load valid board positions and merge into boardData
-            const positionsResponse = await fetch('/game-rules/board_positions.json');
+            const positionsResponse = await fetch('/data/game-rules/board_positions.json');
             if (positionsResponse.ok) {
                 const positionsData = await positionsResponse.json();
                 if (positionsData && positionsData.board_positions) {
@@ -220,6 +221,10 @@ export class AmalgamGame {
                     squaresStartingAreaSize: this.pieceDefs.board_data.starting_areas?.squares_starting_area?.positions?.length
                 });
             }
+            
+            // Load graphics configuration
+            await graphicsConfig.loadConfig();
+            logger.info('Graphics configuration loaded successfully');
             
             logger.debug('Game data loaded successfully');
         } catch (error) {
@@ -431,7 +436,6 @@ export class AmalgamGame {
                 this.portalSwapMode.sourcePiece = null;
                 this.showMessage('Portal swap executed!');
                 
-                console.log('🔄 Portal swap executed:', sourcePiece.id, '↔️', pieceAtLocation.id);
                 return;
             } else {
                 // Invalid target or clicked elsewhere - cancel portal swap
@@ -440,7 +444,6 @@ export class AmalgamGame {
                 this.showMessage('Portal swap cancelled');
                 
                 if (!pieceAtLocation || pieceAtLocation.type !== 'Portal') {
-                    console.log('❌ Portal swap cancelled: Invalid target');
                     return;
                 }
             }
@@ -450,12 +453,9 @@ export class AmalgamGame {
         if (pieceAtLocation && pieceAtLocation.player === state.currentPlayer) {
             this.selectedPieceId = pieceAtLocation.id;
             logger.debug('Selected piece:', pieceAtLocation.id, 'at:', coords);
-            console.log('🔍 DEBUG: Piece selected:', pieceAtLocation.type, 'at', coords);
             
             // Show action buttons for the selected piece
-            console.log('🔍 DEBUG: Calling showActionButtons...');
             this.showActionButtons(pieceAtLocation);
-            console.log('🔍 DEBUG: showActionButtons completed');
             
             // Update board display to show movement indicators
             this.updateBoardDisplay(state);
@@ -528,7 +528,6 @@ export class AmalgamGame {
         const canLaunch = piece.type === 'Jade' || piece.type === 'Amalgam';
         this.updateButtonState(this.launchButton!, canLaunch);
         
-        console.log(`Debug: Updated action buttons for ${piece.type} - Portal Swap: ${canPortalSwap}, Golden: ${isOnGolden}`);
     }
     
     /**
@@ -564,14 +563,16 @@ export class AmalgamGame {
         const screenX = rect.left + (canvasX * rect.width / canvas.width);
         const screenY = rect.top + (canvasY * rect.height / canvas.height);
         
-        // Position the action panel to the right of the piece
-        const panelWidth = 200;
-        const panelHeight = 300;
+        // Position the action panel using graphics configuration
+        const uiConfig = graphicsConfig.getUIConfig();
+        const panelWidth = uiConfig.action_panel.width;
+        const panelHeight = uiConfig.action_panel.height;
+        const offset = uiConfig.action_panel.offset_from_piece;
         
         // Check if panel would go off screen to the right
-        let left = screenX + 30; // 30px offset from piece
+        let left = screenX + offset;
         if (left + panelWidth > window.innerWidth) {
-            left = screenX - panelWidth - 30; // Position to the left instead
+            left = screenX - panelWidth - offset; // Position to the left instead
         }
         
         // Check if panel would go off screen vertically
@@ -607,18 +608,13 @@ export class AmalgamGame {
      * Check if coordinates are on golden line
      */
     private isOnGoldenLine(coords: Vector2): boolean {
-        console.log('🔍 DEBUG: isOnGoldenLine called with coords:', coords);
         
         if (!this.boardData?.golden_coordinates) {
-            console.log('🔍 DEBUG: No golden_coordinates in boardData');
             return false;
         }
         
         const coordString = `${coords[0]},${coords[1]}`;
         const isGolden = this.boardData.golden_coordinates.includes(coordString);
-        console.log(`🔍 DEBUG: Checking [${coords[0]}, ${coords[1]}] (${coordString}) - isGolden: ${isGolden}`);
-        console.log(`🔍 DEBUG: Golden coordinates array length: ${this.boardData.golden_coordinates.length}`);
-        console.log(`🔍 DEBUG: First 5 golden coordinates:`, this.boardData.golden_coordinates.slice(0, 5));
         
         return isGolden;
     }
@@ -637,7 +633,6 @@ export class AmalgamGame {
         // Hide action buttons
         this.hideActionButtons();
         
-        console.log('🔄 Portal swap mode enabled for piece:', piece.id);
     }
     
     /**
@@ -890,7 +885,6 @@ export class AmalgamGame {
                 this.portalSwapMode.sourcePiece = null;
                 this.showMessage('Portal swap executed!');
                 
-                console.log('🔄 Portal swap executed:', sourcePiece.id, '↔️', pieceAtLocation.id);
                 return;
             } else {
                 // Cancel portal swap mode
@@ -899,7 +893,6 @@ export class AmalgamGame {
                 this.showMessage('Portal swap cancelled');
                 
                 if (!pieceAtLocation || pieceAtLocation.type !== 'Portal') {
-                    console.log('❌ Portal swap cancelled: Invalid target');
                 }
             }
         }
@@ -908,12 +901,9 @@ export class AmalgamGame {
         if (pieceAtLocation && pieceAtLocation.player === state.currentPlayer) {
             this.selectedPieceId = pieceAtLocation.id;
             logger.debug('UI: Selected piece:', pieceAtLocation.id, 'at:', coords);
-            console.log('🔍 DEBUG: Piece selected for UI:', pieceAtLocation.type, 'at', coords);
             
             // Show action buttons
-            console.log('🔍 DEBUG: Calling showActionButtons for UI...');
             this.showActionButtons(pieceAtLocation);
-            console.log('🔍 DEBUG: showActionButtons for UI completed');
         } else {
             // Deselect piece
             this.selectedPieceId = null;
@@ -1434,7 +1424,7 @@ export class AmalgamGame {
     }
     
     private getPieceHotkey(type: string, idx: number): string {
-        // Assign hotkeys: R, P, A, J, 1-8 fallback
+        // Assign hotkeys: R, P, A, J, 1-8
         const map: Record<string, string> = { 
             Ruby: 'R', Pearl: 'P', Amber: 'A', Jade: 'J', Amalgam: 'M', Portal: 'O', Void: 'V' 
         };
@@ -1613,7 +1603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.amalgamGame = game; // Make accessible for debugging
     
     game.initialize().catch(error => {
-        console.error('Failed to start game:', error);
+                    logger.error('Failed to start game:', error);
         alert('Failed to start game: ' + error.message);
     });
 });

@@ -314,7 +314,7 @@ export class InteractionManager {
      * Re-initialize event listeners (for debugging)
      */
     reinitializeEventListeners(): void {
-        console.log('🔄 InteractionManager.reinitializeEventListeners: removing and re-adding event listeners');
+
         
         // Remove existing listeners
         this.canvasElement.removeEventListener('click', this.boundHandleClick);
@@ -324,7 +324,7 @@ export class InteractionManager {
         // Re-add listeners
         this.setupEventListeners();
         
-        console.log('🔄 Event listeners reinitialized');
+
     }
 
     /**

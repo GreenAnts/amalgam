@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quadrant Configuration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+        }
+        .nav-btn {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .nav-btn:hover {
+            background-color: #0056b3;
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .test-result.passed {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.failed {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .canvas-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background-color: #343434;
+        }
+        .quadrant-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .quadrant-item {
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation Header -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+        </div>
+        
+        <div class="test-header">
+            <h1>🎨 Quadrant Configuration Tests</h1>
+            <p>Testing the new quadrant-based color configuration for Amalgam pieces</p>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-card">
+                <div class="test-title">Configuration Loading Test</div>
+                <div id="config-test-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-card">
+                <div class="test-title">Quadrant Structure Test</div>
+                <div id="quadrant-test-result" class="test-result"></div>
+            </div>
+            
+            <div class="test-card">
+                <div class="test-title">Color Mapping Test</div>
+                <div id="color-mapping-result" class="test-result"></div>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <div class="test-title">Visual Rendering Test</div>
+            <div class="canvas-container">
+                <canvas id="testCanvas" width="400" height="300"></canvas>
+            </div>
+            <div class="quadrant-info">
+                <div class="quadrant-item" style="background-color: #E63960; color: white;">Top: #E63960</div>
+                <div class="quadrant-item" style="background-color: #F8F6DA; color: black;">Right: #F8F6DA</div>
+                <div class="quadrant-item" style="background-color: #A9E886; color: black;">Left: #A9E886</div>
+                <div class="quadrant-item" style="background-color: #F6C13F; color: black;">Bottom: #F6C13F</div>
+            </div>
+            <div id="rendering-test-result" class="test-result"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { graphicsConfig } from '../../ui/graphics-config.js';
+        
+        // Test results container
+        const results = {
+            config: document.getElementById('config-test-result'),
+            quadrant: document.getElementById('quadrant-test-result'),
+            colorMapping: document.getElementById('color-mapping-result'),
+            rendering: document.getElementById('rendering-test-result')
+        };
+        
+        // Test 1: Configuration Loading
+        async function testConfigurationLoading() {
+            try {
+                const config = await graphicsConfig.loadConfig();
+                const amalgamConfig = config.pieces.amalgam;
+                
+                if (amalgamConfig.quadrants && 
+                    amalgamConfig.quadrants.top && 
+                    amalgamConfig.quadrants.right && 
+                    amalgamConfig.quadrants.left && 
+                    amalgamConfig.quadrants.bottom) {
+                    results.config.className = 'test-result passed';
+                    results.config.textContent = '✅ Configuration loaded successfully with quadrant structure';
+                } else {
+                    results.config.className = 'test-result failed';
+                    results.config.textContent = '❌ Configuration missing quadrant structure';
+                }
+            } catch (error) {
+                results.config.className = 'test-result failed';
+                results.config.textContent = `❌ Configuration loading failed: ${error.message}`;
+            }
+        }
+        
+        // Test 2: Quadrant Structure Validation
+        async function testQuadrantStructure() {
+            try {
+                const config = await graphicsConfig.loadConfig();
+                const quadrants = config.pieces.amalgam.quadrants;
+                
+                const expectedColors = {
+                    top: '#E63960',
+                    right: '#F8F6DA',
+                    left: '#A9E886',
+                    bottom: '#F6C13F'
+                };
+                
+                let allMatch = true;
+                let details = [];
+                
+                for (const [position, expectedColor] of Object.entries(expectedColors)) {
+                    const actualColor = quadrants[position];
+                    if (actualColor === expectedColor) {
+                        details.push(`✅ ${position}: ${actualColor}`);
+                    } else {
+                        details.push(`❌ ${position}: expected ${expectedColor}, got ${actualColor}`);
+                        allMatch = false;
+                    }
+                }
+                
+                results.quadrant.className = allMatch ? 'test-result passed' : 'test-result failed';
+                results.quadrant.innerHTML = allMatch ? 
+                    '✅ All quadrant colors match expected values' :
+                    '❌ Some quadrant colors do not match expected values<br>' + details.join('<br>');
+                    
+            } catch (error) {
+                results.quadrant.className = 'test-result failed';
+                results.quadrant.textContent = `❌ Quadrant structure test failed: ${error.message}`;
+            }
+        }
+        
+        // Test 3: Color Mapping Test
+        async function testColorMapping() {
+            try {
+                const config = await graphicsConfig.loadConfig();
+                const quadrants = config.pieces.amalgam.quadrants;
+                
+                // Test the color array conversion
+                const colors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
+                const expectedColors = ['#E63960', '#F8F6DA', '#A9E886', '#F6C13F'];
+                
+                let allMatch = true;
+                let details = [];
+                
+                for (let i = 0; i < colors.length; i++) {
+                    if (colors[i] === expectedColors[i]) {
+                        details.push(`✅ Index ${i}: ${colors[i]}`);
+                    } else {
+                        details.push(`❌ Index ${i}: expected ${expectedColors[i]}, got ${colors[i]}`);
+                        allMatch = false;
+                    }
+                }
+                
+                results.colorMapping.className = allMatch ? 'test-result passed' : 'test-result failed';
+                results.colorMapping.innerHTML = allMatch ? 
+                    '✅ Color array mapping works correctly' :
+                    '❌ Color array mapping has errors<br>' + details.join('<br>');
+                    
+            } catch (error) {
+                results.colorMapping.className = 'test-result failed';
+                results.colorMapping.textContent = `❌ Color mapping test failed: ${error.message}`;
+            }
+        }
+        
+        // Test 4: Visual Rendering Test
+        async function testVisualRendering() {
+            try {
+                const canvas = document.getElementById('testCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Clear canvas
+                ctx.fillStyle = '#343434';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const config = await graphicsConfig.loadConfig();
+                const quadrants = config.pieces.amalgam.quadrants;
+                const colors = [quadrants.top, quadrants.right, quadrants.left, quadrants.bottom];
+                
+                // Set grid size for scaling
+                graphicsConfig.setGridSize(45);
+                
+                // Draw test Amalgam pieces
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // Draw circle version
+                drawAmalgamCircle(ctx, centerX, centerY, 30, colors, 0);
+                
+                // Draw square version (offset)
+                drawAmalgamSquare(ctx, centerX + 100, centerY, 30, colors, 0);
+                
+                results.rendering.className = 'test-result passed';
+                results.rendering.textContent = '✅ Amalgam pieces rendered successfully with new quadrant structure';
+                
+            } catch (error) {
+                results.rendering.className = 'test-result failed';
+                results.rendering.textContent = `❌ Visual rendering test failed: ${error.message}`;
+            }
+        }
+        
+        // Helper functions for rendering (simplified versions)
+        function drawAmalgamCircle(ctx, x, y, size, colors, rotation) {
+            const radius = size;
+            const outerRadius = radius * 1.2;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            
+            // Define quadrants
+            const angles = [
+                { start: -Math.PI / 4, end: Math.PI / 4, color: colors[1] }, // Right
+                { start: Math.PI / 4, end: 3 * Math.PI / 4, color: colors[0] }, // Top
+                { start: 3 * Math.PI / 4, end: 5 * Math.PI / 4, color: colors[2] }, // Left
+                { start: 5 * Math.PI / 4, end: 7 * Math.PI / 4, color: colors[3] }  // Bottom
+            ];
+            
+            // Draw outer ring
+            angles.forEach((quadrant) => {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, outerRadius, quadrant.start, quadrant.end);
+                ctx.lineTo(0, 0);
+                ctx.fillStyle = darkenColor(quadrant.color, 20);
+                ctx.fill();
+                ctx.closePath();
+            });
+            
+            // Draw inner circle
+            angles.forEach((quadrant) => {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, quadrant.start, quadrant.end);
+                ctx.lineTo(0, 0);
+                ctx.fillStyle = quadrant.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawAmalgamSquare(ctx, x, y, size, colors, rotation) {
+            const outerSize = size * 2.1;
+            const innerSize = size * 1.5;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation + (45 * Math.PI / 180));
+            
+            const halfOuter = outerSize / 2;
+            const outerRects = [
+                { x: -halfOuter, y: 0, w: halfOuter, h: halfOuter, color: darkenColor(colors[0], 20) }, // Top
+                { x: 0, y: 0, w: halfOuter, h: halfOuter, color: darkenColor(colors[1], 20) }, // Right
+                { x: 0, y: -halfOuter, w: halfOuter, h: halfOuter, color: darkenColor(colors[3], 20) }, // Bottom
+                { x: -halfOuter, y: -halfOuter, w: halfOuter, h: halfOuter, color: darkenColor(colors[2], 20) } // Left
+            ];
+            
+            outerRects.forEach(rect => {
+                ctx.fillStyle = rect.color;
+                ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+            });
+            
+            const halfInner = innerSize / 2;
+            const innerRects = [
+                { x: -halfInner, y: 0, w: halfInner, h: halfInner, color: colors[0] }, // Top
+                { x: 0, y: 0, w: halfInner, h: halfInner, color: colors[1] }, // Right
+                { x: 0, y: -halfInner, w: halfInner, h: halfInner, color: colors[3] }, // Bottom
+                { x: -halfInner, y: -halfInner, w: halfInner, h: halfInner, color: colors[2] } // Left
+            ];
+            
+            innerRects.forEach(rect => {
+                ctx.fillStyle = rect.color;
+                ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+            });
+            
+            ctx.restore();
+        }
+        
+        function darkenColor(color, percent) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            await testConfigurationLoading();
+            await testQuadrantStructure();
+            await testColorMapping();
+            await testVisualRendering();
+        }
+        
+        // Start tests when page loads
+        runAllTests();
+    </script>
+</body>
+</html>
