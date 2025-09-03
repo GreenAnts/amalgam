@@ -99,6 +99,12 @@ export interface Move {
     toCoords?: Vector2;
     pieceId?: string;
     playerId: PlayerId;
+    ability?: {
+        type: string;
+        formation?: Vector2[];
+        direction?: Vector2;
+        targetCoords?: Vector2;
+    };
     meta?: Record<string, any>;
 }
 
@@ -118,6 +124,7 @@ export interface GameState {
     moveHistory: Move[];
     winner: PlayerId | null;
     victoryType?: string;
+    availableAbilities?: Ability[];
 }
 
 // Move validation results

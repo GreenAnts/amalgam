@@ -1,17 +1,33 @@
-// Fireball Animation for Amalgam Game
-// Follows game rules: particles form around 2 pieces in figure-8, then shoot in straight line
+// Fireball Animation V3 for Amalgam Game
+// Magical whispy smoke with flowing wisps and ethereal particle effects
 export class FireballAnimation {
     constructor(config) {
-        this.particles = [];
+        this.magicWisps = [];
         this.animationTime = 0;
         this.isActive = true;
         this.targetReached = false;
-        this.impactExplosion = false; // Flag for impact explosion
-        this.impactParticles = []; // Array for impact explosion particles
+        this.targetDestroyed = false;
+        // Target effects
+        this.targetFragments = [];
+        this.targetShatterTime = 0;
+        // Magical field for organic movement
+        this.magicField = [];
+        this.fieldUpdateTime = 0;
+        // Animation phases timing (in milliseconds) - REDUCED for faster response
+        this.PHASE_TIMINGS = {
+            FORMING: 1500, // 1.5s formation around rubies (reduced from 3s)
+            FLOWING: 1000, // 1s flowing together (reduced from 1.5s)
+            PIERCING: 800, // 0.8s fast movement to target (reduced from 1s)
+            IMPACT: 200, // 0.2s impact effect (reduced from 0.4s)
+            DISPERSING: 1500 // 1.5s dispersion and fade (reduced from 2s)
+        };
+        console.log('✨ FIREBALL V3 - MAGICAL WHISPY SMOKE WITH FLOWING WISPS!');
+        console.log('🎯 V3 Features: Ethereal particles, organic flow, magical wisps');
         this.config = config;
         this.formationCenter = this.calculateFormationCenter();
         this.firingDirection = this.calculateFiringDirection();
-        this.initializeParticles();
+        this.initializeMagicField();
+        this.initializeMagicWisps();
     }
     calculateFormationCenter() {
         const [piece1, piece2] = this.config.sourcePieces;
@@ -21,9 +37,8 @@ export class FireballAnimation {
         };
     }
     calculateFiringDirection() {
-        const [piece1, piece2] = this.config.sourcePieces;
-        const dx = piece2.x - piece1.x;
-        const dy = piece2.y - piece1.y;
+        const dx = this.config.targetPosition.x - this.formationCenter.x;
+        const dy = this.config.targetPosition.y - this.formationCenter.y;
         // Normalize the direction vector
         const length = Math.sqrt(dx * dx + dy * dy);
         return {
@@ -31,146 +46,507 @@ export class FireballAnimation {
             y: dy / length
         };
     }
-    initializeParticles() {
-        const particleCount = this.config.isAmplified ? 150 : 120; // More particles for density
-        // Create single cluster for unified figure-8 pattern
-        for (let i = 0; i < particleCount; i++) {
-            this.particles.push({
-                x: this.formationCenter.x,
-                y: this.formationCenter.y,
-                vx: 0,
-                vy: 0,
+    initializeMagicField() {
+        // Create a magical flow field for organic movement
+        const fieldSize = 20;
+        this.magicField = [];
+        for (let i = 0; i < fieldSize; i++) {
+            this.magicField[i] = [];
+            for (let j = 0; j < fieldSize; j++) {
+                // Create organic, flowing patterns
+                const angle = Math.sin(i * 0.3) * Math.cos(j * 0.2) * Math.PI;
+                const strength = 0.5 + Math.sin(i * 0.5) * Math.cos(j * 0.4) * 0.5;
+                this.magicField[i][j] = { angle, strength };
+            }
+        }
+    }
+    updateMagicField(deltaTime) {
+        this.fieldUpdateTime += deltaTime;
+        // Animate the magical field
+        for (let i = 0; i < this.magicField.length; i++) {
+            for (let j = 0; j < this.magicField[i].length; j++) {
+                const field = this.magicField[i][j];
+                field.angle += Math.sin(this.fieldUpdateTime * 0.001 + i * 0.1) * 0.01;
+                field.strength = 0.5 + Math.sin(this.fieldUpdateTime * 0.002 + i * 0.2) * Math.cos(this.fieldUpdateTime * 0.001 + j * 0.3) * 0.5;
+            }
+        }
+    }
+    getFieldInfluence(x, y) {
+        // Get influence from the magical field at a specific position
+        const fieldX = Math.floor((x / 800) * this.magicField.length);
+        const fieldY = Math.floor((y / 600) * this.magicField[0].length);
+        if (fieldX >= 0 && fieldX < this.magicField.length &&
+            fieldY >= 0 && fieldY < this.magicField[0].length) {
+            return this.magicField[fieldX][fieldY];
+        }
+        return { angle: 0, strength: 0 };
+    }
+    initializeMagicWisps() {
+        const wispCount = this.config.isAmplified ? 60 : 45;
+        for (let i = 0; i < wispCount; i++) {
+            const wisp = this.createMagicWisp(i);
+            this.magicWisps.push(wisp);
+        }
+    }
+    createMagicWisp(index) {
+        const [piece1, piece2] = this.config.sourcePieces;
+        // Create dispersed, organic formation instead of rigid circles
+        const formationPattern = this.getDispersedFormationPosition(index);
+        // Shared end point: center of the target piece
+        const finalTargetX = this.config.targetPosition.x;
+        const finalTargetY = this.config.targetPosition.y;
+        const anchorX = formationPattern.x;
+        const anchorY = formationPattern.y;
+        const chargeAmp = 4 + Math.random() * 8;
+        const chargePhase = Math.random() * Math.PI * 2;
+        const chargeSpeed = 1 + Math.random() * 1.5;
+        const perpOffset = (Math.random() * 2 - 1) * 18; // ±18px perpendicular dispersion during flowing
+        return {
+            id: index,
+            x: formationPattern.x,
+            y: formationPattern.y,
+            vx: 0,
+            vy: 0,
+            size: 3 + Math.random() * 6, // Varying wisp sizes
+            baseSize: 3 + Math.random() * 6,
+            color: this.getMagicWispColor(),
+            alpha: 0.3 + Math.random() * 0.4, // Start semi-transparent
+            maxAlpha: 0.7 + Math.random() * 0.3,
+            phase: 'forming',
+            progress: 0,
+            flowAngle: Math.random() * Math.PI * 2,
+            flowSpeed: 0.02 + Math.random() * 0.03,
+            swirlAngle: Math.random() * Math.PI * 2,
+            swirlSpeed: 0.03 + Math.random() * 0.04,
+            driftX: (Math.random() - 0.5) * 0.5,
+            driftY: 0, // prevent downward sag during charge
+            life: 0,
+            maxLife: 7000,
+            trail: [],
+            maxTrailLength: 8 + Math.floor(Math.random() * 6),
+            dispersionAngle: Math.random() * Math.PI * 2,
+            dispersionSpeed: 0.5 + Math.random() * 1.5,
+            magicField: Math.random() * 0.3,
+            energyLevel: 0.3 + Math.random() * 0.4,
+            finalTargetX,
+            finalTargetY,
+            reachedEnd: false,
+            anchorX,
+            anchorY,
+            chargeAmp,
+            chargePhase,
+            chargeSpeed,
+            perpOffset
+        };
+    }
+    getDispersedFormationPosition(index) {
+        const [piece1, piece2] = this.config.sourcePieces;
+        // Create multiple emission sources around each ruby piece
+        const emissionSources = this.createEmissionSources(piece1, piece2);
+        // Use Voronoi-like clustering for natural dispersion
+        const clusterIndex = index % emissionSources.length;
+        const baseSource = emissionSources[clusterIndex];
+        // Add organic randomness using Perlin-like noise
+        const noiseX = this.simplexNoise(index * 0.1, 0) * 25;
+        const noiseY = this.simplexNoise(0, index * 0.1) * 25;
+        // Create natural clustering with some particles closer, some further
+        const clusterRadius = 15 + Math.random() * 20;
+        const clusterAngle = Math.random() * Math.PI * 2;
+        // Add turbulence for smoke-like dispersion
+        const turbulenceX = Math.sin(index * 0.3) * Math.cos(index * 0.2) * 12;
+        const turbulenceY = Math.cos(index * 0.2) * Math.sin(index * 0.3) * 12;
+        return {
+            x: baseSource.x + Math.cos(clusterAngle) * clusterRadius + noiseX + turbulenceX,
+            y: baseSource.y + Math.sin(clusterAngle) * clusterRadius + noiseY + turbulenceY
+        };
+    }
+    createEmissionSources(piece1, piece2) {
+        const sources = [];
+        // Create multiple emission points around each ruby piece
+        const rubyRadius = 18;
+        const emissionPointsPerRuby = 6;
+        // Emission points around first ruby
+        for (let i = 0; i < emissionPointsPerRuby; i++) {
+            const angle = (Math.PI * 2 * i) / emissionPointsPerRuby;
+            const radius = rubyRadius + (Math.random() - 0.5) * 8;
+            sources.push({
+                x: piece1.x + Math.cos(angle) * radius,
+                y: piece1.y + Math.sin(angle) * radius
+            });
+        }
+        // Emission points around second ruby
+        for (let i = 0; i < emissionPointsPerRuby; i++) {
+            const angle = (Math.PI * 2 * i) / emissionPointsPerRuby;
+            const radius = rubyRadius + (Math.random() - 0.5) * 8;
+            sources.push({
+                x: piece2.x + Math.cos(angle) * radius,
+                y: piece2.y + Math.sin(angle) * radius
+            });
+        }
+        // Add some emission points in the space between rubies
+        const midPoint = this.formationCenter;
+        const betweenPoints = 4;
+        for (let i = 0; i < betweenPoints; i++) {
+            const t = (i + 1) / (betweenPoints + 1);
+            const offsetX = (Math.random() - 0.5) * 20;
+            const offsetY = (Math.random() - 0.5) * 20;
+            sources.push({
+                x: midPoint.x + offsetX,
+                y: midPoint.y + offsetY
+            });
+        }
+        return sources;
+    }
+    // Simplified Perlin-like noise for organic randomness
+    simplexNoise(x, y) {
+        const n0 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const n1 = Math.sin(x * 39.233 + y * 12.9898) * 43758.5453;
+        return (n0 + n1) % 1;
+    }
+    getMagicWispColor() {
+        // Create magical, ethereal red colors with variations
+        const baseRed = 139;
+        const variations = [
+            `rgba(${baseRed}, 0, 0, 0.8)`, // Dark red
+            `rgba(${baseRed + 20}, 0, 0, 0.7)`, // Medium red
+            `rgba(${baseRed + 40}, 0, 0, 0.9)`, // Bright red
+            `rgba(${baseRed + 60}, 0, 0, 0.8)`, // Vibrant red
+            `rgba(${baseRed + 80}, 0, 0, 0.7)`, // Brightest red
+            `rgba(${baseRed + 100}, 20, 0, 0.6)` // Magical orange-red
+        ];
+        return variations[Math.floor(Math.random() * variations.length)];
+    }
+    addToTrail(wisp) {
+        // Add current position to trail for smoke effect
+        wisp.trail.push({
+            x: wisp.x,
+            y: wisp.y,
+            alpha: wisp.alpha * 0.8,
+            size: wisp.size * 0.7
+        });
+        // Limit trail length
+        if (wisp.trail.length > wisp.maxTrailLength) {
+            wisp.trail.shift();
+        }
+    }
+    updateFormingPhase(wisp, deltaTime) {
+        // Slowly form with organic, dispersed gathering
+        wisp.progress += deltaTime / this.PHASE_TIMINGS.FORMING;
+        if (wisp.progress >= 1) {
+            wisp.phase = 'flowing';
+            wisp.progress = 0;
+        }
+        // During formation, wisps gather organically toward the center
+        // Instead of rigid circles, use natural flow patterns
+        // Calculate natural gathering position using gradient flow
+        const gatheringPosition = this.getNaturalGatheringPosition(wisp);
+        // 2D oscillation (spherical/figure-8) around gathering point using local tangent/normal
+        const t = this.animationTime * 0.002 * wisp.chargeSpeed + wisp.chargePhase;
+        // Ease-in oscillation to avoid snap and prep for smooth handoff
+        const easeIn = Math.min(1, Math.max(0, wisp.progress));
+        const easeOut = Math.min(1, Math.max(0, 1 - wisp.progress));
+        const ampScale = 0.85 * easeIn + 0.15; // grow from 0.15 to 1.0 through phase
+        const tanX = this.firingDirection.x;
+        const tanY = this.firingDirection.y;
+        const norX = -tanY;
+        const norY = tanX;
+        const oscN = (wisp.chargeAmp * ampScale) * Math.sin(t);
+        const oscT = (wisp.chargeAmp * 0.6 * ampScale) * Math.sin(2 * t); // slight figure-8
+        const offsetX = norX * oscN + tanX * oscT;
+        const offsetY = norY * oscN + tanY * oscT;
+        // Raw target
+        const rawTX = gatheringPosition.x + offsetX;
+        const rawTY = gatheringPosition.y + offsetY;
+        // Blend with previous to avoid micro-resets
+        let targetX = rawTX;
+        let targetY = rawTY;
+        if (wisp.hasLastTarget) {
+            targetX = (wisp.lastTX * 0.85) + (rawTX * 0.15);
+            targetY = (wisp.lastTY * 0.85) + (rawTY * 0.15);
+        }
+        wisp.lastTX = targetX;
+        wisp.lastTY = targetY;
+        wisp.hasLastTarget = true;
+        // Smooth movement toward oscillating target
+        const dx = targetX - wisp.x;
+        const dy = targetY - wisp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 0.5) {
+            const moveSpeed = 0.8 + Math.random() * 0.4;
+            const step = moveSpeed * 0.12;
+            wisp.vx = (dx / distance) * step;
+            wisp.vy = (dy / distance) * step;
+        }
+        // Update position
+        wisp.x += wisp.vx;
+        wisp.y += wisp.vy;
+        // Add magical swirling and flow
+        wisp.swirlAngle += wisp.swirlSpeed;
+        wisp.flowAngle += wisp.flowSpeed;
+        // Enhanced magical field influence for organic movement
+        const fieldInfluence = this.getFieldInfluence(wisp.x, wisp.y);
+        // Light, smoothed influence
+        wisp.x += Math.cos(fieldInfluence.angle) * fieldInfluence.strength * 0.15;
+        wisp.y += Math.sin(fieldInfluence.angle) * fieldInfluence.strength * 0.15;
+        // Small unbiased drift (very low to prevent jitter)
+        wisp.x += wisp.driftX * 0.35;
+        wisp.y += wisp.driftY * 0.35;
+        // Gradually increase alpha and size with organic variation
+        wisp.alpha = Math.min(wisp.alpha + 0.002, wisp.maxAlpha);
+        wisp.size = wisp.baseSize + Math.sin(wisp.progress * Math.PI * 1.5) * 3;
+        // Add to trail
+        this.addToTrail(wisp);
+    }
+    getNaturalGatheringPosition(wisp) {
+        // Create organic gathering pattern instead of rigid circles
+        const baseAngle = (wisp.id * 137.5) % 360; // Golden angle for natural distribution
+        const baseRadius = 20 + Math.sin(wisp.id * 0.1) * 15; // Varying distances
+        // Add some wisps closer to center, some further out
+        const distanceVariation = Math.sin(wisp.id * 0.3) * 0.3 + 0.7;
+        const radius = baseRadius * distanceVariation;
+        // Use spiral-like pattern for organic distribution
+        const spiralAngle = baseAngle * (Math.PI / 180) + wisp.id * 0.1;
+        const spiralRadius = radius * (1 + Math.sin(wisp.id * 0.2) * 0.2);
+        // Add turbulence for smoke-like dispersion
+        const turbulenceX = Math.sin(wisp.id * 0.4) * Math.cos(wisp.id * 0.3) * 8;
+        const turbulenceY = Math.cos(wisp.id * 0.3) * Math.sin(wisp.id * 0.4) * 8;
+        return {
+            x: this.formationCenter.x + Math.cos(spiralAngle) * spiralRadius + turbulenceX,
+            y: this.formationCenter.y + Math.sin(spiralAngle) * spiralRadius + turbulenceY
+        };
+    }
+    updateFlowingPhase(wisp, deltaTime) {
+        // Wisps flow together into a cohesive magical stream without aligning on a line
+        wisp.progress += deltaTime / this.PHASE_TIMINGS.FLOWING;
+        if (wisp.progress >= 1) {
+            wisp.phase = 'piercing';
+            wisp.progress = 0;
+        }
+        // Staging cluster ahead of rubies with perpendicular dispersion per wisp
+        const normalX = -this.firingDirection.y;
+        const normalY = this.firingDirection.x;
+        const stagingBaseX = this.formationCenter.x + this.firingDirection.x * 40;
+        const stagingBaseY = this.formationCenter.y + this.firingDirection.y * 40;
+        let stagingX = stagingBaseX + normalX * wisp.perpOffset;
+        let stagingY = stagingBaseY + normalY * wisp.perpOffset;
+        // 2D oscillation (spherical/figure-8) around staging point
+        const t = this.animationTime * 0.002 * wisp.chargeSpeed + wisp.chargePhase + 0.7;
+        // Ease-out oscillation so it smoothly settles before piercing
+        const easeOut = Math.min(1, Math.max(0, 1 - wisp.progress));
+        const ampScale = 0.2 + 0.8 * easeOut; // shrink as we approach the end of flowing
+        const tanX = this.firingDirection.x;
+        const tanY = this.firingDirection.y;
+        const oscN = (wisp.chargeAmp * ampScale) * Math.sin(t);
+        const oscT = (wisp.chargeAmp * 0.55 * ampScale) * Math.sin(2 * t);
+        const offsetX = normalX * oscN + tanX * oscT;
+        const offsetY = normalY * oscN + tanY * oscT;
+        stagingX += offsetX;
+        stagingY += offsetY;
+        // Smooth movement toward oscillating staging position with target blending
+        let dx = stagingX - wisp.x;
+        let dy = stagingY - wisp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 0.5) {
+            const flowSpeed = 1.2 + Math.random() * 0.8;
+            const step = flowSpeed * 0.09;
+            wisp.vx = (dx / distance) * step;
+            wisp.vy = (dy / distance) * step;
+        }
+        // Update position
+        wisp.x += wisp.vx;
+        wisp.y += wisp.vy;
+        // Continue magical flow influences (small)
+        wisp.swirlAngle += wisp.swirlSpeed * 1.3;
+        wisp.flowAngle += wisp.flowSpeed * 1.3;
+        const fieldInfluence = this.getFieldInfluence(wisp.x, wisp.y);
+        wisp.x += Math.cos(fieldInfluence.angle) * fieldInfluence.strength * 0.15;
+        wisp.y += Math.sin(fieldInfluence.angle) * fieldInfluence.strength * 0.15;
+        // Minor unbiased drift
+        wisp.x += wisp.driftX * 0.35;
+        wisp.y += wisp.driftY * 0.35;
+        // Add to trail
+        this.addToTrail(wisp);
+    }
+    updatePiercingPhase(wisp, deltaTime) {
+        // Distance-aware, target-position-based piercing (not purely time-based)
+        const distToTarget = this.getDistanceToTarget();
+        const baseSpeed = 2.8;
+        const distanceScaledSpeed = baseSpeed + Math.min(6, distToTarget * 0.004); // scale with target distance
+        // Desired target with slight organic curve
+        const fieldInfluence = this.getFieldInfluence(wisp.x, wisp.y);
+        const curveIntensity = 12 * wisp.magicField;
+        const targetX = wisp.finalTargetX + Math.cos(fieldInfluence.angle) * curveIntensity;
+        const targetY = wisp.finalTargetY + Math.sin(fieldInfluence.angle) * curveIntensity;
+        const dx = targetX - wisp.x;
+        const dy = targetY - wisp.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance > 0.5) {
+            wisp.vx = (dx / distance) * distanceScaledSpeed;
+            wisp.vy = (dy / distance) * distanceScaledSpeed;
+        }
+        // Update position
+        wisp.x += wisp.vx;
+        wisp.y += wisp.vy;
+        // Enhanced magical swirling and flow during piercing
+        wisp.swirlAngle += wisp.swirlSpeed * 3;
+        wisp.flowAngle += wisp.flowSpeed * 3;
+        // Natural drift
+        wisp.x += wisp.driftX * 1.2;
+        // Add to trail
+        this.addToTrail(wisp);
+        // Transition to impact when reaching the shared end point
+        if (!wisp.reachedEnd && distance < 6) {
+            wisp.reachedEnd = true;
+            wisp.phase = 'impact';
+            wisp.progress = 0;
+        }
+    }
+    updateImpactPhase(wisp, deltaTime) {
+        // Impact effect at target with magical flash
+        wisp.progress += deltaTime / this.PHASE_TIMINGS.IMPACT;
+        if (wisp.progress >= 1) {
+            wisp.phase = 'dispersing';
+            wisp.progress = 0;
+            // Create target shattering effect on first wisp to reach impact
+            if (!this.targetDestroyed) {
+                this.createTargetShatteringEffect();
+                this.targetDestroyed = true;
+            }
+        }
+        // Impact flash effect
+        wisp.alpha = wisp.maxAlpha + Math.sin(wisp.progress * Math.PI * 6) * 0.3;
+        wisp.size = wisp.baseSize * (1 + Math.sin(wisp.progress * Math.PI * 4) * 0.5);
+        // Add to trail
+        this.addToTrail(wisp);
+    }
+    updateDispersingPhase(wisp, deltaTime) {
+        // Disperse and fade after impact with magical dissipation
+        wisp.progress += deltaTime / this.PHASE_TIMINGS.DISPERSING;
+        if (wisp.progress >= 1) {
+            wisp.alpha = 0;
+            return;
+        }
+        // Continue dispersing from the shared end point at the target center
+        const backSideX = wisp.finalTargetX;
+        const backSideY = wisp.finalTargetY;
+        const disperseProgress = wisp.progress;
+        const disperseDistance = 40 * disperseProgress;
+        const targetX = backSideX + Math.cos(wisp.dispersionAngle) * disperseDistance;
+        const targetY = backSideY + Math.sin(wisp.dispersionAngle) * disperseDistance;
+        // Smooth movement toward dispersion position
+        const dx = targetX - wisp.x;
+        const dy = targetY - wisp.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance > 1) {
+            const disperseSpeed = wisp.dispersionSpeed;
+            wisp.vx = (dx / distance) * disperseSpeed;
+            wisp.vy = (dy / distance) * disperseSpeed;
+        }
+        // Update position
+        wisp.x += wisp.vx;
+        wisp.y += wisp.vy;
+        // Enhanced magical swirling during dispersion
+        wisp.swirlAngle += wisp.swirlSpeed * 4;
+        wisp.flowAngle += wisp.flowSpeed * 4;
+        // Magical field influence
+        const fieldInfluence = this.getFieldInfluence(wisp.x, wisp.y);
+        wisp.x += Math.cos(fieldInfluence.angle) * fieldInfluence.strength * 1.2;
+        wisp.y += Math.sin(fieldInfluence.angle) * fieldInfluence.strength * 1.2;
+        // Natural drift (no vertical bias)
+        wisp.x += wisp.driftX * 2.2;
+        // Fade out
+        wisp.alpha *= 0.97;
+        wisp.size *= 0.98;
+        // Add to trail
+        this.addToTrail(wisp);
+    }
+    getDistanceToTarget() {
+        const dx = this.config.targetPosition.x - this.formationCenter.x;
+        const dy = this.config.targetPosition.y - this.formationCenter.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    createTargetShatteringEffect() {
+        if (this.targetDestroyed)
+            return;
+        this.targetShatterTime = this.animationTime;
+        // Call the callback to notify that target is destroyed
+        if (this.config.onTargetDestroyed) {
+            this.config.onTargetDestroyed();
+        }
+        // Create target fragments (shattered pieces)
+        const fragmentCount = this.config.isAmplified ? 40 : 30;
+        for (let i = 0; i < fragmentCount; i++) {
+            const angle = (Math.PI * 2 * i) / fragmentCount;
+            const speed = 2 + Math.random() * 4;
+            const size = 2 + Math.random() * 5;
+            this.targetFragments.push({
+                x: this.config.targetPosition.x,
+                y: this.config.targetPosition.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
                 life: 0,
-                maxLife: 3000 + Math.random() * 2000,
-                phase: 'forming',
-                size: 0.5 + Math.random() * 1.5, // Smaller particles for light trail effect
-                color: this.getParticleColor(),
-                alpha: 0.4 + Math.random() * 0.4, // More subtle alpha
-                lastX: undefined, // Initialize for trail effect
-                lastY: undefined, // Initialize for trail effect
-                swarmAngle: Math.random() * Math.PI * 2, // Initialize for swarm behavior
-                swarmSpeed: 0.05 + Math.random() * 0.03, // Initialize for swarm behavior
-                individualOffset: Math.random() * Math.PI * 2, // Initialize for individual variation
-                clusterId: 0, // Single cluster for unified figure-8
-                startPosition: { x: this.formationCenter.x, y: this.formationCenter.y } // Center position
+                maxLife: 2500 + Math.random() * 1500,
+                alpha: 0.9 + Math.random() * 0.1,
+                size,
+                color: Math.random() > 0.7 ? '#FFFFFF' : '#FF4444', // White and red fragments
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.4
             });
         }
     }
-    getParticleColor() {
-        const colors = [
-            '#ff2200', // Deep ruby red
-            '#ff4400', // Bright ruby red
-            '#ff6600', // Ruby orange-red
-            '#ff1100', // Dark ruby
-            '#ff3300' // Medium ruby
-        ];
-        return colors[Math.floor(Math.random() * colors.length)];
-    }
-    updateFormingPhase(particle, deltaTime) {
-        const time = this.animationTime / 1000; // Convert to seconds
-        // Single figure-8 pattern where the two circles are centered on the two pieces
-        const t = (particle.life / particle.maxLife) * Math.PI * 4 + particle.individualOffset; // 2 full figure-8 cycles
-        // Calculate the distance between the two pieces
-        const [piece1, piece2] = this.config.sourcePieces;
-        const pieceDistance = Math.sqrt(Math.pow(piece2.x - piece1.x, 2) + Math.pow(piece2.y - piece1.y, 2));
-        // Figure-8 parametric equations - scale based on piece distance
-        const scale = pieceDistance * 0.6; // Scale the figure-8 to fit around both pieces
-        const figure8X = scale * Math.sin(t);
-        const figure8Y = scale * Math.sin(t) * Math.cos(t);
-        // Add gentle swarm-like movement (less chaotic)
-        particle.swarmAngle += particle.swarmSpeed * 0.5; // Slower swarm movement
-        const swarmX = Math.cos(particle.swarmAngle) * 15 * 0.15; // Reduced swarm influence
-        const swarmY = Math.sin(particle.swarmAngle) * 15 * 0.15;
-        // Add minimal individual particle jitter for subtle movement
-        const jitterX = (Math.random() - 0.5) * 3; // Reduced jitter
-        const jitterY = (Math.random() - 0.5) * 3;
-        // Position relative to the formation center (center of the figure-8)
-        particle.x = this.formationCenter.x + figure8X + swarmX + jitterX;
-        particle.y = this.formationCenter.y + figure8Y + swarmY + jitterY;
-        // Store previous position for trail effect
-        if (!particle.hasOwnProperty('lastX')) {
-            particle.lastX = particle.x;
-            particle.lastY = particle.y;
+    updateTargetFragments(deltaTime) {
+        for (let i = this.targetFragments.length - 1; i >= 0; i--) {
+            const fragment = this.targetFragments[i];
+            // Update position
+            fragment.x += fragment.vx;
+            fragment.y += fragment.vy;
+            // Add slight gravity effect
+            fragment.vy += 0.08;
+            // Update rotation
+            fragment.rotation += fragment.rotationSpeed;
+            // Update life and fade
+            fragment.life += deltaTime;
+            fragment.alpha = fragment.alpha * (1 - fragment.life / fragment.maxLife);
+            // Remove dead fragments
+            if (fragment.alpha < 0.05) {
+                this.targetFragments.splice(i, 1);
+            }
         }
-        // Transition to gathering phase after 2 seconds
-        if (this.animationTime > 2000) {
-            particle.phase = 'gathering';
-        }
-    }
-    updateGatheringPhase(particle, deltaTime) {
-        // Particles gather toward the forward piece
-        const forwardPiece = this.config.sourcePieces[1]; // Second piece is "forward"
-        const dx = forwardPiece.x - particle.x;
-        const dy = forwardPiece.y - particle.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance > 5) {
-            // Move toward forward piece
-            particle.vx = (dx / distance) * 2;
-            particle.vy = (dy / distance) * 2;
-            particle.x += particle.vx;
-            particle.y += particle.vy;
-        }
-        else {
-            // Start firing phase
-            particle.phase = 'firing';
-            particle.x = forwardPiece.x;
-            particle.y = forwardPiece.y;
-        }
-    }
-    updateFiringPhase(particle, deltaTime) {
-        // Particles shoot in straight line toward target
-        const speed = this.config.isAmplified ? 8 : 6;
-        particle.x += this.firingDirection.x * speed;
-        particle.y += this.firingDirection.y * speed;
-        // Check if particle reached target
-        const dx = this.config.targetPosition.x - particle.x;
-        const dy = this.config.targetPosition.y - particle.y;
-        const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
-        if (distanceToTarget < 10) {
-            particle.phase = 'impact';
-            this.targetReached = true;
-        }
-    }
-    updateImpactPhase(particle, deltaTime) {
-        // Particles explode outward from target
-        const dx = particle.x - this.config.targetPosition.x;
-        const dy = particle.y - this.config.targetPosition.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 50) {
-            // Expand outward
-            const angle = Math.atan2(dy, dx);
-            const speed = 3;
-            particle.x += Math.cos(angle) * speed;
-            particle.y += Math.sin(angle) * speed;
-        }
-        // Fade out
-        particle.alpha *= 0.95;
     }
     update(deltaTime) {
         if (!this.isActive)
             return;
         this.animationTime += deltaTime;
-        // Update each particle based on its phase
-        for (const particle of this.particles) {
-            particle.life += deltaTime;
-            switch (particle.phase) {
+        // Update magical field
+        this.updateMagicField(deltaTime);
+        // Update target fragments
+        this.updateTargetFragments(deltaTime);
+        // Update each magical wisp based on its phase
+        for (const wisp of this.magicWisps) {
+            wisp.life += deltaTime;
+            switch (wisp.phase) {
                 case 'forming':
-                    this.updateFormingPhase(particle, deltaTime);
+                    this.updateFormingPhase(wisp, deltaTime);
                     break;
-                case 'gathering':
-                    this.updateGatheringPhase(particle, deltaTime);
+                case 'flowing':
+                    this.updateFlowingPhase(wisp, deltaTime);
                     break;
-                case 'firing':
-                    this.updateFiringPhase(particle, deltaTime);
+                case 'piercing':
+                    this.updatePiercingPhase(wisp, deltaTime);
                     break;
                 case 'impact':
-                    this.updateImpactPhase(particle, deltaTime);
+                    this.updateImpactPhase(wisp, deltaTime);
+                    break;
+                case 'dispersing':
+                    this.updateDispersingPhase(wisp, deltaTime);
                     break;
             }
         }
-        // Check if animation is complete
-        const allParticlesDead = this.particles.every(p => p.alpha < 0.1);
-        if (allParticlesDead && this.targetReached) {
+        // Check if animation is complete - only when ALL wisps have finished dispersing
+        const allWispsDead = this.magicWisps.every(w => w.alpha < 0.05);
+        const allFragmentsDead = this.targetFragments.length === 0;
+        // Animation is complete when all wisps have dispersed and all fragments are gone
+        if (allWispsDead && allFragmentsDead) {
             this.isActive = false;
         }
     }
@@ -178,50 +554,104 @@ export class FireballAnimation {
         if (!this.isActive)
             return;
         ctx.save();
-        // Draw particles
-        for (const particle of this.particles) {
-            if (particle.alpha > 0.1) {
-                ctx.globalAlpha = particle.alpha;
-                ctx.fillStyle = particle.color;
-                // Add glow effect
-                ctx.shadowColor = particle.color;
-                ctx.shadowBlur = particle.size * 2;
+        // Draw magical wisps with ethereal, smoke-like effects
+        for (const wisp of this.magicWisps) {
+            if (wisp.alpha > 0.05) {
+                this.drawMagicWisp(ctx, wisp);
+            }
+        }
+        // Draw target fragments (shattered pieces)
+        for (const fragment of this.targetFragments) {
+            if (fragment.alpha > 0.05) {
+                this.drawTargetFragment(ctx, fragment);
+            }
+        }
+        ctx.restore();
+    }
+    drawMagicWisp(ctx, wisp) {
+        ctx.save();
+        // Validate wisp coordinates before drawing
+        if (!this.isValidCoordinate(wisp.x, wisp.y) || !this.isFinite(wisp.x) || !this.isFinite(wisp.y)) {
+            console.warn('Invalid wisp coordinates:', wisp.x, wisp.y);
+            ctx.restore();
+            return;
+        }
+        // Draw trail first (smoke effect)
+        for (let i = 0; i < wisp.trail.length; i++) {
+            const trailPoint = wisp.trail[i];
+            // Validate trail point coordinates
+            if (!this.isValidCoordinate(trailPoint.x, trailPoint.y) || !this.isFinite(trailPoint.x) || !this.isFinite(trailPoint.y)) {
+                continue; // Skip invalid trail points
+            }
+            const trailAlpha = trailPoint.alpha * (i / wisp.trail.length);
+            if (trailAlpha > 0.05) {
+                ctx.globalAlpha = trailAlpha;
+                // Create radial gradient for smoke effect
+                const gradient = ctx.createRadialGradient(trailPoint.x, trailPoint.y, 0, trailPoint.x, trailPoint.y, trailPoint.size);
+                gradient.addColorStop(0, wisp.color);
+                gradient.addColorStop(0.7, wisp.color.replace('rgba', 'rgba').replace(/[\d.]+\)$/, '0.3)'));
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.arc(trailPoint.x, trailPoint.y, trailPoint.size, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
-        // Draw formation connection line
-        if (this.animationTime < 1500) {
-            const [piece1, piece2] = this.config.sourcePieces;
-            ctx.strokeStyle = '#ff4400';
-            ctx.lineWidth = 3;
-            ctx.globalAlpha = 0.6;
-            ctx.beginPath();
-            ctx.moveTo(piece1.x, piece1.y);
-            ctx.lineTo(piece2.x, piece2.y);
-            ctx.stroke();
-        }
-        // Draw firing line
-        if (this.animationTime > 1500 && this.animationTime < 2500) {
-            const forwardPiece = this.config.sourcePieces[1];
-            const lineLength = 100;
-            ctx.strokeStyle = '#ff6600';
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.4;
-            ctx.beginPath();
-            ctx.moveTo(forwardPiece.x, forwardPiece.y);
-            ctx.lineTo(forwardPiece.x + this.firingDirection.x * lineLength, forwardPiece.y + this.firingDirection.y * lineLength);
-            ctx.stroke();
-        }
+        // Draw main wisp
+        ctx.globalAlpha = wisp.alpha;
+        // Create radial gradient for main wisp
+        const gradient = ctx.createRadialGradient(wisp.x, wisp.y, 0, wisp.x, wisp.y, wisp.size);
+        gradient.addColorStop(0, wisp.color);
+        gradient.addColorStop(0.6, wisp.color.replace('rgba', 'rgba').replace(/[\d.]+\)$/, '0.6)'));
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(wisp.x, wisp.y, wisp.size, 0, Math.PI * 2);
+        ctx.fill();
+        // Add subtle glow effect
+        ctx.shadowColor = wisp.color;
+        ctx.shadowBlur = wisp.size * 0.8;
+        ctx.fill();
         ctx.restore();
+    }
+    drawTargetFragment(ctx, fragment) {
+        ctx.save();
+        ctx.globalAlpha = fragment.alpha;
+        ctx.translate(fragment.x, fragment.y);
+        ctx.rotate(fragment.rotation);
+        // Draw angular fragment shape
+        ctx.fillStyle = fragment.color;
+        ctx.shadowColor = fragment.color;
+        ctx.shadowBlur = fragment.size * 0.5;
+        ctx.beginPath();
+        // Create irregular fragment shape
+        const size = fragment.size;
+        ctx.moveTo(-size * 0.8, -size * 0.6);
+        ctx.lineTo(size * 0.7, -size * 0.8);
+        ctx.lineTo(size * 0.9, size * 0.4);
+        ctx.lineTo(size * 0.3, size * 0.9);
+        ctx.lineTo(-size * 0.6, size * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+    isValidCoordinate(x, y) {
+        // Check if coordinates are valid numbers and within reasonable bounds
+        return !isNaN(x) && !isNaN(y) &&
+            isFinite(x) && isFinite(y) &&
+            x >= -1000 && x <= 2000 &&
+            y >= -1000 && y <= 2000;
+    }
+    isFinite(value) {
+        return Number.isFinite(value);
     }
     isComplete() {
         return !this.isActive;
     }
     // Get animation progress (0-1)
     getProgress() {
-        return Math.min(this.animationTime / 4000, 1); // 4 second total duration
+        const totalDuration = Object.values(this.PHASE_TIMINGS).reduce((a, b) => a + b, 0);
+        return Math.min(this.animationTime / totalDuration, 1);
     }
 }
 // Animation manager for multiple fireball animations
@@ -230,16 +660,21 @@ export class FireballAnimationManager {
         this.animations = [];
         this.canvas = canvas;
     }
-    createFireballAnimation(sourcePieces, targetPosition, isAmplified = false) {
-        const animationId = `fireball_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    createFireballAnimation(sourcePieces, targetPosition, isAmplified = false, onTargetDestroyed) {
+        console.log('✨ V3 Manager: Creating Magical Whispy Fireball Animation');
+        const animationId = `fireball_v3_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const config = {
             sourcePieces,
             targetPosition,
             isAmplified,
-            canvas: this.canvas
+            canvas: this.canvas,
+            onTargetDestroyed
         };
+        console.log('🎯 V3 Manager: Animation config:', config);
         const animation = new FireballAnimation(config);
+        console.log('✨ V3 Manager: Animation created:', animation);
         this.animations.push(animation);
+        console.log('📚 V3 Manager: Total animations:', this.animations.length);
         return animationId;
     }
     update(deltaTime) {

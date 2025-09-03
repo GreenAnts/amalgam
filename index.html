@@ -9,12 +9,49 @@
 </head>
 <body>
     <div class="game-container">
+        <div class="left-ribbons" aria-label="Left Controls">
+          <div class="ability-tab" aria-label="Abilities">
+            <div id="ability-tooltip" class="ability-tooltip" role="tooltip" style="display:none;"></div>
+            <div class="icon-item">
+                <span class="icon-label">Portal Swap</span>
+                <button id="portal-swap-btn" class="action-btn disabled icon-portal-swap" disabled title="Portal Swap" aria-label="Portal Swap"></button>
+            </div>
+            <div class="icon-item">
+                <span class="icon-label">Fireball</span>
+                <button id="fireball-btn" class="action-btn disabled icon-fireball" disabled title="Fireball" aria-label="Fireball"></button>
+            </div>
+            <div class="icon-item">
+                <span class="icon-label">Tidal Wave</span>
+                <button id="tidal-wave-btn" class="action-btn disabled icon-tidal-wave" disabled title="Tidal Wave" aria-label="Tidal Wave"></button>
+            </div>
+            <div class="icon-item">
+                <span class="icon-label">Sap</span>
+                <button id="sap-btn" class="action-btn disabled icon-sap" disabled title="Sap" aria-label="Sap"></button>
+            </div>
+            <div class="icon-item">
+                <span class="icon-label">Launch</span>
+                <button id="launch-btn" class="action-btn disabled icon-launch" disabled title="Launch" aria-label="Launch"></button>
+            </div>
+          </div>
+          <div class="control-tab" aria-label="Controls">
+            <div class="icon-item">
+                <span class="icon-label">Undo</span>
+                <button id="undo-icon" class="action-btn icon-undo" title="Undo" aria-label="Undo"></button>
+            </div>
+            <div class="icon-item">
+                <span class="icon-label">End Turn</span>
+                <button id="end-turn-icon" class="action-btn icon-end-turn" title="End Turn" aria-label="End Turn"></button>
+            </div>
+          </div>
+        </div>
         <div id="board-container" class="board-container">
             <!-- Canvas will be created here by JavaScript -->
             <div id="action-panel" class="action-panel" style="display: none;">
                 <!-- Action buttons will be created here by JavaScript -->
             </div>
         </div>
+        <!-- Floating piece selection panel (moved outside side-panel) -->
+        <div id="piece-selection-panel" class="piece-selection-panel" aria-label="Piece Selection"></div>
         <div class="side-panel">
             <div class="game-info">
                 <h2>Amalgam</h2>
@@ -26,49 +63,24 @@
                 <div class="game-phase">
                     <span class="game-phase game-phase--setup">Setup Phase</span>
                 </div>
-                <div id="piece-selection-panel" class="piece-selection-panel" style="margin-top: 1rem;"></div>
             </div>
             <div class="controls">
                 <button id="new-game" class="btn">New Game</button>
-                <button id="undo" class="btn" disabled>Undo</button>
             </div>
-            <div class="action-buttons-panel">
-                <h3>Piece Actions</h3>
-                <div id="selected-piece-info" class="selected-piece-info">
-                    <span class="no-selection">Select a piece to see available actions</span>
-                </div>
-                <div class="action-buttons">
-                    <button id="portal-swap-btn" class="action-btn disabled" disabled>
-                        <span class="btn-icon">🔄</span>
-                        <span class="btn-text">Portal Swap</span>
-                    </button>
-                    <button id="fireball-btn" class="action-btn disabled" disabled>
-                        <span class="btn-icon">🔥</span>
-                        <span class="btn-text">Fireball</span>
-                    </button>
-                    <button id="tidal-wave-btn" class="action-btn disabled" disabled>
-                        <span class="btn-icon">🌊</span>
-                        <span class="btn-text">Tidal Wave</span>
-                    </button>
-                    <button id="sap-btn" class="action-btn disabled" disabled>
-                        <span class="btn-icon">🍯</span>
-                        <span class="btn-text">Sap</span>
-                    </button>
-                    <button id="launch-btn" class="action-btn disabled" disabled>
-                        <span class="btn-icon">🚀</span>
-                        <span class="btn-text">Launch</span>
-                    </button>
-                </div>
+            <div id="selected-piece-info" class="selected-piece-info">
+                <span class="no-selection">Select a piece to see available actions</span>
             </div>
             <div class="piece-info">
-                <h3>Piece Types</h3>
-                <div class="piece-ability">Ruby (R) - Fireball ability</div>
-                <div class="piece-ability">Pearl (P) - Tidal Wave ability</div>
-                <div class="piece-ability">Amber (A) - Sap ability</div>
-                <div class="piece-ability">Jade (J) - Launch ability</div>
-                <div class="piece-ability">Amalgam (M) - All abilities</div>
-                <div class="piece-ability">Portal (O) - Special movement</div>
-                <div class="piece-ability">Void (V) - Victory piece</div>
+                <h3>Pieces Remaining</h3>
+                <div id="piece-type-list" class="piece-type-list two-columns" aria-label="Pieces Remaining by Player">
+                    <div id="piece-type-list-squares" class="piece-type-col" aria-label="Squares pieces">
+                        <div class="piece-type-col-header">Squares</div>
+                    </div>
+                    <div class="piece-type-divider" role="presentation"></div>
+                    <div id="piece-type-list-circles" class="piece-type-col" aria-label="Circles pieces">
+                        <div class="piece-type-col-header">Circles</div>
+                    </div>
+                </div>
             </div>
             <div class="move-history">
                 <h3>Move History</h3>

@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://barpfonsll2ns"]
+
+[ext_resource type="Texture2D" uid="uid://bp2oq22kc3nlx" path="res://Images/Misc/arrows.png" id="1_nelno"]
+[ext_resource type="Script" path="res://Scenes/arrows.gd" id="2_ixdfb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cqqdv"]
+size = Vector2(220, 415)
+
+[node name="Sprite2D" type="Sprite2D"]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("1_nelno")
+offset = Vector2(0, -250)
+script = ExtResource("2_ixdfb")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(-2.27374e-13, -250)
+shape = SubResource("RectangleShape2D_cqqdv")
+
+[connection signal="input_event" from="Area2D" to="." method="_on_area_2d_input_event"]

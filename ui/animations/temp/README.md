@@ -17,10 +17,15 @@ This directory contains the complete animation system for Amalgam game abilities
 ## 📁 **File Structure**
 
 ### **Core Animation Files**
-- `particle-system.ts` - Core particle system with different shapes and movement patterns
-- `ability-animations.ts` - Animation manager that integrates particles with game abilities
-- `fireball-animation.ts` - Specific fireball animation implementation
+- `fireball-animation.ts` - **V3** fireball animation (current development - MAGICAL WHISPY SMOKE)
+- `fireball-animation-v1.ts` - **V1** fireball animation (stable smoke effect)
 - `README.md` - This comprehensive guide
+
+### **Versioning System**
+- **V1**: Stable smoke effect with curved paths and proper particle cleanup
+- **V2**: Cohesive spear with painterly texture and target shattering
+- **V3**: **DEFAULT** - Magical whispy smoke with flowing wisps and ethereal particle effects
+- **Test Suite**: Supports switching between versions via dropdown (V3 is default)
 
 ### **Test Files**
 - `tests/animations/animations-test-suite.html` - **MAIN TEST SUITE** (use this for all testing)
@@ -39,14 +44,16 @@ This directory contains the complete animation system for Amalgam game abilities
 The **primary testing interface** for all animations:
 
 - **Animation Type Subheaders**: Fireball, Tidal Wave, Sap, Launch, Portal Swap, Movement, Combat
-- **Version Dropdown**: Different iterations of each animation (V1.0, V1.1, etc.)
+- **Version Dropdown**: Different iterations of each animation (V1.0, V2.0, V3.0)
 - **Formation Controls**: Horizontal, Vertical, Diagonal piece formations
 - **Ability Types**: Standard vs Amplified versions
 - **Range Controls**: Game-accurate distance testing (1-9)
 - **Grid System**: Matches actual game coordinate system
 
 ### **Implementation Status**
-- ✅ **Fireball**: Fully implemented with light trail particle effects
+- ✅ **Fireball V1**: Smoke effect with curved paths and particle cleanup
+- ✅ **Fireball V2**: Cohesive spear with painterly texture and target shattering
+- ✅ **Fireball V3**: **COMPLETE** - Magical whispy smoke with flowing wisps and ethereal particles
 - ⏳ **Tidal Wave**: Not yet implemented
 - ⏳ **Sap**: Not yet implemented  
 - ⏳ **Launch**: Not yet implemented
@@ -128,6 +135,35 @@ switch (this.currentAnimationType) {
 
 ## 🎨 **Animation Features**
 
+### **Fireball V3 - Magical Whispy System**
+- **Formation Phase**: 3s slow gathering around ruby pieces with magical field influence
+- **Flowing Phase**: 1.5s flowing together into cohesive magical stream
+- **Piercing Phase**: 1s fast movement to target with organic curves and magical flow
+- **Impact Phase**: 0.4s impact flash and target shattering
+- **Dispersing Phase**: 2s outward dispersion and magical dissipation
+
+### **Magical Wisp Characteristics**
+- **Ethereal particle system** with smoke-like trails and transparency
+- **Organic flow movement** using animated magical field influence
+- **Varying wisp sizes** and alpha levels for natural appearance
+- **Radial gradients** for soft, smoke-like rendering
+- **Trail effects** that create flowing smoke appearance
+- **Magical field influence** for organic, non-linear movement
+
+### **Advanced Particle Features**
+- **Trail system** with fade-out for smoke effects
+- **Magical field** that creates organic flow patterns
+- **Swirling motion** with independent rotation speeds
+- **Natural drift** for realistic particle movement
+- **Energy level variations** for dynamic effects
+- **Smooth transitions** between animation phases
+
+### **Target Effects**
+- **Shattering animation** with multiple angular fragments
+- **Outward dispersion** of fragments with rotation
+- **Gravity effects** for realistic movement
+- **Fade-out timing** for smooth completion
+
 ### **Particle Shapes**
 - **Circle** - For fireball effects
 - **Square** - For launch effects  
@@ -153,9 +189,9 @@ switch (this.currentAnimationType) {
 ### **Using the Test Suite**
 1. **Open**: `tests/animations/animations-test-suite.html`
 2. **Select Animation Type**: Click subheader button
-3. **Choose Version**: Select from dropdown
+3. **Choose Version**: Select from dropdown (V3 is default for fireball)
 4. **Set Formation**: Horizontal, Vertical, or Diagonal
-5. **Select Ability Type**: Standard or Amplified
+5. **Select Ability Type**: Standard or amplified
 6. **Set Range**: 1-9 game distances
 7. **Cast Animation**: Click cast button
 
@@ -188,13 +224,13 @@ switch (this.currentAnimationType) {
 ### **Integration with Main Game**
 ```typescript
 // In your game's main.ts or gameManager.ts
-import { AbilityAnimationManager } from './ui/animations/temp/ability-animations.js';
+import { FireballAnimationManager } from './ui/animations/temp/fireball-animation.js';
 
 class GameManager {
-  private animationManager: AbilityAnimationManager;
+  private animationManager: FireballAnimationManager;
   
   constructor(canvas: HTMLCanvasElement) {
-    this.animationManager = new AbilityAnimationManager(canvas);
+    this.animationManager = new FireballAnimationManager(canvas);
   }
   
   castAbility(abilityType: string, targetX: number, targetY: number) {
@@ -262,7 +298,7 @@ class GameManager {
 - **Handle edge cases** - Test with different formations
 
 ### **Code Quality**
-- **Follow existing patterns** - Use similar structure to fireball
+- **Follow existing patterns** - Use similar structure to fireball V3
 - **Add proper comments** - Document complex logic
 - **Handle errors gracefully** - Don't crash on invalid inputs
 - **Keep it modular** - Separate concerns properly
@@ -300,7 +336,7 @@ class GameManager {
 ### **For LLMs**
 - **Read this README first** - It contains all the information you need
 - **Check the test suite** - See how existing animations work
-- **Follow the patterns** - Use similar structure to fireball
+- **Follow the patterns** - Use similar structure to fireball V3
 - **Update documentation** - Keep this guide current
 
 ### **For Developers**
@@ -312,5 +348,5 @@ class GameManager {
 ---
 
 **Last Updated**: [Current Date]  
-**Version**: 2.0  
+**Version**: 3.0  
 **Maintained By**: Amalgam Development Team

@@ -25,6 +25,123 @@ body {
     background: #ffffff;
 }
 
+/* Left ribbons container: vertically centers the two ribbons together */
+.left-ribbons {
+    position: fixed;
+    top: 50%;
+    left: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px; /* increased spacing between the two ribbons to prevent overlap */
+    z-index: 1001;
+}
+
+/* Left-side vertical ability tab */
+.ability-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e6d7c3;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(139, 69, 19, 0.15);
+    position: relative;
+}
+
+/* Secondary control tab positioned underneath the abilities ribbon */
+.control-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.55rem;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e6d7c3;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(139, 69, 19, 0.1);
+    overflow: visible; /* ensure hover rings don't clip */
+}
+
+/* Icon item container for proper alignment */
+.icon-item {
+    position: relative;
+    display: flex;
+    flex-direction: column; /* label above, button below */
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+/* Labels above icons, not rotated */
+.icon-item .icon-label {
+    font-size: 11px;
+    color: #6c757d;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+/* Ability buttons - consistent centering */
+.ability-tab .action-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #dee2e6;
+    background-color: #ffffff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 60% 60%;
+    flex-shrink: 0;
+}
+
+/* Control buttons - larger, colored backgrounds */
+.control-tab .action-btn {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #dee2e6;
+    background-color: #ffffff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 65% 65%;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.ability-tab .action-btn .btn-text { display: none; }
+
+.ability-tab .action-btn:not(.disabled):hover {
+    background-color: #f5f7fa; /* keep background-image intact */
+    transform: translateY(-1px);
+    border-color: #cfd4da;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), inset 0 0 0 2px rgba(99, 110, 123, 0.08);
+}
+
+.control-tab .action-btn:hover {
+    background-color: #f5f7fa; /* keep background-image intact */
+    border-color: #cfd4da;
+    box-shadow: 0 0 0 2px rgba(99,110,123,0.10) inset, 0 2px 8px rgba(0,0,0,0.10);
+}
+
+/* Icon images generated from references */
+/* Inline SVG icons (lightweight, no external files) */
+.icon-fireball { background-image: url('./images/icons/fireball.png'); }
+.icon-tidal-wave { background-image: url('./images/icons/tidal-wave.png'); }
+.icon-sap { background-image: url('./images/icons/sap.png'); }
+.icon-launch { background-image: url('./images/icons/launch.png'); }
+.icon-portal-swap { background-image: url('./images/icons/portal-swap.svg'); }
+
 .board-container {
     flex: 1;
     display: flex;
@@ -119,8 +236,8 @@ body {
 }
 
 #gameCanvas {
-    width: min(calc(100vh - 1rem), calc(100vw - 250px - 1rem));
-    height: min(calc(100vh - 1rem), calc(100vw - 250px - 1rem));
+    width: min(calc(100vh - 1rem), calc(100vw - 250px - 1rem - 60px));
+    height: min(calc(100vh - 1rem), calc(100vw - 250px - 1rem - 60px));
     max-width: 1200px;
     max-height: 1200px;
     background: #ffffff;
@@ -153,6 +270,58 @@ body {
     font-size: 1.8rem;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.1);
+}
+.piece-type-list.two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr; /* left | divider | right */
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: start;
+}
+.piece-type-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.piece-type-divider {
+    width: 1px;
+    background: #e6d7c3;
+    height: 100%;
+}
+.piece-type-col-header {
+    font-weight: 700;
+    color: #5d3a1a;
+    margin-bottom: 4px;
+}
+.piece-type-list .type-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+    font-size: 0.9rem;
+    color: #5d3a1a;
+}
+.piece-type-list .type-name {
+    display: inline-grid;
+    grid-auto-flow: column;
+    align-items: center;
+    column-gap: 6px;
+}
+.piece-type-list .type-dot {
+    width: 10px;
+    height: 10px;
+    border: 1px solid #d4c4a8;
+}
+.piece-type-list .type-dot.circle {
+    border-radius: 50%;
+}
+.piece-type-list .type-dot.square {
+    border-radius: 2px;
+    transform: rotate(45deg);
+    transform-origin: center;
+}
+.piece-type-list .type-count {
+    font-weight: 600;
 }
 
 .status {
@@ -559,8 +728,8 @@ body {
     padding: 0;
     border-radius: 0;
     box-shadow: none;
-    max-height: 200px;
-    overflow-y: auto;
+    max-height: 220px;
+    overflow: hidden;
 }
 
 .move-history h3 {
@@ -572,6 +741,12 @@ body {
     padding-bottom: 0.5rem;
 }
 
+.move-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px; /* prevent scrollbar overlap */
+}
+
 .move-entry {
     font-size: 0.8rem;
     padding: 0.3rem 0.5rem;
@@ -580,7 +755,20 @@ body {
     background: rgba(230, 215, 195, 0.2);
     margin-bottom: 0.2rem;
     border-radius: 3px;
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    column-gap: 8px;
+    align-items: center;
 }
+.move-entry .type-dot {
+    width: 10px;
+    height: 10px;
+    border: 1px solid #d4c4a8;
+}
+
+/* Generic shape classes for dots used across panels and move history */
+.type-dot.circle { border-radius: 50%; }
+.type-dot.square { border-radius: 2px; transform: rotate(45deg); transform-origin: center; }
 
 .move-entry:last-child {
     border-bottom: none;
@@ -701,20 +889,82 @@ body {
     }
 }
 
+/* Ability tab icon overrides (ensure backgrounds aren't reset by base .action-btn) */
+.ability-tab .icon-fireball { background: #ffffff url('./images/icons/fireball.png') center/60% no-repeat; }
+.ability-tab .icon-tidal-wave { background: #ffffff url('./images/icons/tidal-wave.png') center/60% no-repeat; }
+.ability-tab .icon-sap { background: #ffffff url('./images/icons/sap.png') center/60% no-repeat; }
+.ability-tab .icon-launch { background: #ffffff url('./images/icons/launch.png') center/60% no-repeat; }
+.ability-tab .icon-portal-swap { background: #ffffff url('./images/icons/portal-swap.svg') center/60% no-repeat; }
+
+/* Control tab icons */
+.control-tab .icon-undo { background: #ffffff url('./images/icons/undo.svg') center/60% no-repeat; }
+.control-tab .icon-end-turn { background: #ffffff url('./images/icons/end-turn.svg') center/60% no-repeat; }
+
+/* Ability hover tooltip */
+.ability-tooltip {
+    position: absolute;
+    top: 0;
+    left: 84px; /* give a bit more breathing room from the tab */
+    max-width: 270px; /* allow wider lines */
+    width: 270px; /* consistent readable width */
+    background: #ffffff;
+    border: 1px solid #e6d7c3;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #5d3a1a;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 1100;
+    pointer-events: none; /* ignore mouse */
+    line-height: 1.3;
+}
+.ability-tooltip::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: -8px;
+    width: 0; height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid #ffffff; /* bubble color */
+}
+.ability-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: -9px;
+    width: 0; height: 0;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    border-right: 9px solid #e6d7c3; /* border color */
+}
+
+/* Explicitly preserve icon backgrounds on hover (some cascades may override) */
+.control-tab .icon-undo:hover { background-image: url('./images/icons/undo.svg'); background-repeat: no-repeat; background-position: center; background-size: 60% 60%; }
+.control-tab .icon-end-turn:hover { background-image: url('./images/icons/end-turn.svg'); background-repeat: no-repeat; background-position: center; background-size: 60% 60%; }
+
 .piece-selection-panel {
+    position: fixed;
+    top: 50%;
+    right: 270px; /* float to the left of side panel (250px + padding/border) */
+    transform: translateY(-50%);
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.5rem;
-    justify-content: center;
-    margin-bottom: 1.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e6d7c3;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(139, 69, 19, 0.15);
+    z-index: 1001;
 }
 .piece-select-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border: 2px solid #d4c4a8;
     border-radius: 6px;
     background: #f9f6f0;
@@ -733,9 +983,55 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
 }
-.piece-select-btn .piece-symbol {
-    font-size: 1.4rem;
-    margin-bottom: 0.2rem;
+.piece-select-btn .piece-symbol { display: none; }
+.piece-select-btn .piece-type-label { display: none; }
+/* Re-enable hotkey bubble in top-right */
+.piece-select-btn .piece-hotkey {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #8B4513;
+    color: #f9f6f0;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 1px solid #654321;
+}
+
+/* Canvas icon inside selection button */
+.piece-select-btn canvas {
+    width: 42px;
+    height: 42px;
+    image-rendering: auto;
+}
+
+/* Two-dot remaining indicator at bottom */
+.piece-select-btn .piece-dots {
+    position: absolute;
+    top: 50%;
+    left: -14px; /* place just to the left of the button */
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column; /* vertical dots */
+    gap: 6px;
+}
+.piece-select-btn .piece-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid #d4c4a8;
+}
+.piece-select-btn .piece-dot.active {
+    background: #8B4513;
+    border-color: #8B4513;
+}
+.piece-select-btn .piece-dot.inactive {
+    background: #e6d7c3;
 }
 .piece-select-btn .piece-type-label {
     font-size: 0.75rem;
@@ -763,4 +1059,14 @@ body {
     justify-content: center;
     font-weight: bold;
     border: 1px solid #654321;
+}
+
+/* Specific colors for Undo (red) and End Turn (green) */
+.control-tab .icon-undo {
+    background-color: #ffeaea; /* light red */
+    border-color: #f3b7b7;
+}
+.control-tab .icon-end-turn {
+    background-color: #eaffea; /* light green */
+    border-color: #b9e3b9;
 }

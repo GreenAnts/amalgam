@@ -12,12 +12,11 @@
     "rootDir": "./",
     "allowImportingTsExtensions": false,
     "noEmit": false,
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -6,6 +6,8 @@
 import { logger } from './utils/logger.js';
 import { GameManager } from './game/gameManager.js';
 import { graphicsConfig } from './ui/graphics-config.js';
+import { renderPiece } from './ui/graphics.js';
+import { getFireballDirections, executeFireballAbility } from './core/rules.js';
 import type { 
     BoardData, 
     PieceDefinitions, 
@@ -14,7 +16,8 @@ import type {
     CanvasContext,
     Vector2,
     Piece,
-    PlayerId
+    PlayerId,
+    Ability
 } from './core/types.js';
 
 interface GameOption {
@@ -139,10 +142,17 @@ export class AmalgamGame {
     private scoreElement: HTMLElement | null = null;
     private newGameButton: HTMLButtonElement | null = null;
     private undoButton: HTMLButtonElement | null = null;
+    private endTurnButton: HTMLButtonElement | null = null;
+    private undoIconButton: HTMLButtonElement | null = null;
+    private endTurnIconButton: HTMLButtonElement | null = null;
     private selectedPieceId: string | null = null;
     private pieceSelectionPanel: HTMLElement | null = null;
     private actionPanel: HTMLElement | null = null;
     private portalSwapMode: { enabled: boolean; sourcePiece: string | null } = { enabled: false, sourcePiece: null };
+    private fireballMode: { enabled: boolean; formation: Vector2[] | null; availableDirections: Vector2[] | null } = { enabled: false, formation: null, availableDirections: null };
+    
+    // Track abilities used this turn to prevent reuse
+    private abilitiesUsedThisTurn: Set<string> = new Set();
     
     // Permanent action buttons
     private selectedPieceInfo: HTMLElement | null = null;
@@ -151,6 +161,8 @@ export class AmalgamGame {
     private tidalWaveButton: HTMLButtonElement | null = null;
     private sapButton: HTMLButtonElement | null = null;
     private launchButton: HTMLButtonElement | null = null;
+
+    private lastLoggedMoveIndex: number = 0;
 
     /**
      * Initialize the game application
@@ -258,8 +270,12 @@ export class AmalgamGame {
         this.scoreElement = document.getElementById('score');
         this.newGameButton = document.getElementById('new-game') as HTMLButtonElement;
         this.undoButton = document.getElementById('undo') as HTMLButtonElement;
+        this.endTurnButton = document.getElementById('end-turn') as HTMLButtonElement;
         this.pieceSelectionPanel = document.getElementById('piece-selection-panel');
         this.actionPanel = document.getElementById('action-panel');
+        // Control ribbon icon buttons (removed right ribbon; keep for safety if present)
+        this.undoIconButton = document.getElementById('undo-icon') as HTMLButtonElement | null;
+        this.endTurnIconButton = document.getElementById('end-turn-icon') as HTMLButtonElement | null;
         
         // Get permanent action buttons
         this.selectedPieceInfo = document.getElementById('selected-piece-info');
@@ -269,7 +285,7 @@ export class AmalgamGame {
         this.sapButton = document.getElementById('sap-btn') as HTMLButtonElement;
         this.launchButton = document.getElementById('launch-btn') as HTMLButtonElement;
         
-        if (!this.statusElement || !this.scoreElement || !this.newGameButton || !this.undoButton || !this.pieceSelectionPanel || !this.actionPanel ||
+        if (!this.statusElement || !this.scoreElement || !this.newGameButton || !this.pieceSelectionPanel || !this.actionPanel ||
             !this.selectedPieceInfo || !this.portalSwapButton || !this.fireballButton || !this.tidalWaveButton || !this.sapButton || !this.launchButton) {
             throw new Error('Required UI elements not found');
         }
@@ -287,13 +303,65 @@ export class AmalgamGame {
         // New game button
         this.newGameButton?.addEventListener('click', () => {
             this.showGameOptions();
+            // Reset move log when starting a new game
+            const list = document.getElementById('move-list');
+            if (list) list.innerHTML = '';
+            this.lastLoggedMoveIndex = 0;
         });
         
-        // Undo button
+        // Primary controls: control ribbon icons
+        if (this.undoIconButton) {
+            this.undoIconButton.addEventListener('click', () => {
+                if (!this.undoIconButton?.classList.contains('disabled') && this.gameManager) {
+                    this.gameManager.undoMove();
+                }
+            });
+        }
+
+        // Ability tooltips: show descriptive text on hover next to the tab
+        const tooltip = document.getElementById('ability-tooltip') as HTMLDivElement | null;
+        const abilityDescriptions: Record<string, string> = {
+            'portal-swap-btn': 'Swap your selected piece with an adjacent Portal following portal rules.',
+            'fireball-btn': 'Ruby formation: launch a line attack along golden lines, destroying enemies.',
+            'tidal-wave-btn': 'Pearl formation: create a wave that affects an area, pushing or disabling.',
+            'sap-btn': 'Amber formation: sap enemy strength, reducing their effectiveness.',
+            'launch-btn': 'Jade formation: launch/throw a piece to extend its movement.'
+        };
+        const hookTooltip = (btnId: string) => {
+            const btn = document.getElementById(btnId);
+            if (!btn || !tooltip) return;
+            btn.addEventListener('mouseenter', () => {
+                tooltip.textContent = abilityDescriptions[btnId] || '';
+                tooltip.style.display = 'block';
+                // Position bubble vertically aligned to hovered button
+                const tabRect = (this.portalSwapButton?.closest('.ability-tab') as HTMLElement)?.getBoundingClientRect();
+                const btnRect = btn.getBoundingClientRect();
+                if (tabRect) {
+                    const offsetY = btnRect.top - tabRect.top - 6; // small offset aligns arrow
+                    tooltip.style.top = `${offsetY}px`;
+                }
+            });
+            btn.addEventListener('mouseleave', () => {
+                tooltip.style.display = 'none';
+            });
+        };
+        ['portal-swap-btn','fireball-btn','tidal-wave-btn','sap-btn','launch-btn'].forEach(hookTooltip);
+        
+        if (this.endTurnIconButton) {
+            this.endTurnIconButton.addEventListener('click', () => {
+                if (!this.endTurnIconButton?.classList.contains('disabled')) {
+                    this.handleEndTurn();
+                }
+            });
+        }
+        
+        // Legacy side-panel buttons (if present) now proxy to ribbon icons
         this.undoButton?.addEventListener('click', () => {
-            if (this.gameManager) {
-                this.gameManager.undoMove();
-            }
+            this.undoIconButton?.click();
+        });
+        
+        this.endTurnButton?.addEventListener('click', () => {
+            this.endTurnIconButton?.click();
         });
         
         // Permanent action buttons
@@ -307,11 +375,25 @@ export class AmalgamGame {
         });
         
         this.fireballButton?.addEventListener('click', () => {
-            if (!this.fireballButton?.disabled && this.selectedPieceId) {
-                const state = this.gameManager?.getState();
-                if (state && state.pieces[this.selectedPieceId]) {
-                    this.handleFireball(state.pieces[this.selectedPieceId]);
-                }
+            if (this.fireballButton?.disabled) return;
+            
+            // Check if fireball was already used this turn
+            if (this.abilitiesUsedThisTurn.has('fireball')) {
+                this.showMessage('Fireball already used this turn - end your turn to use abilities again');
+                return;
+            }
+            
+            const state = this.gameManager?.getState();
+            if (!state) return;
+            
+            // Check if there are available fireball abilities
+            const fireballAbility = state.availableAbilities?.find(ability => ability.type === 'fireball');
+            if (fireballAbility) {
+                // Use the ability formation directly
+                this.handleFireballFromAbility(fireballAbility);
+            } else if (this.selectedPieceId && state.pieces[this.selectedPieceId]) {
+                // Fallback to piece-based fireball (for when piece is selected)
+                this.handleFireball(state.pieces[this.selectedPieceId]);
             }
         });
         
@@ -358,6 +440,85 @@ export class AmalgamGame {
         // This method is now redundant as InteractionManager handles clicks
         // Keep for backward compatibility but don't process
         logger.debug('Canvas click event received but handled by InteractionManager');
+    }
+
+    /**
+     * Start fireball animation
+     */
+    private async startFireballAnimation(formation: Vector2[], direction: Vector2): Promise<void> {
+        logger.debug('Starting fireball animation', { formation, direction });
+        
+        try {
+            if (!this.gameCanvas) {
+                logger.warn('No canvas available for fireball animation');
+                return;
+            }
+            
+            // TODO: Integrate proper fireball animation
+            // For now, just log that animation would start
+            logger.debug('Fireball animation would start here', {
+                formation, direction,
+                centerX: (formation[0][0] + formation[1][0]) / 2,
+                centerY: (formation[0][1] + formation[1][1]) / 2
+            });
+            
+        } catch (error) {
+            logger.error('Failed to start fireball animation:', error);
+        }
+    }
+
+    /**
+     * Handle end turn button click
+     */
+    private handleEndTurn(): void {
+        if (!this.gameManager) {
+            logger.warn('Cannot end turn - no game manager');
+            return;
+        }
+
+        const state = this.gameManager.getState();
+        if (!state || state.gamePhase === 'setup') {
+            logger.warn('Cannot end turn during setup phase');
+            return;
+        }
+
+        // Clear any active ability modes
+        this.fireballMode.enabled = false;
+        this.fireballMode.formation = null;
+        this.fireballMode.availableDirections = null;
+        this.portalSwapMode.enabled = false;
+        this.portalSwapMode.sourcePiece = null;
+        
+        // Clear abilities used this turn (new turn starting)
+        this.abilitiesUsedThisTurn.clear();
+        
+        // Clear visual indicators
+        this.cleanupFireballIndicators();
+        this.hideActionButtons();
+        
+        // Switch to next player
+        this.gameManager.switchPlayer();
+        
+        // Clear available abilities since turn ended
+        if (state.availableAbilities) {
+            state.availableAbilities = [];
+        }
+        
+        // Update UI
+        this.updateGameInfo(state);
+        
+        // If the new player is AI, trigger their turn
+        const newState = this.gameManager.getState();
+        const currentPlayer = this.gameManager.getCurrentPlayer();
+        if (newState && newState.gamePhase === 'gameplay' && currentPlayer && currentPlayer.type !== 'human') {
+            logger.info('End turn: triggering AI player turn');
+            // Use the existing GameManager method to handle AI turn
+            if (this.gameManager && 'handleAITurnDuringGameplay' in this.gameManager) {
+                (this.gameManager as any).handleAITurnDuringGameplay();
+            }
+        }
+        
+        logger.info('Turn ended manually by player');
     }
 
     /**
@@ -447,6 +608,19 @@ export class AmalgamGame {
                     return;
                 }
             }
+        }
+        
+        // Handle fireball direction selection - now handled by direct click events on indicators
+        // If clicking elsewhere while in fireball mode, cancel it
+        if (this.fireballMode.enabled) {
+            // Click elsewhere - cancel fireball mode
+            this.fireballMode.enabled = false;
+            this.fireballMode.formation = null;
+            this.fireballMode.availableDirections = null;
+            this.cleanupFireballIndicators();
+            this.showMessage('Fireball cancelled - click on direction arrows to fire');
+            
+            // Don't return here - allow normal piece selection
         }
         
         // If clicking on a piece that belongs to current player, select it
@@ -639,8 +813,66 @@ export class AmalgamGame {
      * Handle Fireball ability
      */
     private handleFireball(piece: Piece): void {
-        alert(`Fireball ability selected for ${piece.type}. Click to select direction.`);
-        // TODO: Implement ability targeting
+        const state = this.gameManager?.getState();
+        if (!state) return;
+
+        // Find valid fireball formations that include this piece
+        const formation = this.findFireballFormationForPiece(state, piece);
+        
+        if (!formation) {
+            this.showMessage(`${piece.type} is not in a valid fireball formation (requires adjacent Ruby/Amalgam)`);
+            return;
+        }
+
+        // Get available firing directions
+        const availableDirections = getFireballDirections(formation);
+        
+        if (availableDirections.length === 0) {
+            this.showMessage('No valid firing directions available for this formation');
+            return;
+        }
+
+        // Enable fireball mode
+        this.fireballMode.enabled = true;
+        this.fireballMode.formation = formation;
+        this.fireballMode.availableDirections = availableDirections;
+        
+        // Show visual direction indicators
+        this.showFireballDirections(formation, availableDirections);
+        
+        // Update message and hide action buttons
+        this.showMessage(`Fireball ready! Click on a direction indicator to fire (${availableDirections.length} direction${availableDirections.length > 1 ? 's' : ''} available)`);
+        this.hideActionButtons();
+    }
+
+    /**
+     * Handle Fireball ability from available ability (after a move)
+     */
+    private handleFireballFromAbility(ability: Ability): void {
+        if (!ability.formation) {
+            this.showMessage('Invalid fireball ability - no formation specified');
+            return;
+        }
+
+        // Get available firing directions
+        const availableDirections = getFireballDirections(ability.formation);
+        
+        if (availableDirections.length === 0) {
+            this.showMessage('No valid firing directions available for this formation');
+            return;
+        }
+
+        // Enable fireball mode
+        this.fireballMode.enabled = true;
+        this.fireballMode.formation = ability.formation;
+        this.fireballMode.availableDirections = availableDirections;
+        
+        // Show visual direction indicators
+        this.showFireballDirections(ability.formation, availableDirections);
+        
+        // Update message and hide action buttons
+        this.showMessage(`Fireball ready! Click on a direction indicator to fire (${availableDirections.length} direction${availableDirections.length > 1 ? 's' : ''} available)`);
+        this.hideActionButtons();
     }
     
     /**
@@ -739,6 +971,15 @@ export class AmalgamGame {
                     this.portalSwapMode.enabled = false;
                     this.portalSwapMode.sourcePiece = null;
                     this.showMessage('Portal swap cancelled');
+                    this.hideActionButtons();
+                }
+                // Cancel fireball mode
+                if (this.fireballMode.enabled) {
+                    this.fireballMode.enabled = false;
+                    this.fireballMode.formation = null;
+                    this.fireballMode.availableDirections = null;
+                    this.cleanupFireballIndicators();
+                    this.showMessage('Fireball cancelled');
                     this.hideActionButtons();
                 }
                 if (this.gameManager) {
@@ -1103,6 +1344,9 @@ export class AmalgamGame {
         this.updateUI();
         this.updateBoardDisplay(state);
         this.renderPieceSelectionPanel(state);
+        
+        // Check for available abilities after moves
+        this.updateAbilityButtons(state);
     }
     
     /**
@@ -1352,6 +1596,29 @@ export class AmalgamGame {
         return '#FFFFFF';
     }
     
+    /**
+     * Render a small SVG representing the piece for selection buttons
+     */
+    private renderPieceSVG(type: string, player: 'circles' | 'squares'): string {
+        const outer = this.getPieceOuterColor(type, player);
+        const inner = this.getPieceInnerColor(type);
+        const stroke = '#654321';
+        // Keep SVG simple and readable, matching in-game style
+        return `
+            <svg width="28" height="28" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <defs>
+                    <radialGradient id="g_${type}_${player}" cx="50%" cy="50%" r="60%">
+                        <stop offset="0%" stop-color="${inner}"/>
+                        <stop offset="100%" stop-color="${outer}"/>
+                    </radialGradient>
+                </defs>
+                <circle cx="20" cy="20" r="18" fill="url(#g_${type}_${player})" stroke="${stroke}" stroke-width="1.5"/>
+                ${type === 'Portal' ? '<circle cx="20" cy="20" r="8" fill="none" stroke="#87CEEB" stroke-width="2"/>' : ''}
+                ${type === 'Void' ? '<circle cx="20" cy="20" r="6" fill="#3b2f52"/>' : ''}
+            </svg>
+        `;
+    }
+
 
 
     private renderPieceSelectionPanel(state: GameState): void {
@@ -1360,6 +1627,7 @@ export class AmalgamGame {
         // Only show during setup phase
         if (!state || state.gamePhase !== 'setup') {
             this.pieceSelectionPanel.innerHTML = '';
+            (this.pieceSelectionPanel as HTMLElement).style.display = 'none';
             return;
         }
         
@@ -1373,6 +1641,12 @@ export class AmalgamGame {
             const placedPieces = Object.keys(state.pieces);
             const unplaced = Object.entries(pieceDefs)
                 .filter(([id, def]) => !placedPieces.includes(id) && def.placement === 'setup_phase');
+            if (unplaced.length === 0) {
+                this.pieceSelectionPanel.innerHTML = '';
+                (this.pieceSelectionPanel as HTMLElement).style.display = 'none';
+                return;
+            }
+            (this.pieceSelectionPanel as HTMLElement).style.display = 'flex';
             
             this.pieceSelectionPanel.innerHTML = `
                 <div class="ai-setup-status">
@@ -1392,25 +1666,106 @@ export class AmalgamGame {
         const placedPieces = Object.keys(state.pieces);
         const unplaced = Object.entries(pieceDefs)
             .filter(([id, def]) => !placedPieces.includes(id) && def.placement === 'setup_phase');
+        if (unplaced.length === 0) {
+            this.pieceSelectionPanel.innerHTML = '';
+            (this.pieceSelectionPanel as HTMLElement).style.display = 'none';
+            return;
+        }
+        (this.pieceSelectionPanel as HTMLElement).style.display = 'flex';
+
+        // Group unplaced by piece type so we render one button per gem type
+        const byType: Record<string, { ids: string[]; def: any } > = {};
+        for (const [id, def] of unplaced) {
+            const type = (def as any).type;
+            if (!byType[type]) {
+                byType[type] = { ids: [], def };
+            }
+            byType[type].ids.push(id);
+        }
         
         logger.debug('renderPieceSelectionPanel', { player, unplaced, state });
         
-        // Render buttons
-        this.pieceSelectionPanel.innerHTML = unplaced.map(([id, def], idx) => {
-            const symbol = this.getPieceSymbol(def.type);
-            const selected = this.selectedPieceId === id ? 'selected' : '';
-            return `<button class="piece-select-btn ${player} ${selected}" data-piece-id="${id}" tabindex="0">
-                <span class="piece-symbol">${symbol}</span>
-                <span class="piece-type-label">${def.type}</span>
-                <span class="piece-hotkey">${this.getPieceHotkey(def.type, idx)}</span>
+        // Render one button per type with count badge
+        const types = Object.keys(byType);
+        this.pieceSelectionPanel.innerHTML = types.map((type, idx) => {
+            const firstId = byType[type].ids[0];
+            const remaining = byType[type].ids.length;
+            const def = byType[type].def;
+            const selected = this.selectedPieceId && byType[type].ids.includes(this.selectedPieceId) ? 'selected' : '';
+            const svg = this.renderPieceSVG(type, player);
+            const hotkey = this.getPieceHotkey(type, idx);
+            return `<button class="piece-select-btn ${player} ${selected}" data-piece-id="${firstId}" data-type="${type}" data-hotkey="${hotkey}" tabindex="0" aria-label="${type}">
+                ${svg}
+                <span class="piece-type-label">${type}</span>
+                <span class="piece-hotkey">${hotkey}</span>
             </button>`;
         }).join('');
         
-        // Add event listeners
-        Array.from(this.pieceSelectionPanel.querySelectorAll('.piece-select-btn')).forEach(btn => {
+        // Replace each button content with a canvas-drawn miniature matching the board renderer
+        Array.from(this.pieceSelectionPanel.querySelectorAll('.piece-select-btn')).forEach((btn) => {
+            const pieceId = (btn as HTMLElement).getAttribute('data-piece-id');
+            const type = (btn as HTMLElement).getAttribute('data-type') || '';
+            const hotkey = (btn as HTMLElement).getAttribute('data-hotkey') || '';
+            const def = byType[type]?.def || (pieceId ? pieceDefs[pieceId] : undefined);
+            const canvas = document.createElement('canvas');
+            canvas.width = 48;
+            canvas.height = 48;
+            canvas.setAttribute('aria-hidden', 'true');
+            (btn as HTMLElement).innerHTML = '';
+            (btn as HTMLElement).appendChild(canvas);
+            if (hotkey) {
+                const bubble = document.createElement('span');
+                bubble.className = 'piece-hotkey';
+                bubble.textContent = hotkey;
+                (btn as HTMLElement).appendChild(bubble);
+            }
+
+            // Add two-dot remaining indicator at bottom
+            const dots = document.createElement('div');
+            dots.className = 'piece-dots';
+            const remaining = (byType[type]?.ids || []).length;
+            for (let i = 0; i < 2; i++) {
+                const dot = document.createElement('span');
+                dot.className = 'piece-dot ' + (i < remaining ? 'active' : 'inactive');
+                dots.appendChild(dot);
+            }
+            (btn as HTMLElement).appendChild(dots);
+
+            try {
+                // Draw using same pipeline as board pieces
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    const tempContext = {
+                        ctx,
+                        originX: 24,
+                        originY: 24,
+                        gridSize: 1,
+                        boardData: null
+                    } as any;
+                    const piece: any = {
+                        id: pieceId,
+                        type: type,
+                        player,
+                        graphics: {
+                            shape: player === 'circles' ? 'circle' : 'square',
+                            size: 12,
+                            colors: this.getPieceColors(type),
+                            color: this.getPieceColors(type)[0],
+                            outerColor: this.getPieceOuterColor(type, player),
+                            innerColor: this.getPieceInnerColor(type),
+                            rotation: 0
+                        }
+                    };
+                    (renderPiece as any)(tempContext, piece, [0, 0]);
+                }
+            } catch (_) {
+                /* Ignore miniature draw errors to avoid blocking UI */
+            }
+
             btn.addEventListener('click', () => {
-                const pieceId = (btn as HTMLElement).getAttribute('data-piece-id');
-                this.selectedPieceId = pieceId;
+                // Select the first available piece id for this type at click time
+                const remainingIds = byType[type]?.ids || [];
+                this.selectedPieceId = remainingIds[0] || pieceId;
                 this.renderPieceSelectionPanel(state);
             });
         });
@@ -1493,6 +1848,149 @@ export class AmalgamGame {
             if (scoreCirclesElement) scoreCirclesElement.textContent = String(circlesPieces);
             if (scoreSquaresElement) scoreSquaresElement.textContent = String(squaresPieces);
         }
+        
+        // Update dynamic piece type list (right panel): show pieces currently on the board (not removed)
+        const listLeft = document.getElementById('piece-type-list-squares');
+        const listRight = document.getElementById('piece-type-list-circles');
+        if (listLeft && listRight && this.pieceDefs) {
+            // Build a set of all piece types from definitions (both players)
+            const allDefs = {
+                ...this.pieceDefs.piece_definitions.circles_pieces,
+                ...this.pieceDefs.piece_definitions.squares_pieces
+            } as any;
+            const allTypesSet = new Set<string>();
+            Object.values(allDefs).forEach((def: any) => allTypesSet.add(def.type));
+
+            // Count pieces on the board by type and player
+            const countsOnBoardByPlayer: Record<'circles' | 'squares', Record<string, number>> = {
+                circles: {},
+                squares: {}
+            };
+            Object.values(state.pieces).forEach((p: any) => {
+                const bucket = countsOnBoardByPlayer[p.player as 'circles' | 'squares'];
+                bucket[p.type] = (bucket[p.type] || 0) + 1;
+            });
+
+            // Ordering: Void, Amalgam, gems (Ruby, Pearl, Amber, Jade), Portal, then any others
+            const preferredOrder = ['Void', 'Amalgam', 'Ruby', 'Pearl', 'Amber', 'Jade', 'Portal'];
+            const types = Array.from(allTypesSet).sort((a, b) => {
+                const ia = preferredOrder.indexOf(a);
+                const ib = preferredOrder.indexOf(b);
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                if (ia !== -1) return -1;
+                if (ib !== -1) return 1;
+                return a.localeCompare(b);
+            });
+            const makeRows = (player: 'circles' | 'squares') => types.map((t) => {
+                const colors = this.getPieceColors(t);
+                const onBoard = countsOnBoardByPlayer[player][t] || 0;
+                const dotStyle = t === 'Amalgam' && colors.length >= 4
+                    ? `background: conic-gradient(${colors[0]} 0 90deg, ${colors[1]} 90deg 180deg, ${colors[2]} 180deg 270deg, ${colors[3]} 270deg 360deg);`
+                    : `background:${colors[0]}`;
+                // Left column (squares) should use diamond/square shape; right column (circles) uses circle
+                const shapeClass = player === 'squares' ? 'square' : 'circle';
+                return `<div class="type-row"><span class="type-name"><span class="type-dot ${shapeClass}" style="${dotStyle}"></span><span class="type-label">${t}</span></span><span class="type-count">${onBoard}</span></div>`;
+            }).join('');
+            listLeft.innerHTML = makeRows('squares');
+            listRight.innerHTML = makeRows('circles');
+        }
+
+        // Ensure move list container exists and stays scrollable
+        const moveList = document.getElementById('move-list');
+        if (moveList) {
+            (moveList as HTMLElement).style.overflowY = 'auto';
+        }
+
+        // Log any new moves since last update
+        const history = state.moveHistory || [];
+        for (let i = this.lastLoggedMoveIndex; i < history.length; i++) {
+            const m: any = history[i];
+            if (m.ability && m.ability.type) {
+                this.appendMoveLog({ ability: m.ability.type, player: m.playerId, moveType: 'ability' });
+            } else if (m.pieceId && m.fromCoords && m.toCoords) {
+                const piece = state.pieces[m.pieceId];
+                const type = piece?.type || 'Piece';
+                // Prefer move.playerId; if missing, infer from the piece BEFORE the move (check meta?.movedBy)
+                const player = (m.playerId as ('circles'|'squares')) || (m.meta?.movedBy as ('circles'|'squares')) || piece?.player;
+                this.appendMoveLog({ pieceType: type, player, moveType: 'moved', from: `(${m.fromCoords[0]},${m.fromCoords[1]})`, to: `(${m.toCoords[0]},${m.toCoords[1]})` });
+            }
+        }
+        this.lastLoggedMoveIndex = history.length;
+
+        // Update end turn button visibility and state
+        if (this.endTurnButton) {
+            // Only show end turn button during gameplay phase for human players
+            const currentPlayer = this.gameManager?.getCurrentPlayer();
+            const shouldShowEndTurn = state.gamePhase === 'gameplay' && 
+                                      !state.winner && 
+                                      currentPlayer?.type === 'human';
+            
+            // Debug logging to help diagnose issues
+            console.log('🔧 DEBUG End Turn Button:', {
+                gamePhase: state.gamePhase,
+                winner: state.winner,
+                currentPlayerType: currentPlayer?.type,
+                currentPlayerId: currentPlayer?.id,
+                stateCurrentPlayer: state.currentPlayer,
+                shouldShowEndTurn: shouldShowEndTurn,
+                gameManagerExists: !!this.gameManager
+            });
+            
+            this.endTurnButton.style.display = shouldShowEndTurn ? 'inline-block' : 'none';
+            this.endTurnButton.disabled = !shouldShowEndTurn;
+            // Sync control icon state
+            if (this.endTurnIconButton) {
+                if (shouldShowEndTurn) {
+                    this.endTurnIconButton.classList.remove('disabled');
+                } else {
+                    this.endTurnIconButton.classList.add('disabled');
+                }
+            }
+        }
+    }
+
+    private appendMoveLog(entry: { pieceType?: string; player?: 'circles' | 'squares'; moveType: string; from?: string; to?: string; ability?: string }): void {
+        const list = document.getElementById('move-list');
+        if (!list) return;
+        const row = document.createElement('div');
+        row.className = 'move-entry';
+        const icon = document.createElement('span');
+        const label = document.createElement('span');
+        label.className = 'move-text';
+
+        // Build small dot icon matching side panel style
+        const type = entry.pieceType || entry.ability || 'Unknown';
+        const colors = this.getPieceColors(type);
+        const isCircles = entry.player === 'circles';
+        const shapeClass = isCircles ? 'circle' : 'square';
+        icon.className = `type-dot ${shapeClass}`;
+        const dotStyle = type === 'Amalgam' && colors.length >= 4
+            ? `conic-gradient(${colors[0]} 0 90deg, ${colors[1]} 90deg 180deg, ${colors[2]} 180deg 270deg, ${colors[3]} 270deg 360deg)`
+            : colors[0];
+        (icon as HTMLElement).style.background = dotStyle;
+
+        // Compose text
+        if (entry.ability) {
+            label.textContent = `${type} used by ${entry.player === 'circles' ? 'Circles' : 'Squares'}`;
+        } else {
+            const from = entry.from || '';
+            const to = entry.to || '';
+            label.textContent = `${type} ${entry.moveType} ${from} to ${to}`;
+        }
+
+        row.appendChild(icon);
+        row.appendChild(label);
+        // Prepend newest entries at the top
+        if (list.firstChild) {
+            list.insertBefore(row, list.firstChild);
+        } else {
+            list.appendChild(row);
+        }
+
+        // Keep view near the newest entry (top of the list)
+        requestAnimationFrame(() => {
+            list.scrollTop = 0;
+        });
     }
 
     /**
@@ -1501,7 +1999,15 @@ export class AmalgamGame {
     private updateUI(): void {
         // Update button states
         if (this.undoButton) {
-            this.undoButton.disabled = !this.gameManager || !this.gameManager.canUndo();
+            const can = !!this.gameManager && this.gameManager.canUndo();
+            this.undoButton.disabled = !can;
+            if (this.undoIconButton) {
+                if (can) {
+                    this.undoIconButton.classList.remove('disabled');
+                } else {
+                    this.undoIconButton.classList.add('disabled');
+                }
+            }
         }
     }
 
@@ -1551,8 +2057,8 @@ export class AmalgamGame {
             style.textContent = `
                 .toast {
                     position: fixed;
-                    top: 20px;
-                    right: 20px;
+                    bottom: 20px;
+                    left: 20px;
                     padding: 1rem 1.5rem;
                     border-radius: 4px;
                     color: white;
@@ -1567,12 +2073,349 @@ export class AmalgamGame {
                     background: #dc3545;
                 }
                 @keyframes toast-slide-in {
-                    from { transform: translateX(100%); opacity: 0; }
+                    from { transform: translateX(-100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
                 }
             `;
             document.head.appendChild(style);
         }
+    }
+
+    /**
+     * Find fireball formation that includes the given piece
+     */
+    private findFireballFormationForPiece(state: GameState, piece: Piece): Vector2[] | null {
+        // Check for Ruby-Ruby, Ruby-Amalgam, or Amalgam-Amalgam formations
+        const validTypes = ['Ruby', 'Amalgam'];
+        if (!validTypes.includes(piece.type)) {
+            return null;
+        }
+
+        // Find all pieces of the same player that can form fireball formations
+        const playerPieces = Object.values(state.pieces).filter(p => 
+            p.player === piece.player && validTypes.includes(p.type)
+        );
+
+        // Check each piece to see if it forms a valid adjacent formation with our piece
+        for (const otherPiece of playerPieces) {
+            if (otherPiece.id === piece.id) continue;
+
+            // Check if pieces are adjacent
+            const dx = Math.abs(piece.coords[0] - otherPiece.coords[0]);
+            const dy = Math.abs(piece.coords[1] - otherPiece.coords[1]);
+            
+            if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                // Adjacent pieces found - return formation
+                return [piece.coords, otherPiece.coords];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Show visual indicators for fireball directions
+     */
+    private showFireballDirections(formation: Vector2[], directions: Vector2[]): void {
+        logger.debug('Showing fireball directions:', { formation, directions });
+        
+        // Create direction indicator elements as temporary visual feedback
+        // This is a simple implementation - a full canvas-based solution would be better
+        const boardContainer = document.getElementById('board-container');
+        if (!boardContainer) {
+            logger.warn('Board container not found for fireball indicators');
+            return;
+        }
+        
+        logger.debug('Board container found:', boardContainer);
+        logger.debug('Board container dimensions:', {
+            width: boardContainer.offsetWidth,
+            height: boardContainer.offsetHeight,
+            rect: boardContainer.getBoundingClientRect()
+        });
+        
+        // Clean up any existing direction indicators
+        document.querySelectorAll('.fireball-direction-indicator').forEach(el => el.remove());
+        
+        // Calculate formation center
+        const [pos1, pos2] = formation;
+        const centerX = (pos1[0] + pos2[0]) / 2;
+        const centerY = (pos1[1] + pos2[1]) / 2;
+        
+        
+        // Add direction indicators
+        directions.forEach((direction, index) => {
+            const indicator = document.createElement('div');
+            indicator.className = 'fireball-direction-indicator';
+            indicator.style.position = 'absolute';
+            indicator.style.width = '30px';
+            indicator.style.height = '30px';
+            indicator.style.backgroundColor = 'rgba(255, 100, 0, 0.9)';
+            indicator.style.border = '3px solid #ff3300';
+            indicator.style.borderRadius = '50%';
+            indicator.style.cursor = 'pointer';
+            indicator.style.zIndex = '99999'; // Extremely high z-index to appear above canvas
+            indicator.style.display = 'flex';
+            indicator.style.alignItems = 'center';
+            indicator.style.justifyContent = 'center';
+            indicator.style.fontSize = '18px';
+            indicator.style.fontWeight = 'bold';
+            indicator.style.color = 'white';
+            indicator.style.boxShadow = '0 4px 12px rgba(255, 51, 0, 0.6)';
+            indicator.style.transition = 'transform 0.2s ease';
+            indicator.style.userSelect = 'none';
+            
+            // Add arrow or direction indicator (including diagonals)
+            const arrow = direction[0] === 1 && direction[1] === 0 ? '→' :   // Right
+                         direction[0] === -1 && direction[1] === 0 ? '←' :   // Left  
+                         direction[0] === 0 && direction[1] === 1 ? '↓' :    // Down
+                         direction[0] === 0 && direction[1] === -1 ? '↑' :   // Up
+                         direction[0] === 1 && direction[1] === 1 ? '↘' :    // Down-Right
+                         direction[0] === 1 && direction[1] === -1 ? '↗' :   // Up-Right
+                         direction[0] === -1 && direction[1] === 1 ? '↙' :   // Down-Left  
+                         direction[0] === -1 && direction[1] === -1 ? '↖' :  // Up-Left
+                         '●'; // Fallback
+            indicator.textContent = arrow;
+            indicator.title = `Fire fireball in direction [${direction[0]}, ${direction[1]}]`;
+            
+            // Position the indicator properly using game coordinate system
+            if (!this.gameCanvas) {
+                logger.warn('No game canvas available for positioning indicators');
+                return;
+            }
+            
+            // Get canvas coordinate system parameters
+            const canvas = this.gameCanvas.canvas;
+            const canvasRect = canvas.getBoundingClientRect();
+            const containerRect = boardContainer.getBoundingClientRect();
+            
+            // Calculate position 2 spaces away from formation center in game coordinates
+            const indicatorGameX = centerX + direction[0] * 2;
+            const indicatorGameY = centerY + direction[1] * 2;
+            
+            // Convert game coordinates to pixel coordinates using the canvas coordinate system
+            // Use the exact same coordinate transformation as graphics.ts
+            const gridSize = this.boardData?.board?.coordinate_scale || 45;
+            const pixelX = this.gameCanvas.originX + indicatorGameX * gridSize;
+            const pixelY = this.gameCanvas.originY - indicatorGameY * gridSize;
+            
+            // Center the 30px indicator (-15px offset from pixel coordinates)
+            const screenX = pixelX - 15;
+            const screenY = pixelY - 15;
+            
+            indicator.style.left = screenX + 'px';
+            indicator.style.top = screenY + 'px';
+            
+            logger.debug(`Direction indicator ${index + 1}:`, {
+                direction,
+                screenPos: [screenX, screenY],
+                containerSize: [containerRect.width, containerRect.height]
+            });
+            
+            // Add hover effect
+            indicator.addEventListener('mouseenter', () => {
+                indicator.style.transform = 'scale(1.2)';
+                indicator.style.backgroundColor = 'rgba(255, 51, 0, 1.0)';
+            });
+            indicator.addEventListener('mouseleave', () => {
+                indicator.style.transform = 'scale(1.0)';
+                indicator.style.backgroundColor = 'rgba(255, 100, 0, 0.9)';
+            });
+            
+            // Add click handler directly to the indicator
+            indicator.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                logger.debug(`Fireball direction indicator clicked: ${arrow} [${direction[0]}, ${direction[1]}]`);
+                this.executeFireballInDirection(direction);
+            });
+            
+            boardContainer.appendChild(indicator);
+            logger.debug(`Appended direction indicator ${index + 1} to board container`);
+        });
+        
+        // Also highlight the formation pieces
+        const formationHighlight = document.createElement('div');
+        formationHighlight.className = 'fireball-direction-indicator formation-highlight';
+        formationHighlight.style.position = 'absolute';
+        formationHighlight.style.width = '80px';
+        formationHighlight.style.height = '40px';
+        formationHighlight.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+        formationHighlight.style.border = '3px dashed #ffcc00';
+        formationHighlight.style.borderRadius = '10px';
+        formationHighlight.style.zIndex = '999';
+        formationHighlight.style.pointerEvents = 'none';
+        
+        // Position formation highlight at board center
+        const containerRect2 = boardContainer.getBoundingClientRect();
+        const highlightX = containerRect2.width / 2 - 40; // Center minus half width
+        const highlightY = containerRect2.height / 2 - 20; // Center minus half height
+        formationHighlight.style.left = highlightX + 'px';
+        formationHighlight.style.top = highlightY + 'px';
+        
+        logger.debug('Formation highlight positioned at:', [highlightX, highlightY]);
+        
+        boardContainer.appendChild(formationHighlight);
+        
+        logger.debug(`Fireball direction indicators complete: ${directions.length} indicators added to board container`);
+    }
+
+    /**
+     * Clean up fireball visual indicators
+     */
+    private cleanupFireballIndicators(): void {
+        document.querySelectorAll('.fireball-direction-indicator').forEach(el => el.remove());
+    }
+
+    /**
+     * Update ability buttons based on available abilities in game state
+     */
+    private updateAbilityButtons(state: GameState): void {
+        // Debug logging to understand when this is called
+        console.log('🔧 DEBUG updateAbilityButtons called:', {
+            gamePhase: state.gamePhase,
+            availableAbilities: state.availableAbilities,
+            currentPlayer: state.currentPlayer
+        });
+        
+        // Only show ability notifications during gameplay phase
+        if (state.gamePhase !== 'gameplay' || !state.availableAbilities || state.availableAbilities.length === 0) {
+            return; // No abilities available or not in gameplay phase
+        }
+
+        // Enable ability buttons based on available abilities
+        const fireballAvailable = state.availableAbilities.some(ability => ability.type === 'fireball');
+        const tidalWaveAvailable = state.availableAbilities.some(ability => ability.type === 'tidal_wave');
+        const sapAvailable = state.availableAbilities.some(ability => ability.type === 'sap');
+        const launchAvailable = state.availableAbilities.some(ability => ability.type === 'launch');
+
+        if (fireballAvailable) {
+            this.updateButtonState(this.fireballButton!, true);
+            this.showMessage('Fireball ability available! Click the Fireball button to activate.');
+        }
+        if (tidalWaveAvailable) {
+            this.updateButtonState(this.tidalWaveButton!, true);
+        }
+        if (sapAvailable) {
+            this.updateButtonState(this.sapButton!, true);
+        }
+        if (launchAvailable) {
+            this.updateButtonState(this.launchButton!, true);
+        }
+    }
+
+    /**
+     * Determine if a click corresponds to a valid fireball direction
+     */
+    private getFireballDirectionFromClick(clickCoords: Vector2, formation: Vector2[], availableDirections: Vector2[]): Vector2 | null {
+        // For now, implement a simple approach:
+        // Check if the click is in one of the available directions from the formation
+        
+        // Calculate the formation's center for direction calculation
+        const [pos1, pos2] = formation;
+        const formationCenter: Vector2 = [
+            (pos1[0] + pos2[0]) / 2,
+            (pos1[1] + pos2[1]) / 2
+        ];
+        
+        // Calculate direction from formation to click
+        const clickDirection: Vector2 = [
+            clickCoords[0] - formationCenter[0],
+            clickCoords[1] - formationCenter[1]
+        ];
+        
+        // Normalize the click direction to match available directions
+        const normalizedClickDir: Vector2 = [
+            clickDirection[0] > 0 ? 1 : clickDirection[0] < 0 ? -1 : 0,
+            clickDirection[1] > 0 ? 1 : clickDirection[1] < 0 ? -1 : 0
+        ];
+        
+        // Check if normalized direction matches any available direction
+        for (const availableDir of availableDirections) {
+            if (availableDir[0] === normalizedClickDir[0] && availableDir[1] === normalizedClickDir[1]) {
+                logger.debug('Fireball direction selected:', availableDir);
+                return availableDir;
+            }
+        }
+        
+        // If no direct match, check if click is near the direction endpoints
+        // This provides a larger clickable area for better UX
+        for (const direction of availableDirections) {
+            // Calculate endpoint 2-3 spaces away from formation for easier clicking
+            const endpoint: Vector2 = [
+                formationCenter[0] + direction[0] * 3,
+                formationCenter[1] + direction[1] * 3
+            ];
+            
+            // Check if click is within 1.5 spaces of the endpoint
+            const distance = Math.sqrt(
+                Math.pow(clickCoords[0] - endpoint[0], 2) + 
+                Math.pow(clickCoords[1] - endpoint[1], 2)
+            );
+            
+            if (distance <= 1.5) {
+                logger.debug('Fireball direction selected (via endpoint):', direction);
+                return direction;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Execute fireball in the specified direction (called when indicator is clicked)
+     */
+    private executeFireballInDirection(direction: Vector2): void {
+        logger.debug('Executing fireball in direction:', direction);
+        
+        if (!this.fireballMode.enabled || !this.fireballMode.formation) {
+            logger.warn('Fireball not in active mode');
+            return;
+        }
+        
+        const state = this.gameManager?.getState();
+        if (!state || !this.pieceDefs) {
+            logger.warn('Game state or piece definitions not available');
+            return;
+        }
+        
+        // Create a proper ability move and send it through GameManager
+        const abilityMove: Move = {
+            type: 'standard', // Placeholder move type - the ability will be processed
+            playerId: state.currentPlayer,
+            ability: {
+                type: 'fireball',
+                formation: this.fireballMode.formation,
+                direction: direction
+            }
+        };
+        
+        // Start animation before processing the move
+        this.startFireballAnimation(this.fireballMode.formation, direction);
+        
+        // Send the move through GameManager for proper processing
+        if (this.gameManager) {
+            // Process the ability move directly
+            this.gameManager.processAbilityMove(abilityMove);
+        }
+        
+        // Mark fireball as used this turn
+        this.abilitiesUsedThisTurn.add('fireball');
+            
+        // Reset fireball mode and clean up visual indicators
+        this.fireballMode.enabled = false;
+        this.fireballMode.formation = null;
+        this.fireballMode.availableDirections = null;
+        this.cleanupFireballIndicators();
+        
+        // Clear available abilities since we used one
+        const currentState = this.gameManager?.getState();
+        if (currentState) {
+            currentState.availableAbilities = [];
+        }
+        
+        this.showMessage('Fireball launched!');
+        logger.info('Fireball ability executed successfully');
     }
 
     /**

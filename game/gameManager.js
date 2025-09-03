@@ -4,8 +4,8 @@
  * Implements the move pipeline and turn management
  */
 import { logger } from '../utils/logger.js';
-import { isValidMove, applyMove, getLegalMoves, hasLegalMoves, getLegalMovesForPiece } from '../core/rules.js';
-import { createBoard, createInitialState, cloneState, getIntersectionByCoords } from '../core/board.js';
+import { isValidMove, applyMove, getLegalMoves, hasLegalMoves, getLegalMovesForPiece, executeFireballAbility } from '../core/rules.js';
+import { createBoard, createInitialState, cloneState, getIntersectionByCoords, areAdjacent, isStraightLine } from '../core/board.js';
 import { createInteractionManager } from '../ui/interactions.js';
 import { createPlayer } from './player.js';
 /**
@@ -158,6 +158,11 @@ export class GameManager {
                 this.handleGameEnd();
                 break;
             }
+            // Exit game loop when gameplay phase begins (manual turn management)
+            if (this.state.gamePhase === 'gameplay') {
+                logger.info('Game loop: gameplay phase reached, switching to manual turn management');
+                break;
+            }
             // Check if current player has legal moves
             const legalMovesCheck = hasLegalMoves(this.state, this.currentPlayer.id, this.pieceDefs);
             logger.debug(`Game loop: legal moves check for ${this.currentPlayer.id}: ${legalMovesCheck}`);
@@ -179,12 +184,6 @@ export class GameManager {
                 }
                 else {
                     logger.warn('Player returned null move, skipping turn');
-                    // If we're in gameplay phase and getting null moves, pause the game
-                    if (this.state.gamePhase === 'gameplay') {
-                        logger.info('Gameplay phase with null moves - pausing game (gameplay not implemented)');
-                        this.isGameActive = false;
-                        return;
-                    }
                     this.switchPlayer();
                 }
             }
@@ -248,22 +247,61 @@ export class GameManager {
             // Add stack trace to see where this is being called from
             logger.debug('processMove called from:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
             logger.debug('processMove: starting move processing');
-            // Validate move
-            const validation = isValidMove(this.state, move, this.pieceDefs);
-            if (!validation.ok) {
-                logger.warn('Invalid move:', validation.reason);
-                // Do not surface as an application error; simply ignore the invalid input
-                return;
+            let result;
+            // Handle fireball ability moves separately (with movement requirement validation)
+            if (move.ability && move.ability.type === 'fireball') {
+                // For ability-only moves, we need to get the moved piece from the last move in history
+                const lastMovedPieceCoords = this.getLastMovedPieceCoords();
+                result = executeFireballAbility(this.state, move.ability.formation, move.ability.direction, this.pieceDefs, lastMovedPieceCoords);
+                if (!result.ok) {
+                    logger.warn('Failed to execute fireball:', result.reason);
+                    return;
+                }
+                this.state = result.nextState;
+                logger.debug('Fireball executed, destroyed pieces:', result.destroyedPieces);
             }
-            // Apply move
-            const result = applyMove(this.state, move, this.pieceDefs);
-            if (!result.ok) {
-                logger.warn('Failed to apply move:', result.reason);
-                this.handleError(new Error(`Failed to apply move: ${result.reason}`));
-                return;
+            else {
+                // Validate move
+                const validation = isValidMove(this.state, move, this.pieceDefs);
+                if (!validation.ok) {
+                    logger.warn('Invalid move:', validation.reason);
+                    // Do not surface as an application error; simply ignore the invalid input
+                    return;
+                }
+                // Apply move
+                result = applyMove(this.state, move, this.pieceDefs);
+                if (!result.ok) {
+                    logger.warn('Failed to apply move:', result.reason);
+                    this.handleError(new Error(`Failed to apply move: ${result.reason}`));
+                    return;
+                }
+                // Update state
+                this.state = result.nextState;
+                // Check for available abilities after movement (Step 3 in turn structure)
+                // Only check for abilities during actual gameplay moves, not setup-to-gameplay transitions
+                if (this.state.gamePhase === 'gameplay' && move.toCoords &&
+                    move.type !== 'place' && // Don't check abilities for place moves (setup)
+                    (move.type === 'standard' || move.type === 'nexus' ||
+                        move.type === 'portal_standard' || move.type === 'portal_phasing' ||
+                        move.type === 'portal_line' || move.type === 'portal_swap')) {
+                    // Find abilities that can use the moved piece
+                    const availableAbilities = this.findAvailableAbilitiesForMovedPiece(move.toCoords);
+                    if (availableAbilities.length > 0) {
+                        logger.info(`Found ${availableAbilities.length} available abilities after movement`);
+                        // Add available abilities to state so UI can access them
+                        this.state.availableAbilities = availableAbilities;
+                        logger.debug('Added available abilities to game state:', availableAbilities);
+                    }
+                    else {
+                        // Clear abilities if none available
+                        this.state.availableAbilities = [];
+                    }
+                }
+                else {
+                    // Clear abilities for non-gameplay moves or place moves
+                    this.state.availableAbilities = [];
+                }
             }
-            // Update state
-            this.state = result.nextState;
             logger.debug('processMove: state updated');
             // Clear selection after successful move
             this.selectedPiece = null;
@@ -275,9 +313,39 @@ export class GameManager {
             logger.debug('processMove: handling animations');
             await this.handleMoveAnimations(move, result);
             logger.debug('processMove: animations completed');
-            // Switch players (but not for setup moves since applyMove handles it)
+            // Handle player switching based on phase
             if (this.state.gamePhase !== 'setup') {
-                this.switchPlayer();
+                // Sync GameManager's current player with state after gameplay transitions
+                if (this.state.currentPlayer !== this.currentPlayer?.id) {
+                    console.log('🔧 DEBUG: Syncing current player after transition', {
+                        stateCurrentPlayer: this.state.currentPlayer,
+                        managerCurrentPlayer: this.currentPlayer?.id,
+                        gamePhase: this.state.gamePhase,
+                        moveType: move.type
+                    });
+                    const wasSetupToGameplayTransition = move.type === 'place' && this.state.gamePhase === 'gameplay';
+                    if (this.state.currentPlayer === 'circles') {
+                        this.currentPlayer = this.player1;
+                    }
+                    else {
+                        this.currentPlayer = this.player2;
+                    }
+                    // Update interaction state for new current player
+                    this.updateInteractionState();
+                    // If this is the initial setup-to-gameplay transition and new player is AI, trigger their turn
+                    if (wasSetupToGameplayTransition && this.currentPlayer && this.currentPlayer.type !== 'human') {
+                        console.log('🔧 DEBUG: Setup-to-gameplay transition - triggering initial AI turn');
+                        this.handleAITurnDuringGameplay();
+                    }
+                    else {
+                        console.log('🔧 DEBUG: Mid-gameplay transition - waiting for manual turn management');
+                    }
+                }
+                console.log('🔧 DEBUG: Gameplay phase - NOT switching players automatically', {
+                    currentPlayer: this.currentPlayer?.id,
+                    gamePhase: this.state.gamePhase
+                });
+                logger.debug('processMove: gameplay phase - player remains active for potential abilities');
             }
             else {
                 // For setup moves, just sync the currentPlayer with the state
@@ -359,11 +427,15 @@ export class GameManager {
                 }
             }
         }
-        // Show ability effects if any
+        // Store available abilities for UI to present to user
         if (result.availableAbilities && result.availableAbilities.length > 0) {
-            for (const ability of result.availableAbilities) {
-                await this.handleAbilityActivation(ability);
-            }
+            logger.debug('Abilities available after move:', result.availableAbilities);
+            // Don't automatically handle abilities - let the UI present them to the user
+            // The UI will detect abilities in the game state and show ability buttons
+            this.state.availableAbilities = result.availableAbilities;
+        }
+        else {
+            this.state.availableAbilities = [];
         }
     }
     /**
@@ -415,14 +487,25 @@ export class GameManager {
         const move = this.convertMoveIntentToMove(moveIntent);
         logger.debug('handleMoveIntent: converted move intent to move:', move);
         if (move) {
-            // Set the move for the human player to resolve the pending promise
-            if (this.currentPlayer && this.currentPlayer.type === 'human') {
-                logger.debug('handleMoveIntent: calling setMoveIntent on human player');
-                this.currentPlayer.setMoveIntent(move);
-                logger.debug('handleMoveIntent: setMoveIntent completed');
+            // During gameplay phase, process moves immediately instead of using game loop
+            if (this.state?.gamePhase === 'gameplay') {
+                logger.debug('handleMoveIntent: gameplay phase - processing move immediately');
+                this.processMove(move).then(() => {
+                    logger.debug('handleMoveIntent: move processed successfully');
+                }).catch(error => {
+                    logger.error('handleMoveIntent: error processing move:', error);
+                });
             }
             else {
-                logger.warn('handleMoveIntent: current player is not human:', this.currentPlayer?.type);
+                // Set the move for the human player to resolve the pending promise (setup phase)
+                if (this.currentPlayer && this.currentPlayer.type === 'human') {
+                    logger.debug('handleMoveIntent: calling setMoveIntent on human player');
+                    this.currentPlayer.setMoveIntent(move);
+                    logger.debug('handleMoveIntent: setMoveIntent completed');
+                }
+                else {
+                    logger.warn('handleMoveIntent: current player is not human:', this.currentPlayer?.type);
+                }
             }
         }
         else {
@@ -542,6 +625,78 @@ export class GameManager {
         return Object.keys(playerPieceDefs).filter(pieceId => !placedPieces.includes(pieceId) && playerPieceDefs[pieceId].placement === 'setup_phase');
     }
     /**
+     * Get coordinates of the piece that moved in the last move
+     * Used for ability movement requirement validation
+     */
+    getLastMovedPieceCoords() {
+        if (this.moveHistory.length === 0) {
+            return undefined;
+        }
+        const lastMove = this.moveHistory[this.moveHistory.length - 1];
+        // For movement moves, return the destination coordinates
+        if (lastMove.toCoords &&
+            (lastMove.type === 'standard' || lastMove.type === 'nexus' ||
+                lastMove.type === 'portal_standard' || lastMove.type === 'portal_phasing' ||
+                lastMove.type === 'portal_line')) {
+            return lastMove.toCoords;
+        }
+        // For portal swap, return the coordinates where the non-Portal piece ended up
+        if (lastMove.type === 'portal_swap' && lastMove.toCoords) {
+            return lastMove.toCoords;
+        }
+        return undefined;
+    }
+    /**
+     * Find available abilities for a piece that just moved
+     * Based on game-logic-reference.gd lines 198-206
+     */
+    findAvailableAbilitiesForMovedPiece(movedPieceCoords) {
+        if (!this.state || !this.currentPlayer) {
+            return [];
+        }
+        const abilities = [];
+        const playerId = this.currentPlayer.id;
+        const playerPieces = Object.values(this.state.pieces).filter(p => p.player === playerId);
+        // Find fireball formations that include the moved piece
+        const rubies = playerPieces.filter(p => p.type === 'Ruby');
+        const amalgams = playerPieces.filter(p => p.type === 'Amalgam');
+        // Check Ruby + Ruby formations
+        for (const ruby1 of rubies) {
+            for (const ruby2 of rubies) {
+                if (ruby1.id !== ruby2.id && areAdjacent(ruby1.coords, ruby2.coords) &&
+                    isStraightLine([ruby1.coords, ruby2.coords])) {
+                    // Only include if the moved piece is part of this formation
+                    if ((ruby1.coords[0] === movedPieceCoords[0] && ruby1.coords[1] === movedPieceCoords[1]) ||
+                        (ruby2.coords[0] === movedPieceCoords[0] && ruby2.coords[1] === movedPieceCoords[1])) {
+                        abilities.push({
+                            type: 'fireball',
+                            formation: [ruby1.coords, ruby2.coords],
+                            playerId: playerId
+                        });
+                    }
+                }
+            }
+        }
+        // Check Ruby + Amalgam formations
+        for (const ruby of rubies) {
+            for (const amalgam of amalgams) {
+                if (areAdjacent(ruby.coords, amalgam.coords) &&
+                    isStraightLine([ruby.coords, amalgam.coords])) {
+                    // Only include if the moved piece is part of this formation
+                    if ((ruby.coords[0] === movedPieceCoords[0] && ruby.coords[1] === movedPieceCoords[1]) ||
+                        (amalgam.coords[0] === movedPieceCoords[0] && amalgam.coords[1] === movedPieceCoords[1])) {
+                        abilities.push({
+                            type: 'fireball',
+                            formation: [ruby.coords, amalgam.coords],
+                            playerId: playerId
+                        });
+                    }
+                }
+            }
+        }
+        return abilities;
+    }
+    /**
      * Get legal moves for current state
      * @returns Array of legal moves
      */
@@ -622,6 +777,16 @@ export class GameManager {
     /**
      * Switch to next player
      */
+    getCurrentPlayer() {
+        return this.currentPlayer;
+    }
+    /**
+     * Process an ability move (like fireball)
+     */
+    async processAbilityMove(move) {
+        logger.info('Processing ability move:', move);
+        await this.processMove(move);
+    }
     switchPlayer() {
         if (!this.currentPlayer || !this.player1 || !this.player2 || !this.state) {
             return;
@@ -631,12 +796,44 @@ export class GameManager {
         this.state.currentPlayer = this.currentPlayer.id;
         // Clear selection when switching players
         this.clearSelection();
+        // Update interaction state for new player
+        this.updateInteractionState();
         logger.info('Switched player:', {
             from: previousPlayer,
             to: this.currentPlayer.id,
             gamePhase: this.state.gamePhase,
-            setupTurn: this.state.setupTurn
+            setupTurn: this.state.setupTurn,
+            newPlayerType: this.currentPlayer.type
         });
+        // During gameplay, don't automatically start AI turns - they should be triggered by manual end turn
+        if (this.state.gamePhase === 'gameplay' && this.currentPlayer.type !== 'human') {
+            logger.info('AI player turn - waiting for manual trigger');
+        }
+    }
+    /**
+     * Handle AI turn during gameplay phase (when game loop has stopped)
+     */
+    async handleAITurnDuringGameplay() {
+        if (!this.currentPlayer || this.currentPlayer.type === 'human' || !this.isGameActive) {
+            return;
+        }
+        try {
+            logger.debug('Getting move from AI player during gameplay phase');
+            const move = await this.getPlayerMove();
+            if (move) {
+                logger.debug('Processing AI move during gameplay phase:', move);
+                await this.processMove(move);
+            }
+            else {
+                logger.warn('AI player returned null move during gameplay');
+                // Skip this turn and switch back
+                this.switchPlayer();
+            }
+        }
+        catch (error) {
+            logger.error('Error during AI turn in gameplay phase:', error);
+            this.handleError(error);
+        }
     }
     /**
      * Update the game display

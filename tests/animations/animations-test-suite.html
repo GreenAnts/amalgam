@@ -50,6 +50,7 @@
 -->
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Animations Test Suite</title>
     <style>
         body {
@@ -382,7 +383,9 @@
                 <h3>Animation Version</h3>
                 <div class="animation-version-selector">
                     <select id="animationVersion" class="animation-dropdown">
-                        <option value="v1">Version 1.0</option>
+                        <option value="v1" selected>Version 1.0</option>
+                        <option value="v2">Version 2.0</option>
+                        <option value="v3">Version 3.0</option>
                     </select>
                 </div>
                 
@@ -397,6 +400,19 @@
                 <div class="subtype-tabs">
                     <button class="subtype-tab active" data-subtype="standard">Standard</button>
                     <button class="subtype-tab" data-subtype="amplified">Amplified</button>
+                </div>
+                
+                <h3>Target Piece</h3>
+                <div class="animation-version-selector">
+                    <select id="targetPiece" class="animation-dropdown">
+                        <option value="Amalgam" selected>Amalgam (enemy)</option>
+                        <option value="Portal">Portal (enemy)</option>
+                        <option value="Ruby">Ruby (enemy)</option>
+                        <option value="Pearl">Pearl (enemy)</option>
+                        <option value="Amber">Amber (enemy)</option>
+                        <option value="Jade">Jade (enemy)</option>
+                        <option value="Void">Void (enemy)</option>
+                    </select>
                 </div>
                 
                 <div class="range-control">
@@ -442,6 +458,10 @@
                         <span id="currentRange">1</span>
                     </div>
                     <div class="status-item">
+                        <span>Target Piece:</span>
+                        <span id="currentTargetPiece">Amalgam</span>
+                    </div>
+                    <div class="status-item">
                         <span>Grid Coords:</span>
                         <span id="gridCoords">[0,0] → [1,0]</span>
                     </div>
@@ -471,7 +491,9 @@
     
     <script type="module">
         // Import animation managers
-        import { FireballAnimationManager } from '../../ui/animations/temp/fireball-animation.js';
+        import { FireballAnimationManager as FireballV1Manager } from '../../ui/animations/temp/fireball-animation-v1.js';
+        import { FireballAnimationManager as FireballV2Manager } from '../../ui/animations/temp/fireball-animation-v2.js';
+        import { FireballAnimationManager as FireballV3Manager } from '../../ui/animations/temp/fireball-animation-v3.js';
         
         /**
          * CleanAnimationTest Class
@@ -492,7 +514,15 @@
                 // Initialize canvas and rendering context
                 this.canvas = document.getElementById('mainCanvas');
                 this.ctx = this.canvas.getContext('2d');
-                this.animationManager = new FireballAnimationManager(this.canvas);
+                // Initialize manager based on current dropdown selection
+                const initialVersion = (document.getElementById('animationVersion')).value;
+                if (initialVersion === 'v1') {
+                    this.animationManager = new FireballV1Manager(this.canvas);
+                } else if (initialVersion === 'v2') {
+                    this.animationManager = new FireballV2Manager(this.canvas);
+                } else {
+                    this.animationManager = new FireballV3Manager(this.canvas);
+                }
                 this.lastTime = 0;
                 
                 // Game coordinate system (matching actual game)
@@ -502,12 +532,14 @@
                 
                 // Current settings - initialize with default values
                 this.currentAnimationType = 'fireball';
-                this.currentAnimationVersion = 'v1';
+                this.currentAnimationVersion = (document.getElementById('animationVersion')).value;
                 this.currentFormation = 'horizontal';
                 this.currentSubtype = 'standard';
                 this.currentRange = '6'; // Default to 6 intersections away
                 this.targetPosition = null;
                 this.formationPieces = null;
+                this.targetDestroyed = false; // Track if target piece is destroyed
+                this.currentTargetPiece = 'Amalgam';
                 
                 // Initialize the test suite
                 this.initializeEventListeners();
@@ -515,8 +547,35 @@
                 
                 // Set default active states for UI elements
                 this.setDefaultActiveStates();
-                
+                this.updateCastButton();
+                this.updateStatus();
                 this.startAnimation();
+            }
+            
+            /**
+             * Switch animation version
+             */
+            switchAnimationVersion(version) {
+                console.log(`🔄 Switching to Fireball ${version.toUpperCase()}`);
+                this.currentAnimationVersion = version;
+                
+                // Clear existing animations
+                this.animationManager.clearAll();
+                
+                // Switch to appropriate manager
+                if (version === 'v1') {
+                    console.log('📦 Creating FireballV1Manager');
+                    this.animationManager = new FireballV1Manager(this.canvas);
+                } else if (version === 'v2') {
+                    console.log('📦 Creating FireballV2Manager');
+                    this.animationManager = new FireballV2Manager(this.canvas);
+                } else if (version === 'v3') {
+                    console.log('📦 Creating FireballV3Manager');
+                    this.animationManager = new FireballV3Manager(this.canvas);
+                }
+                
+                console.log(`✅ Switched to Fireball ${version.toUpperCase()}`);
+                console.log('🔍 Current animationManager:', this.animationManager);
             }
             
             /**
@@ -584,8 +643,15 @@
                 
                 // Animation version dropdown
                 document.getElementById('animationVersion').addEventListener('change', (e) => {
-                    this.currentAnimationVersion = e.target.value;
+                    const version = e.target.value;
+                    this.switchAnimationVersion(version);
                     this.updateCastButton();
+                    this.updateStatus();
+                });
+                
+                // Target piece dropdown
+                document.getElementById('targetPiece').addEventListener('change', (e) => {
+                    this.currentTargetPiece = e.target.value;
                     this.updateStatus();
                 });
                 
@@ -663,6 +729,9 @@
                 }
                 
                 this.setupTarget();
+                
+                // Reset target destroyed state when setting up new formation
+                this.targetDestroyed = false;
             }
             
             setupTarget() {
@@ -712,17 +781,38 @@
                     this.setupFormation();
                 }
                 
+                // Reset target destroyed state
+                this.targetDestroyed = false;
+                
                 const isAmplified = this.currentSubtype === 'amplified';
                 const sourcePieces = this.formationPieces.slice(0, 2);
                 
                 // Handle different animation types
                 switch (this.currentAnimationType) {
                     case 'fireball':
-                        const animationId = this.animationManager.createFireballAnimation(
-                            sourcePieces,
-                            this.targetPosition,
-                            isAmplified
-                        );
+                        // Handle different fireball versions
+                        if (this.currentAnimationVersion === 'v1') {
+                            const animationId = this.animationManager.createFireballAnimation(
+                                sourcePieces,
+                                this.targetPosition,
+                                isAmplified
+                            );
+                        } else if (this.currentAnimationVersion === 'v2') {
+                            const animationId = this.animationManager.createFireballAnimation(
+                                sourcePieces,
+                                this.targetPosition,
+                                isAmplified,
+                                () => { this.targetDestroyed = true; }, // Callback when target is destroyed
+                                this.currentTargetPiece
+                            );
+                        } else if (this.currentAnimationVersion === 'v3') {
+                            const animationId = this.animationManager.createFireballAnimation(
+                                sourcePieces,
+                                this.targetPosition,
+                                isAmplified,
+                                () => { this.targetDestroyed = true; } // Callback when target is destroyed (extra args ignored)
+                            );
+                        }
                         break;
                     case 'tidalwave':
                         console.log('Tidal Wave animation not yet implemented');
@@ -762,6 +852,8 @@
                     this.currentSubtype.charAt(0).toUpperCase() + this.currentSubtype.slice(1);
                 document.getElementById('currentRange').textContent = 
                     this.currentRange;
+                document.getElementById('currentTargetPiece').textContent = 
+                    this.currentTargetPiece;
                 
                 // Update grid coordinates display
                 if (this.formationPieces && this.targetPosition) {
@@ -856,9 +948,9 @@
                     this.drawGamePiece(piece.x, piece.y, 'Ruby', 'circles', index + 1);
                 });
                 
-                // Draw target piece
-                if (this.targetPosition) {
-                    this.drawGamePiece(this.targetPosition.x, this.targetPosition.y, 'Amalgam', 'squares', 'T');
+                // Draw target piece (only if not destroyed)
+                if (this.targetPosition && !this.targetDestroyed) {
+                    this.drawGamePiece(this.targetPosition.x, this.targetPosition.y, this.currentTargetPiece, 'squares', 'T');
                 }
             }
             
@@ -916,6 +1008,65 @@
                         
                         this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
                     }
+                } else if (pieceType === 'Pearl' || pieceType === 'Amber' || pieceType === 'Jade') {
+                    const colorMap = {
+                        'Pearl': '#F8F6DA',
+                        'Amber': '#F6C13F',
+                        'Jade': '#A9E886'
+                    };
+                    const color = colorMap[pieceType] || '#FFFFFF';
+                    const outerColor = this.darkenColor(color, 20);
+                    // Always render as circle gem for enemy gems
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 1.2, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = outerColor;
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = color;
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                    this.ctx.beginPath();
+                    this.ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.2, 0, 2 * Math.PI);
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    this.ctx.fill();
+                    this.ctx.closePath();
+                } else if (pieceType === 'Portal') {
+                    // Portal ring (two-tone)
+                    const outer = '#87CEEB';
+                    const inner = '#ADD8E6';
+                    this.ctx.lineCap = 'round';
+                    // Outer ring
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 1.5, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = outer;
+                    this.ctx.lineWidth = 4;
+                    this.ctx.stroke();
+                    // Inner ring
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 1.0, 0, 2 * Math.PI);
+                    this.ctx.strokeStyle = inner;
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                    // Core glow
+                    const grad = this.ctx.createRadialGradient(x, y, 0, x, y, size * 0.9);
+                    grad.addColorStop(0, 'rgba(173,216,230,0.35)');
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    this.ctx.fillStyle = grad;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 0.9, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                } else if (pieceType === 'Void') {
+                    // Dark void sphere with subtle highlight
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 1.1, 0, Math.PI * 2);
+                    this.ctx.fillStyle = '#222222';
+                    this.ctx.fill();
+                    this.ctx.beginPath();
+                    this.ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.35, 0, Math.PI * 2);
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    this.ctx.fill();
                 } else if (pieceType === 'Amalgam') {
                     // Amalgam piece - multi-colored
                     const colors = ['#E63960', '#87CEEB', '#F6C13F', '#A9E886']; // Ruby, Pearl, Amber, Jade

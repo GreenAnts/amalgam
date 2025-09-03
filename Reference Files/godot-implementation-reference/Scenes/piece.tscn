@@ -1,0 +1,29 @@
+[gd_scene load_steps=6 format=3 uid="uid://dsdkq6afgb2qa"]
+
+[ext_resource type="Script" path="res://Scenes/piece.gd" id="1_wl78l"]
+[ext_resource type="Texture2D" uid="uid://3lqv5wiwuk83" path="res://Images/Pieces/Amalgam_Circle.png" id="2_isdim"]
+[ext_resource type="Script" path="res://Scenes/icon.gd" id="3_7gqut"]
+
+[sub_resource type="Curve" id="Curve_e7tpp"]
+_data = [Vector2(0.100917, 0.043956), 0.0, 0.0, 0, 0, Vector2(0.422018, 0.494505), 0.0, 0.0, 0, 0, Vector2(0.743119, 0.593407), 0.332723, 0.332723, 0, 0, Vector2(0.96789, 0.978022), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_tbiq0"]
+
+[node name="Piece" type="Node2D"]
+script = ExtResource("1_wl78l")
+curve = SubResource("Curve_e7tpp")
+
+[node name="Icon" type="Sprite2D" parent="."]
+scale = Vector2(0.03, 0.03)
+texture = ExtResource("2_isdim")
+script = ExtResource("3_7gqut")
+
+[node name="Area2D" type="Area2D" parent="Icon"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Icon/Area2D"]
+scale = Vector2(50, 50)
+shape = SubResource("CircleShape2D_tbiq0")
+
+[connection signal="mouse_entered" from="Icon/Area2D" to="Icon" method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Icon/Area2D" to="Icon" method="_on_area_2d_mouse_exited"]

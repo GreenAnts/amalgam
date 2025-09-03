@@ -556,6 +556,12 @@ export function isGoldenLineIntersection(board: Board, coords: Vector2): boolean
 export function getGoldenLineConnections(board: Board, coords: Vector2): Vector2[] {
     const coordStr = `${coords[0]},${coords[1]}`;
     
+    // BUG FIX: Positions 0,6 and 0,-6 should not have hub connections
+    // These positions are on golden lines but have no hub connections in the actual game
+    if (coordStr === '0,6' || coordStr === '0,-6') {
+        return [];
+    }
+    
     // First check if we have the golden_lines_dict from reference implementation
     if (board.goldenLinesDict && board.goldenLinesDict[coordStr]) {
         return board.goldenLinesDict[coordStr].map(conn => [conn.x, conn.y] as Vector2);

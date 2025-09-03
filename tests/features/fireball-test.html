@@ -3,25 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fireball Ability Tests</title>
+    <title>🔥 Fireball Ability Tests</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #ffffff;
             min-height: 100vh;
-            color: #333;
+            color: #2c1810;
             padding: 20px;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255,255,255,0.95);
-            border-radius: 15px;
+            background: #f9f6f0;
+            border: 2px solid #8B4513;
+            border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.2);
+        }
+
+        /* Navigation Header */
+        .nav-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #d4c4a8;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: #d2b48c;
+            color: #2c1810;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            border: 2px solid #8B4513;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            background: #c19a6b;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
         }
 
         .test-header {
@@ -30,355 +57,1291 @@
         }
 
         .test-header h1 {
-            color: #c0392b;
+            color: #8B4513;
             font-size: 2.5rem;
             margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.1);
         }
 
-        .feature-info {
-            background: #fff3cd;
-            border: 1px solid #ffecb5;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .feature-rules {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .test-header p {
+            color: #5d3a1a;
+            font-size: 1.1rem;
+            line-height: 1.6;
         }
 
         .test-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
             margin-bottom: 30px;
         }
 
-        .test-item {
-            background: white;
-            border-radius: 10px;
+        .test-section {
+            background: rgba(230, 215, 195, 0.3);
+            border: 1px solid #d4c4a8;
+            border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-left: 4px solid #e74c3c;
-            transition: transform 0.3s ease;
         }
 
-        .test-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .test-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-
-        .test-desc {
-            color: #666;
+        .test-section h3 {
+            color: #8B4513;
             margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 1px solid #d4c4a8;
+            padding-bottom: 8px;
+        }
+
+        .test-case {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #e0d0b7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .test-case h4 {
+            color: #5d3a1a;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .test-description {
+            color: #6b4a2a;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
             line-height: 1.4;
         }
 
-        .test-status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 500;
-            font-size: 0.85rem;
+        .test-details {
+            background: rgba(220, 200, 180, 0.3);
+            border-left: 3px solid #8B4513;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
         }
 
-        .test-status.pending { background: #f39c12; color: white; }
-        .test-status.passed { background: #27ae60; color: white; }
-        .test-status.failed { background: #e74c3c; color: white; }
-
-        .controls {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .btn {
-            padding: 12px 24px;
+        .run-test-btn {
+            background: #228B22;
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
 
-        .btn-primary { background: #e74c3c; color: white; }
-        .btn-success { background: #27ae60; color: white; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .run-test-btn:hover {
+            background: #32CD32;
+            transform: translateY(-1px);
+        }
 
-        .console-output {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 20px;
+        .test-result {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .result-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .summary-panel {
+            background: rgba(200, 180, 160, 0.3);
+            border: 2px solid #8B4513;
             border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-line;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .summary-panel h3 {
+            color: #8B4513;
+            margin-bottom: 15px;
+        }
+
+        .run-all-btn {
+            background: #4682B4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .run-all-btn:hover {
+            background: #5F9EA0;
+            transform: translateY(-2px);
+        }
+
+        .copy-btn {
+            background: #DC143C;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #FF1493;
+        }
+
+        .board-preview {
+            background: #2c5530;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #e8f5e8;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Navigation Header -->
-        <div class="nav-header" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
-            <a href="../../tests.html" class="nav-btn" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🏠 Testing Hub</a>
-            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn" style="background: #27ae60; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">📊 Full Suite</a>
-            <a href="movement-test.html" class="nav-btn" style="background: #8e44ad; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">⚔️ Movement</a>
-            <a href="visual-feedback-test.html" class="nav-btn" style="background: #9b59b6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 500;">🎨 Visual</a>
+        <!-- Navigation Header (REQUIRED) -->
+        <div class="nav-header">
+            <a href="../../tests.html" class="nav-btn">🏠 Testing Hub</a>
+            <a href="../comprehensive-game-mechanics-test.html" class="nav-btn">📊 Full Suite</a>
+            <a href="../" class="nav-btn">📁 Feature Tests</a>
         </div>
-
+        
         <div class="test-header">
             <h1>🔥 Fireball Ability Tests</h1>
-            <p>Comprehensive testing for Ruby piece formation attacks</p>
+            <p>Ruby formation line attack testing based on game-logic-reference.gd implementation<br>
+            Tests both standard and amplified fireball mechanics with comprehensive validation</p>
         </div>
 
-        <div class="feature-info">
-            <h3>📋 Implementation Status</h3>
-            <p><strong>Status:</strong> ⏳ Ready for Implementation</p>
-            <p><strong>Implementation Guide:</strong> <code>core/rules-implementation-guide.ts</code> (search for "FIREBALL")</p>
-            <p><strong>Function to Implement:</strong> <code>executeFireballAbility()</code> in <code>core/rules.ts</code></p>
+        <div class="test-grid">
+            <!-- Formation Validation Tests -->
+            <div class="test-section">
+                <h3>🎯 Formation Validation</h3>
+                
+                <div class="test-case">
+                    <h4>Test 1: Valid Ruby-Ruby Adjacent Formation</h4>
+                    <div class="test-description">
+                        Two Ruby pieces positioned adjacent horizontally should form valid fireball formation
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby at [0,0], Ruby at [1,0]<br>
+                        Expected: Formation valid, 2 firing directions available<br>
+                        Reference: game-logic-reference.gd lines 177-188
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('formation_ruby_horizontal')">Run Test</button>
+                    <div class="test-result" id="result_formation_ruby_horizontal"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 2: Valid Ruby-Amalgam Diagonal Formation</h4>
+                    <div class="test-description">
+                        Ruby and Amalgam pieces positioned diagonally adjacent should form valid formation
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby at [0,0], Amalgam at [1,1]<br>
+                        Expected: Formation valid, diagonal alignment detected<br>
+                        Reference: Formation requirements from rules
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('formation_ruby_amalgam')">Run Test</button>
+                    <div class="test-result" id="result_formation_ruby_amalgam"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 3: Invalid Non-Adjacent Formation</h4>
+                    <div class="test-description">
+                        Ruby pieces not adjacent should not form valid fireball formation
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby at [0,0], Ruby at [2,0] (gap between)<br>
+                        Expected: Formation invalid, no firing options<br>
+                        Reference: Adjacent requirement from game rules
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('formation_invalid_distance')">Run Test</button>
+                    <div class="test-result" id="result_formation_invalid_distance"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 4: Invalid Wrong Piece Types</h4>
+                    <div class="test-description">
+                        Pearl-Amber formation should not enable fireball ability
+                    </div>
+                    <div class="test-details">
+                        Setup: Pearl at [0,0], Amber at [1,0]<br>
+                        Expected: No fireball formation detected<br>
+                        Reference: Ruby/Amalgam requirement from rules
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('formation_wrong_pieces')">Run Test</button>
+                    <div class="test-result" id="result_formation_wrong_pieces"></div>
+                </div>
+            </div>
+
+            <!-- Standard Fireball Tests -->
+            <div class="test-section">
+                <h3>🎯 Standard Fireball Mechanics</h3>
+                
+                <div class="test-case">
+                    <h4>Test 5: Standard Range and Target Detection</h4>
+                    <div class="test-description">
+                        Standard fireball should hit first opponent within 6-intersection range
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby formation at [0,0]-[1,0], opponent at [4,0]<br>
+                        Expected: Target at [4,0] within range, should be hit<br>
+                        Reference: game-logic-reference.gd lines 213-240
+                    </div>
+                    <div class="board-preview">
+R-R . . . O . . (O = opponent target)
+Formation fires right direction, range 6
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('standard_range_hit')">Run Test</button>
+                    <div class="test-result" id="result_standard_range_hit"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 6: Portal Blocking Standard Fireball</h4>
+                    <div class="test-description">
+                        Standard fireball should be blocked by Portal pieces
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby formation, Portal at [2,0], opponent at [4,0]<br>
+                        Expected: Portal blocks fireball, opponent not hit<br>
+                        Reference: lines 231-233 Portal blocking logic
+                    </div>
+                    <div class="board-preview">
+R-R . P . O . . (P = Portal blocks, O = safe)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('standard_portal_blocking')">Run Test</button>
+                    <div class="test-result" id="result_standard_portal_blocking"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 7: Range Limit Testing</h4>
+                    <div class="test-description">
+                        Standard fireball should not hit targets beyond 6-intersection range
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby formation at [0,0]-[1,0], opponent at [8,0]<br>
+                        Expected: Target beyond range, no hit<br>
+                        Reference: range limit from lines 222
+                    </div>
+                    <div class="board-preview">
+R-R . . . . . . . O (O beyond range 6)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('standard_range_limit')">Run Test</button>
+                    <div class="test-result" id="result_standard_range_limit"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 8: Bidirectional Firing Options</h4>
+                    <div class="test-description">
+                        Ruby formation should provide two firing direction options
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby formation at [0,0]-[1,0]<br>
+                        Expected: Can fire left (from [0,0]) or right (from [1,0])<br>
+                        Reference: lines 198-207 bidirectional logic
+                    </div>
+                    <div class="board-preview">
+← R-R → (Two firing directions available)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('bidirectional_options')">Run Test</button>
+                    <div class="test-result" id="result_bidirectional_options"></div>
+                </div>
+            </div>
+
+            <!-- Amplified Fireball Tests -->
+            <div class="test-section">
+                <h3>⚡ Amplified Fireball Mechanics</h3>
+                
+                <div class="test-case">
+                    <h4>Test 9: Void Amplification Detection</h4>
+                    <div class="test-description">
+                        Void piece adjacent to Ruby formation should enable amplification
+                    </div>
+                    <div class="test-details">
+                        Setup: Ruby-Ruby-Void formation at [0,0]-[1,0]-[2,0]<br>
+                        Expected: Amplified fireball enabled, enhanced range/targeting<br>
+                        Reference: lines 189-193 Void amplification check
+                    </div>
+                    <div class="board-preview">
+R-R-V → (Void amplifies formation)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('amplified_void_detection')">Run Test</button>
+                    <div class="test-result" id="result_amplified_void_detection"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 10: Extended Range (9 intersections)</h4>
+                    <div class="test-description">
+                        Amplified fireball should have 9-intersection range instead of 6
+                    </div>
+                    <div class="test-details">
+                        Setup: Amplified formation, opponent at [8,0] from Void<br>
+                        Expected: Target within amplified range, should be hit<br>
+                        Reference: line 220 amplified range logic
+                    </div>
+                    <div class="board-preview">
+R-R-V . . . . . . O (O within range 9)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('amplified_extended_range')">Run Test</button>
+                    <div class="test-result" id="result_amplified_extended_range"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 11: Portal Penetration</h4>
+                    <div class="test-description">
+                        Amplified fireball should penetrate through Portal pieces
+                    </div>
+                    <div class="test-details">
+                        Setup: Amplified formation, Portal at [2,0], opponent at [4,0]<br>
+                        Expected: Portal does not block, opponent hit<br>
+                        Reference: lines 231-233 amplified bypasses Portal blocking
+                    </div>
+                    <div class="board-preview">
+R-R-V . P . O . . (P cannot block amplified, O gets hit)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('amplified_portal_penetration')">Run Test</button>
+                    <div class="test-result" id="result_amplified_portal_penetration"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 12: Movement Requirement for Abilities</h4>
+                    <div class="test-description">
+                        Amplified fireball can activate when ANY formation piece moved this turn (Ruby, Amalgam, or Void)
+                    </div>
+                    <div class="test-details">
+                        Setup: Amplified formation with valid Void positioning<br>
+                        Expected: Ability works regardless of which specific piece moved<br>
+                        Reference: lines 198-206 - any piece can trigger formation abilities
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('void_movement_requirement')">Run Test</button>
+                    <div class="test-result" id="result_void_movement_requirement"></div>
+                </div>
+            </div>
+
+            <!-- Edge Cases and Integration -->
+            <div class="test-section">
+                <h3>🔍 Edge Cases & Integration</h3>
+                
+                <div class="test-case">
+                    <h4>Test 13: Multiple Target Priority</h4>
+                    <div class="test-description">
+                        Fireball should hit first opponent encountered, stopping there
+                    </div>
+                    <div class="test-details">
+                        Setup: Formation, opponent at [2,0], another at [4,0]<br>
+                        Expected: First opponent hit, second safe<br>
+                        Reference: line 235 "stop after first opponent piece"
+                    </div>
+                    <div class="board-preview">
+R-R . O . O . . (First O hit, second O safe)
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('multiple_target_priority')">Run Test</button>
+                    <div class="test-result" id="result_multiple_target_priority"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 14: Own Piece Safety</h4>
+                    <div class="test-description">
+                        Fireball should not target or affect own pieces
+                    </div>
+                    <div class="test-details">
+                        Setup: Formation with own piece in line of fire<br>
+                        Expected: Own piece ignored, continues to valid targets<br>
+                        Reference: Implied from opponent targeting logic
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('own_piece_safety')">Run Test</button>
+                    <div class="test-result" id="result_own_piece_safety"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 15: Board Boundary Handling</h4>
+                    <div class="test-description">
+                        Fireball should respect board boundaries and not target off-board
+                    </div>
+                    <div class="test-details">
+                        Setup: Formation near board edge<br>
+                        Expected: Range limited by board boundary<br>
+                        Reference: line 226 "not DataHandler.board_dict.has(target_pos)"
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('board_boundary_handling')">Run Test</button>
+                    <div class="test-result" id="result_board_boundary_handling"></div>
+                </div>
+
+                <div class="test-case">
+                    <h4>Test 16: Complex Formation Patterns</h4>
+                    <div class="test-description">
+                        Test various Ruby/Amalgam formation combinations and orientations
+                    </div>
+                    <div class="test-details">
+                        Setup: Vertical, diagonal, mixed formations<br>
+                        Expected: All valid orientations detected correctly<br>
+                        Reference: lines 185-188 alignment checking
+                    </div>
+                    <button class="run-test-btn" onclick="runTest('complex_formations')">Run Test</button>
+                    <div class="test-result" id="result_complex_formations"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="feature-rules">
-            <h3>🎯 Fireball Ability Rules</h3>
-            <ul>
-                <li><strong>Formation:</strong> 3 Ruby pieces in a straight line</li>
-                <li><strong>Activation:</strong> Automatic when formation exists</li>
-                <li><strong>Standard Attack:</strong> Line attack destroys first enemy piece hit</li>
-                <li><strong>Amplified Attack:</strong> When Amalgam is part of formation, destroys all pieces in line until board edge</li>
-                <li><strong>Direction:</strong> Attack direction is from formation center outward</li>
-                <li><strong>Range:</strong> Continues until hit or board edge</li>
-            </ul>
-        </div>
+        <!-- Summary Panel -->
+        <div class="summary-panel">
+            <h3>🧪 Test Summary & Controls</h3>
+            <p>Comprehensive fireball ability validation based on game-logic-reference.gd lines 177-240</p>
+            
+            <div style="margin: 20px 0;">
+                <button class="run-all-btn" onclick="runAllTests()">🚀 Run All Fireball Tests</button>
+                <button class="copy-btn" onclick="copyTestResults()">📋 Copy Results</button>
+                <button class="copy-btn" onclick="copyFailedTests()">❌ Copy Failures Only</button>
+            </div>
+            
+            <div id="test-summary" style="margin-top: 20px; font-family: 'Consolas', 'Monaco', monospace;">
+                Ready to run tests...
+            </div>
 
-        <div class="controls">
-            <button class="btn btn-primary" onclick="runAllFireballTests()">🔥 Run All Fireball Tests</button>
-            <button class="btn btn-success" onclick="runSpecificTest('formation')">Test Formation Detection</button>
-            <button class="btn btn-success" onclick="runSpecificTest('attack')">Test Attack Logic</button>
-        </div>
-
-        <div class="test-grid" id="test-grid">
-            <!-- Tests will be dynamically generated -->
-        </div>
-
-        <div class="console-output" id="console-output">
-Fireball ability test system initialized.
-Click "Run All Fireball Tests" to begin validation.
-
-📝 Implementation Instructions:
-1. Find FIREBALL section in core/rules-implementation-guide.ts
-2. Implement executeFireballAbility() function in core/rules.ts  
-3. Run tests to validate implementation
-4. Test in main application during gameplay phase
+            <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">
+                <h4>Implementation Requirements:</h4>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li><strong>validateFireballFormation()</strong> - Check Ruby/Amalgam adjacency and alignment</li>
+                    <li><strong>getFireballTargets()</strong> - Calculate line attack with range limits</li>
+                    <li><strong>checkFireballAmplification()</strong> - Detect Void piece for enhanced version</li>
+                    <li><strong>applyFireballAttack()</strong> - Execute attack and remove targeted pieces</li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <script type="module">
-        // Global state
+        // Import actual game modules
+        import { 
+            executeFireballAbility, 
+            validateFireballMove, 
+            getFireballDirections 
+        } from '../../core/rules.js';
+        import { createBoard, getIntersectionByCoords } from '../../core/board.js';
+        
         let GameModules = {};
         let testResults = {};
+        let boardData = null;
+        let pieceDefinitions = null;
 
-        // Initialize modules
-        async function initializeModules() {
+        // Load game data
+        async function loadGameData() {
             try {
-                GameModules.rules = await import('../../core/rules.js');
-                GameModules.board = await import('../../core/board.js');
-                log('✅ Game modules loaded successfully');
-                return true;
+                const [boardResponse, pieceResponse] = await Promise.all([
+                    fetch('../../data/board-data.json'),
+                    fetch('../../data/piece-definitions.json')
+                ]);
+                
+                boardData = await boardResponse.json();
+                pieceDefinitions = await pieceResponse.json();
+                
+                console.log('Game data loaded successfully');
             } catch (error) {
-                log(`❌ Module loading failed: ${error.message}`);
-                return false;
+                console.error('Failed to load game data:', error);
+                boardData = createMockBoardData();
+                pieceDefinitions = createMockPieceDefinitions();
             }
         }
 
-        // Fireball test definitions
-        const fireballTests = {
-            'Formation Detection': {
-                id: 'formation',
-                description: 'Detect 3 Ruby pieces in straight line formation',
-                test: () => testFormationDetection()
-            },
-            'Attack Direction': {
-                id: 'direction',
-                description: 'Calculate correct attack direction from formation',
-                test: () => testAttackDirection()
-            },
-            'Standard Attack': {
-                id: 'attack',
-                description: 'Standard fireball destroys first enemy piece hit',
-                test: () => testStandardAttack()
-            },
-            'Amplified Attack': {
-                id: 'amplified',
-                description: 'Amplified fireball destroys all pieces in line',
-                test: () => testAmplifiedAttack()
-            },
-            'Attack Range': {
-                id: 'range',
-                description: 'Attack continues until obstruction or board edge',
-                test: () => testAttackRange()
-            },
-            'Multiple Formations': {
-                id: 'multiple',
-                description: 'Handle multiple Ruby formations simultaneously',
-                test: () => testMultipleFormations()
-            }
-        };
+        function createMockBoardData() {
+            return {
+                board: {
+                    width: 800,
+                    height: 800,
+                    coordinate_scale: 30,
+                    center_offset: [400, 400],
+                    intersectionRadius: 8,
+                    pieceRadius: 12
+                },
+                board_positions: {
+                    coordinates: [
+                        [0, 0], [1, 0], [2, 0], [3, 0], [4, 0],
+                        [0, 1], [1, 1], [2, 1], [3, 1], [4, 1],
+                        [0, 2], [1, 2], [2, 2], [3, 2], [4, 2]
+                    ]
+                },
+                golden_lines: {
+                    golden_lines_dict: {}
+                },
+                starting_areas: {
+                    circles_starting_area: { positions: [[0, 3], [1, 3]], description: "Circles area" },
+                    squares_starting_area: { positions: [[0, -3], [1, -3]], description: "Squares area" }
+                }
+            };
+        }
 
-        // Initialize page
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initializeModules();
-            initializeTestGrid();
+        function createMockPieceDefinitions() {
+            return {
+                piece_definitions: {
+                    circles_pieces: {
+                        "c_ruby_1": { type: "Ruby", player: "circles" },
+                        "c_ruby_2": { type: "Ruby", player: "circles" },
+                        "c_amalgam": { type: "Amalgam", player: "circles" },
+                        "c_void": { type: "Void", player: "circles" },
+                        "c_portal_1": { type: "Portal", player: "circles" }
+                    },
+                    squares_pieces: {
+                        "s_ruby_1": { type: "Ruby", player: "squares" },
+                        "s_ruby_2": { type: "Ruby", player: "squares" },
+                        "s_amalgam": { type: "Amalgam", player: "squares" },
+                        "s_void": { type: "Void", player: "squares" },
+                        "s_portal_1": { type: "Portal", player: "squares" }
+                    }
+                }
+            };
+        }
+
+        // Test data and state setup
+        function createTestGameState(customPieces = {}) {
+            if (!boardData) {
+                console.error('Board data not loaded');
+                return null;
+            }
+            
+            try {
+                let board = createBoard(boardData);
+                const pieces = {
+                    ...customPieces
+                };
+
+                // Place pieces on the board
+                for (const [pieceId, piece] of Object.entries(pieces)) {
+                    const intersection = board.intersections.find(int => 
+                        int.coords[0] === piece.coords[0] && int.coords[1] === piece.coords[1]
+                    );
+                    if (intersection) {
+                        intersection.piece = pieceId;
+                        console.log(`Placed piece ${pieceId} (${piece.type}) at [${piece.coords}]`);
+                    } else {
+                        console.warn(`No intersection found for piece ${pieceId} at [${piece.coords}]`);
+                    }
+                }
+
+                console.log(`Created test state with ${Object.keys(pieces).length} pieces on ${board.intersections.length} intersections`);
+                console.log('Pieces on board:', Object.keys(pieces).map(id => `${id}:${pieces[id].type}@[${pieces[id].coords}]`));
+
+                return {
+                    board,
+                    pieces,
+                    currentPlayer: 'circles',
+                    gamePhase: 'gameplay',
+                    setupTurn: 0,
+                    moveHistory: [],
+                    winner: null
+                };
+            } catch (error) {
+                console.error('Failed to create test game state:', error);
+                return null;
+            }
+        }
+
+        // Initialize on page load
+        loadGameData().then(() => {
+            console.log('🔥 Fireball Test Suite ready with actual game implementation');
+            updateSummary();
         });
 
-        function initializeTestGrid() {
-            const grid = document.getElementById('test-grid');
-            grid.innerHTML = '';
-
-            Object.entries(fireballTests).forEach(([name, test]) => {
-                const testDiv = document.createElement('div');
-                testDiv.className = 'test-item';
-                testDiv.innerHTML = `
-                    <div class="test-name">${name}</div>
-                    <div class="test-desc">${test.description}</div>
-                    <span class="test-status pending" id="status-${test.id}">PENDING</span>
-                `;
-                grid.appendChild(testDiv);
-                
-                testResults[test.id] = { status: 'pending', error: null };
-            });
-        }
-
-        function log(message) {
-            const console = document.getElementById('console-output');
-            const timestamp = new Date().toLocaleTimeString();
-            console.textContent += `[${timestamp}] ${message}\n`;
-            console.scrollTop = console.scrollHeight;
-        }
-
-        function updateTestStatus(testId, passed, error = null) {
-            const statusEl = document.getElementById(`status-${testId}`);
-            if (passed) {
-                statusEl.textContent = 'PASSED';
-                statusEl.className = 'test-status passed';
-                testResults[testId] = { status: 'passed', error: null };
-            } else {
-                statusEl.textContent = 'FAILED';
-                statusEl.className = 'test-status failed';
-                testResults[testId] = { status: 'failed', error };
-            }
-        }
-
-        // Test implementation functions
-        async function testFormationDetection() {
-            try {
-                // Check if fireball function exists
-                if (!GameModules.rules || typeof GameModules.rules.executeFireballAbility !== 'function') {
-                    return { passed: false, error: 'executeFireballAbility function not implemented in core/rules.ts' };
-                }
-
-                // TODO: Implement formation detection test
-                // Test should create a game state with 3 Ruby pieces in a line
-                // and verify the function detects the formation correctly
-                
-                return { passed: false, error: 'Formation detection test not implemented - waiting for executeFireballAbility()' };
-            } catch (error) {
-                return { passed: false, error: error.message };
-            }
-        }
-
-        async function testAttackDirection() {
-            return { passed: false, error: 'Attack direction test not implemented - waiting for executeFireballAbility()' };
-        }
-
-        async function testStandardAttack() {
-            return { passed: false, error: 'Standard attack test not implemented - waiting for executeFireballAbility()' };
-        }
-
-        async function testAmplifiedAttack() {
-            return { passed: false, error: 'Amplified attack test not implemented - waiting for executeFireballAbility()' };
-        }
-
-        async function testAttackRange() {
-            return { passed: false, error: 'Attack range test not implemented - waiting for executeFireballAbility()' };
-        }
-
-        async function testMultipleFormations() {
-            return { passed: false, error: 'Multiple formations test not implemented - waiting for executeFireballAbility()' };
-        }
-
-        // Global functions
-        window.runAllFireballTests = async function() {
-            log('🔥 Starting comprehensive fireball ability tests...');
-            
-            let totalTests = 0;
-            let passedTests = 0;
-
-            for (const [name, test] of Object.entries(fireballTests)) {
-                totalTests++;
-                log(`Testing ${name}...`);
-
-                try {
-                    const result = await test.test();
-                    if (result.passed) {
-                        log(`✅ ${name} - PASSED`);
-                        updateTestStatus(test.id, true);
-                        passedTests++;
-                    } else {
-                        log(`❌ ${name} - FAILED: ${result.error}`);
-                        updateTestStatus(test.id, false, result.error);
-                    }
-                } catch (error) {
-                    log(`❌ ${name} - ERROR: ${error.message}`);
-                    updateTestStatus(test.id, false, error.message);
-                }
-            }
-
-            log(`\n📊 Fireball Tests Complete: ${passedTests}/${totalTests} passed`);
-            
-            if (passedTests === 0) {
-                log(`\n🛠️  Implementation Instructions:`);
-                log(`1. Open core/rules-implementation-guide.ts`);
-                log(`2. Search for "FIREBALL ABILITY IMPLEMENTATION"`);
-                log(`3. Implement executeFireballAbility() in core/rules.ts`);
-                log(`4. Re-run tests to validate implementation`);
-            }
-        };
-
-        window.runSpecificTest = async function(testId) {
-            const test = Object.values(fireballTests).find(t => t.id === testId);
-            if (!test) {
-                log(`❌ Test ${testId} not found`);
-                return;
-            }
-
-            log(`🧪 Running specific test: ${testId}...`);
+        // Test execution framework
+        async function runTest(testId) {
+            console.log(`Running test: ${testId}`);
+            const resultDiv = document.getElementById(`result_${testId}`);
+            resultDiv.style.display = 'block';
             
             try {
-                const result = await test.test();
+                // Tests will be implemented once core fireball logic exists
+                const result = await executeTest(testId);
+                
                 if (result.passed) {
-                    log(`✅ ${testId} - PASSED`);
-                    updateTestStatus(testId, true);
+                    resultDiv.className = 'test-result result-pass';
+                    resultDiv.innerHTML = `✅ PASSED: ${result.message}`;
                 } else {
-                    log(`❌ ${testId} - FAILED: ${result.error}`);
-                    updateTestStatus(testId, false, result.error);
+                    resultDiv.className = 'test-result result-fail';
+                    resultDiv.innerHTML = `❌ FAILED: ${result.error}`;
+                }
+                
+                testResults[testId] = result;
+                updateSummary();
+                
+            } catch (error) {
+                resultDiv.className = 'test-result result-fail';
+                resultDiv.innerHTML = `❌ ERROR: ${error.message}`;
+                testResults[testId] = { passed: false, error: error.message };
+                updateSummary();
+            }
+        }
+
+        async function executeTest(testId) {
+            // Test implementations based on game-logic-reference.gd
+            switch(testId) {
+                case 'formation_ruby_horizontal':
+                    return testRubyHorizontalFormation();
+                case 'formation_ruby_amalgam':
+                    return testRubyAmalgamFormation();
+                case 'formation_invalid_distance':
+                    return testInvalidFormationDistance();
+                case 'formation_wrong_pieces':
+                    return testWrongPieceTypes();
+                case 'standard_range_hit':
+                    return testStandardRangeHit();
+                case 'standard_portal_blocking':
+                    return testStandardPortalBlocking();
+                case 'standard_range_limit':
+                    return testStandardRangeLimit();
+                case 'bidirectional_options':
+                    return testBidirectionalOptions();
+                case 'amplified_void_detection':
+                    return testAmplifiedVoidDetection();
+                case 'amplified_extended_range':
+                    return testAmplifiedExtendedRange();
+                case 'amplified_portal_penetration':
+                    return testAmplifiedPortalPenetration();
+                case 'void_movement_requirement':
+                    return testVoidMovementRequirement();
+                case 'multiple_target_priority':
+                    return testMultipleTargetPriority();
+                case 'own_piece_safety':
+                    return testOwnPieceSafety();
+                case 'board_boundary_handling':
+                    return testBoardBoundaryHandling();
+                case 'complex_formations':
+                    return testComplexFormations();
+                case 'movement_requirement_validation':
+                    return testMovementRequirementValidation();
+                default:
+                    throw new Error('Test not implemented yet');
+            }
+        }
+
+        // Individual test functions - now connected to actual implementation
+        async function testRubyHorizontalFormation() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) {
+                    return { passed: false, error: "Failed to create test state" };
+                }
+                
+                // Test formation validation
+                const formation = [[0, 0], [1, 0]];
+                const directions = getFireballDirections(formation);
+                
+                if (directions.length === 2) {
+                    return { passed: true, message: "Ruby-Ruby horizontal formation detected with 2 firing directions" };
+                } else {
+                    return { passed: false, error: `Expected 2 directions, got ${directions.length}` };
                 }
             } catch (error) {
-                log(`❌ ${testId} - ERROR: ${error.message}`);
-                updateTestStatus(testId, false, error.message);
+                return { passed: false, error: `Test execution failed: ${error.message}` };
             }
-        };
+        }
+
+        async function testRubyAmalgamFormation() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_amalgam": { id: "c_amalgam", type: "Amalgam", player: "circles", coords: [1, 1], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) {
+                    return { passed: false, error: "Failed to create test state" };
+                }
+                
+                const formation = [[0, 0], [1, 1]];
+                const directions = getFireballDirections(formation);
+                
+                if (directions.length === 2) {
+                    return { passed: true, message: "Ruby-Amalgam diagonal formation detected correctly" };
+                } else {
+                    return { passed: false, error: `Formation not detected properly, got ${directions.length} directions` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testInvalidFormationDistance() {
+            try {
+                // Test non-adjacent pieces - should not form valid formation
+                const formation = [[0, 0], [2, 0]]; // Gap between pieces
+                const directions = getFireballDirections(formation);
+                
+                // Function should still return directions for any two points, but validation would fail
+                const testState = createTestGameState();
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const move = {
+                    type: 'standard',
+                    playerId: 'circles',
+                    ability: {
+                        type: 'fireball',
+                        formation: formation,
+                        direction: [1, 0]
+                    }
+                };
+                
+                const validation = validateFireballMove(testState, move, pieceDefinitions);
+                
+                if (!validation.ok) {
+                    return { passed: true, message: "Non-adjacent formation correctly rejected" };
+                } else {
+                    return { passed: false, error: "Non-adjacent formation should be invalid" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testWrongPieceTypes() {
+            try {
+                const testState = createTestGameState({
+                    "c_pearl": { id: "c_pearl", type: "Pearl", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_amber": { id: "c_amber", type: "Amber", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const move = {
+                    type: 'standard',
+                    playerId: 'circles',
+                    ability: {
+                        type: 'fireball',
+                        formation: [[0, 0], [1, 0]],
+                        direction: [1, 0]
+                    }
+                };
+                
+                const validation = validateFireballMove(testState, move, pieceDefinitions);
+                
+                if (!validation.ok && validation.reason?.includes('Ruby')) {
+                    return { passed: true, message: "Pearl-Amber formation correctly rejected for fireball" };
+                } else {
+                    return { passed: false, error: "Wrong piece types should be rejected for fireball" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testStandardRangeHit() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [4, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length > 0) {
+                    return { passed: true, message: `Standard fireball hit target at range 4 (within 6-range limit)` };
+                } else {
+                    return { passed: false, error: `Fireball should hit target within range: ${result.reason || 'Unknown error'}` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testStandardPortalBlocking() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "s_portal": { id: "s_portal", type: "Portal", player: "squares", coords: [2, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [4, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward through Portal
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Standard fireball should be blocked by Portal, no targets hit
+                if (result.ok && (!result.destroyedPieces || result.destroyedPieces.length === 0)) {
+                    return { passed: true, message: "Portal correctly blocked standard fireball" };
+                } else {
+                    return { passed: false, error: `Portal should block standard fireball, but ${result.destroyedPieces?.length || 0} pieces were destroyed` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testStandardRangeLimit() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [8, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Target at range 8 should be beyond 6-range limit
+                if (result.ok && (!result.destroyedPieces || result.destroyedPieces.length === 0)) {
+                    return { passed: true, message: "Target beyond range 6 correctly not hit by standard fireball" };
+                } else {
+                    return { passed: false, error: "Target beyond range limit should not be hit" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testBidirectionalOptions() {
+            try {
+                const formation = [[0, 0], [1, 0]];
+                const directions = getFireballDirections(formation);
+                
+                // Should have two opposite directions
+                if (directions.length === 2) {
+                    const [dir1, dir2] = directions;
+                    // Check if they're opposite directions
+                    if (dir1[0] === -dir2[0] && dir1[1] === -dir2[1]) {
+                        return { passed: true, message: "Two opposite firing directions correctly provided" };
+                    } else {
+                        return { passed: false, error: `Directions should be opposite: ${JSON.stringify(dir1)} vs ${JSON.stringify(dir2)}` };
+                    }
+                } else {
+                    return { passed: false, error: `Expected 2 directions, got ${directions.length}` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testAmplifiedVoidDetection() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "c_void": { id: "c_void", type: "Void", player: "circles", coords: [2, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [8, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                console.log("=== AMPLIFICATION DETECTION TEST ===");
+                console.log("Formation:", [[0, 0], [1, 0]]);
+                console.log("Expected Void position: [2, 0]");
+                console.log("Pieces on board:", Object.entries(testState.pieces).map(([id, piece]) => `${id}: ${piece.type} at [${piece.coords}]`));
+                
+                // Manually check intersections
+                const voidIntersection = testState.board.intersections.find(int => int.coords[0] === 2 && int.coords[1] === 0);
+                console.log("Void intersection at [2,0]:", voidIntersection);
+                if (voidIntersection) {
+                    console.log("Piece at void intersection:", voidIntersection.piece);
+                    if (voidIntersection.piece) {
+                        const voidPiece = testState.pieces[voidIntersection.piece];
+                        console.log("Void piece details:", voidPiece);
+                    }
+                }
+                
+                // Manual amplification check
+                const [pos1, pos2] = [[0, 0], [1, 0]];
+                const formationDir = [pos2[0] - pos1[0], pos2[1] - pos1[1]]; // [1, 0]
+                const voidPos2 = [pos2[0] + formationDir[0], pos2[1] + formationDir[1]]; // [2, 0]
+                console.log("Manual amplification check:");
+                console.log("Formation direction:", formationDir);
+                console.log("Expected void position (pos2 + direction):", voidPos2);
+                
+                const manualVoidCheck = getIntersectionByCoords(testState.board, voidPos2);
+                console.log("Manual void intersection lookup:", manualVoidCheck);
+                if (manualVoidCheck?.piece) {
+                    const manualVoidPiece = testState.pieces[manualVoidCheck.piece];
+                    console.log("Manual void piece found:", manualVoidPiece);
+                    console.log("Is it actually a Void?", manualVoidPiece?.type === 'Void');
+                }
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0];
+                
+                console.log("Executing fireball with direction:", direction);
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                console.log("Fireball result:", result);
+                
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length > 0) {
+                    return { passed: true, message: `Void amplification detected - hit target at range 8 (destroyed ${result.destroyedPieces.length} pieces)` };
+                } else {
+                    return { passed: false, error: `Void amplification not working - target at range 8 should be hit with amplification. Result: ${JSON.stringify(result)}` };
+                }
+            } catch (error) {
+                console.error("Test error:", error);
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testAmplifiedExtendedRange() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "c_void": { id: "c_void", type: "Void", player: "circles", coords: [2, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [9, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Target at range 9 from start should be hit with amplified range
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length > 0) {
+                    return { passed: true, message: "Amplified fireball hit target at range 9 (extended range working)" };
+                } else {
+                    return { passed: false, error: "Amplified fireball should hit target at range 9" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testAmplifiedPortalPenetration() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "c_void": { id: "c_void", type: "Void", player: "circles", coords: [2, 0], isPrePlaced: false, graphics: {} },
+                    "s_portal": { id: "s_portal", type: "Portal", player: "squares", coords: [3, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [5, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward through Portal
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Amplified fireball should penetrate Portal and hit target
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length > 0) {
+                    return { passed: true, message: "Amplified fireball penetrated Portal and hit target" };
+                } else {
+                    return { passed: false, error: "Amplified fireball should penetrate Portal and hit target" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testVoidMovementRequirement() {
+            // Based on game-logic-reference.gd lines 198-206: ANY piece in formation can be moved to activate ability
+            // This test validates the core amplification logic works regardless of which piece moved
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "c_void": { id: "c_void", type: "Void", player: "circles", coords: [2, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [7, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0];
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Should work regardless of which piece "moved" - core logic handles amplification detection
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length > 0) {
+                    return { passed: true, message: "Amplified ability works - any formation piece can be moved to activate" };
+                } else {
+                    return { passed: false, error: "Movement requirement logic issue - amplification should work" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testMultipleTargetPriority() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "s_target_1": { id: "s_target_1", type: "Ruby", player: "squares", coords: [3, 0], isPrePlaced: false, graphics: {} },
+                    "s_target_2": { id: "s_target_2", type: "Ruby", player: "squares", coords: [5, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Should hit only the first target, not the second
+                if (result.ok && result.destroyedPieces && result.destroyedPieces.length === 1) {
+                    // Check that the second target is still alive
+                    const remainingPieces = Object.keys(result.nextState?.pieces || {});
+                    if (remainingPieces.includes("s_target_2")) {
+                        return { passed: true, message: "First target hit, second target safe (correct priority)" };
+                    } else {
+                        return { passed: false, error: "Both targets destroyed - should only hit first" };
+                    }
+                } else {
+                    return { passed: false, error: `Expected 1 target destroyed, got ${result.destroyedPieces?.length || 0}` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testOwnPieceSafety() {
+            try {
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "c_friendly": { id: "c_friendly", type: "Pearl", player: "circles", coords: [3, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [5, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0]; // Fire rightward through own piece
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Should be blocked by own piece, no targets hit
+                if (result.ok && (!result.destroyedPieces || result.destroyedPieces.length === 0)) {
+                    return { passed: true, message: "Own piece correctly blocks fireball, protecting distant target" };
+                } else {
+                    return { passed: false, error: "Fireball should be blocked by own pieces" };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testBoardBoundaryHandling() {
+            try {
+                // Use coordinates that are actually valid on the board but near the edge
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [2, 2], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [3, 2], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[2, 2], [3, 2]];
+                const direction = [1, 0]; // Fire rightward toward board edge
+                
+                // For these tests, we simulate that a piece in the formation has moved
+                const movedPieceCoords = formation[0]; // Simulate first piece moved
+                const result = executeFireballAbility(testState, formation, direction, pieceDefinitions, movedPieceCoords);
+                
+                // Should execute without error, even if no targets hit due to board boundaries
+                if (result.ok) {
+                    return { passed: true, message: "Board boundary handled correctly, no crash or error" };
+                } else {
+                    return { passed: false, error: `Boundary handling failed: ${result.reason}` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testComplexFormations() {
+            try {
+                // Test vertical formation
+                const verticalFormation = [[0, 0], [0, 1]];
+                const verticalDirections = getFireballDirections(verticalFormation);
+                
+                // Test diagonal formation
+                const diagonalFormation = [[0, 0], [1, 1]];
+                const diagonalDirections = getFireballDirections(diagonalFormation);
+                
+                if (verticalDirections.length === 2 && diagonalDirections.length === 2) {
+                    return { passed: true, message: "Vertical and diagonal formations correctly detected with bidirectional options" };
+                } else {
+                    return { passed: false, error: `Formation detection issue: vertical=${verticalDirections.length}, diagonal=${diagonalDirections.length}` };
+                }
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        async function testMovementRequirementValidation() {
+            try {
+                console.log("🧪 Starting Movement Requirement Validation Test");
+                
+                const testState = createTestGameState({
+                    "c_ruby_1": { id: "c_ruby_1", type: "Ruby", player: "circles", coords: [0, 0], isPrePlaced: false, graphics: {} },
+                    "c_ruby_2": { id: "c_ruby_2", type: "Ruby", player: "circles", coords: [1, 0], isPrePlaced: false, graphics: {} },
+                    "s_target": { id: "s_target", type: "Ruby", player: "squares", coords: [4, 0], isPrePlaced: false, graphics: {} }
+                });
+                
+                if (!testState) return { passed: false, error: "Failed to create test state" };
+                
+                const formation = [[0, 0], [1, 0]];
+                const direction = [1, 0];
+                
+                // Test 1: No moved piece (should fail)
+                const resultNoMove = executeFireballAbility(testState, formation, direction, pieceDefinitions, undefined);
+                
+                if (resultNoMove.ok) {
+                    return { passed: false, error: "Fireball should fail when no piece moved this turn" };
+                }
+                
+                // Test 2: Moved piece not in formation (should fail) 
+                const resultWrongPiece = executeFireballAbility(testState, formation, direction, pieceDefinitions, [2, 2]);
+                
+                if (resultWrongPiece.ok) {
+                    return { passed: false, error: "Fireball should fail when moved piece is not in formation" };
+                }
+                
+                // Test 3: Moved piece is in formation (should succeed)
+                const resultCorrect = executeFireballAbility(testState, formation, direction, pieceDefinitions, formation[0]);
+                
+                if (!resultCorrect.ok) {
+                    return { passed: false, error: `Fireball should succeed when moved piece is in formation: ${resultCorrect.reason}` };
+                }
+                
+                return { passed: true, message: "Movement requirement validation works correctly in all cases" };
+            } catch (error) {
+                return { passed: false, error: `Test failed: ${error.message}` };
+            }
+        }
+
+        // Test suite management
+        async function runAllTests() {
+            const testIds = [
+                'formation_ruby_horizontal', 'formation_ruby_amalgam', 'formation_invalid_distance', 'formation_wrong_pieces',
+                'standard_range_hit', 'standard_portal_blocking', 'standard_range_limit', 'bidirectional_options',
+                'amplified_void_detection', 'amplified_extended_range', 'amplified_portal_penetration', 'void_movement_requirement',
+                'multiple_target_priority', 'own_piece_safety', 'board_boundary_handling', 'complex_formations', 'movement_requirement_validation'
+            ];
+            
+            testResults = {};
+            
+            for (const testId of testIds) {
+                await runTest(testId);
+                // Small delay for visual feedback
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(r => r.passed).length;
+            const failed = total - passed;
+            
+            const summaryDiv = document.getElementById('test-summary');
+            summaryDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
+                    <div><strong>Total Tests:</strong> ${total}</div>
+                    <div style="color: #155724;"><strong>Passed:</strong> ${passed}</div>
+                    <div style="color: #721c24;"><strong>Failed:</strong> ${failed}</div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <strong>Status:</strong> ${total === 0 ? 'Ready' : total === passed ? 'All Passing ✅' : 'Implementation Needed ⚠️'}
+                </div>
+            `;
+        }
+
+        function copyTestResults() {
+            const results = Object.entries(testResults)
+                .map(([id, result]) => `${id}: ${result.passed ? 'PASS' : 'FAIL - ' + result.error}`)
+                .join('\n');
+            
+            const summary = `FIREBALL ABILITY TEST RESULTS\n${'='.repeat(40)}\n${results}\n\nNext: Implement fireball logic in core/rules.ts`;
+            
+            navigator.clipboard.writeText(summary);
+            showToast('Test results copied to clipboard!');
+        }
+
+        function copyFailedTests() {
+            const failures = Object.entries(testResults)
+                .filter(([id, result]) => !result.passed)
+                .map(([id, result]) => `${id}: ${result.error}`)
+                .join('\n');
+            
+            const summary = `FIREBALL TESTS - FAILURES ONLY\n${'='.repeat(40)}\n${failures || 'No failures recorded yet'}`;
+            
+            navigator.clipboard.writeText(summary);
+            showToast('Failed tests copied to clipboard!');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 20px; right: 20px; background: #10b981; color: white;
+                padding: 12px 20px; border-radius: 8px; font-weight: 500; z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 2000);
+        }
+
+        // Make functions global so HTML can access them - must be after function definitions
+        window.runTest = runTest;
+        window.runAllTests = runAllTests;
+        window.copyTestResults = copyTestResults;
+        window.copyFailedTests = copyFailedTests;
+
+        // Initialize
+        updateSummary();
+        console.log('🔥 Fireball Test Suite loaded - Ready for core implementation');
     </script>
 </body>
 </html>

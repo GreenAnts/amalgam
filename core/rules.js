@@ -4,7 +4,7 @@
  * All functions are deterministic and side-effect free
  */
 import { logger } from '../utils/logger.js';
-import { getIntersectionByCoords, isEmptyIntersection, placePiece, movePiece, areAdjacent, isStraightLine, getAdjacentCoords, getAdjacentIntersections, isGoldenLineIntersection, getGoldenLineConnections, isValidCoords } from './board.js';
+import { getIntersectionByCoords, isEmptyIntersection, placePiece, removePiece, movePiece, areAdjacent, isStraightLine, getAdjacentCoords, getAdjacentIntersections, isGoldenLineIntersection, getGoldenLineConnections, isValidCoords } from './board.js';
 /**
  * Check if a move is valid for the current game state
  * @param state - Current game state
@@ -485,9 +485,9 @@ export function applyMove(state, move, pieceDefs) {
         newState.winner = winCheck.winner;
         newState.victoryType = winCheck.victoryType;
     }
-    // Only find available abilities during gameplay phase
+    // Only find available abilities during gameplay phase for actual gameplay moves (not setup-to-gameplay transitions)
     let availableAbilities = [];
-    if (newState.gamePhase === 'gameplay') {
+    if (newState.gamePhase === 'gameplay' && move.type !== 'place') {
         availableAbilities = findAvailableAbilities(newState, move.playerId, pieceDefs);
     }
     // Track destroyed pieces from the attack result
@@ -844,6 +844,287 @@ function hasVoidAmplification(pieces, formationCoords) {
         }
     }
     return false;
+}
+// =============================================================================
+// FIREBALL ABILITY IMPLEMENTATION
+// Based on game-logic-reference.gd lines 177-240
+// =============================================================================
+/**
+ * Validate and execute fireball ability
+ * @param state - Current game state
+ * @param formation - Ruby/Amalgam formation coordinates
+ * @param direction - Firing direction choice
+ * @param pieceDefs - Piece definitions
+ * @param movedPieceCoords - Coordinates of piece that moved this turn (required for ability activation)
+ * @returns Result of fireball ability
+ */
+export function executeFireballAbility(state, formation, direction, pieceDefs, movedPieceCoords) {
+    logger.debug('Executing fireball ability', { formation, direction });
+    // Validate formation
+    const formationValidation = validateFireballFormation(state, formation, pieceDefs);
+    if (!formationValidation.valid) {
+        return { ok: false, reason: formationValidation.reason };
+    }
+    // Validate movement requirement - based on game-logic-reference.gd lines 198-206
+    if (!validateMovementRequirement(formation, movedPieceCoords)) {
+        return { ok: false, reason: 'Fireball can only be activated when at least one formation piece moved this turn' };
+    }
+    // Check for amplification
+    const isAmplified = checkFireballAmplification(state, formation);
+    // Get targets
+    const targets = getFireballTargets(state, formation, direction, isAmplified);
+    // Apply damage - create deep copy of state
+    const newState = {
+        ...state,
+        board: { ...state.board, intersections: [...state.board.intersections] },
+        pieces: { ...state.pieces }
+    };
+    const destroyedPieces = [];
+    for (const target of targets) {
+        const targetIntersection = getIntersectionByCoords(newState.board, target);
+        if (targetIntersection?.piece) {
+            destroyedPieces.push(targetIntersection.piece);
+            delete newState.pieces[targetIntersection.piece];
+        }
+        newState.board = removePiece(newState.board, target);
+    }
+    // Switch to next player after ability use
+    newState.currentPlayer = newState.currentPlayer === 'circles' ? 'squares' : 'circles';
+    return {
+        ok: true,
+        nextState: newState,
+        destroyedPieces,
+        availableAbilities: []
+    };
+}
+/**
+ * Validate movement requirement for abilities
+ * Based on game-logic-reference.gd lines 198-206: only formations involving moved piece can activate
+ */
+function validateMovementRequirement(formation, movedPieceCoords) {
+    if (!movedPieceCoords) {
+        return false; // No piece moved this turn
+    }
+    // Check if any piece in formation matches the moved piece coordinates
+    return formation.some(formationCoords => formationCoords[0] === movedPieceCoords[0] &&
+        formationCoords[1] === movedPieceCoords[1]);
+}
+/**
+ * Validate fireball formation requirements
+ * Based on game-logic-reference.gd lines 177-188
+ */
+function validateFireballFormation(state, formation, pieceDefs) {
+    if (formation.length !== 2) {
+        return { valid: false, reason: 'Fireball requires exactly 2 pieces' };
+    }
+    const [pos1, pos2] = formation;
+    // Check adjacency
+    if (!areAdjacent(pos1, pos2)) {
+        return { valid: false, reason: 'Fireball formation pieces must be adjacent' };
+    }
+    // Check alignment - must form straight line (horizontal, vertical, or diagonal)
+    if (!isStraightLine([pos1, pos2])) {
+        return { valid: false, reason: 'Fireball formation must be aligned in straight line' };
+    }
+    // Get pieces at positions
+    const intersection1 = getIntersectionByCoords(state.board, pos1);
+    const intersection2 = getIntersectionByCoords(state.board, pos2);
+    if (!intersection1?.piece || !intersection2?.piece) {
+        return { valid: false, reason: 'Formation positions must contain pieces' };
+    }
+    const piece1 = state.pieces[intersection1.piece];
+    const piece2 = state.pieces[intersection2.piece];
+    if (!piece1 || !piece2) {
+        return { valid: false, reason: 'Invalid pieces in formation' };
+    }
+    // Check piece types - must be Ruby/Amalgam combination
+    const validTypes = new Set(['Ruby', 'Amalgam']);
+    if (!validTypes.has(piece1.type) || !validTypes.has(piece2.type)) {
+        return { valid: false, reason: 'Fireball requires Ruby and/or Amalgam pieces' };
+    }
+    return { valid: true };
+}
+/**
+ * Check if formation has Void amplification for fireball
+ * Based on game-logic-reference.gd lines 189-193
+ */
+function checkFireballAmplification(state, formation) {
+    const [pos1, pos2] = formation;
+    // Calculate formation direction
+    const direction = [pos2[0] - pos1[0], pos2[1] - pos1[1]];
+    // Check both ends of the formation for Void piece (following reference lines 190-193)
+    const voidPos1 = [pos1[0] - direction[0], pos1[1] - direction[1]];
+    const voidPos2 = [pos2[0] + direction[0], pos2[1] + direction[1]];
+    // Use console.log for immediate visibility in tests
+    console.log('[AMPLIFICATION] Checking amplification', {
+        formation,
+        direction,
+        voidPos1,
+        voidPos2,
+        totalPieces: Object.keys(state.pieces).length
+    });
+    // Check first potential Void position (pos1 - direction)
+    const intersection1 = getIntersectionByCoords(state.board, voidPos1);
+    console.log('[AMPLIFICATION] Intersection1 at', voidPos1, ':', intersection1);
+    if (intersection1?.piece) {
+        const piece1 = state.pieces[intersection1.piece];
+        console.log('[AMPLIFICATION] Found piece at voidPos1', piece1);
+        if (piece1?.type === 'Void') {
+            console.log('[AMPLIFICATION] ✅ Amplification detected at pos1');
+            return true;
+        }
+    }
+    // Check second potential Void position (pos2 + direction)
+    const intersection2 = getIntersectionByCoords(state.board, voidPos2);
+    console.log('[AMPLIFICATION] Intersection2 at', voidPos2, ':', intersection2);
+    if (intersection2?.piece) {
+        const piece2 = state.pieces[intersection2.piece];
+        console.log('[AMPLIFICATION] Found piece at voidPos2', piece2);
+        if (piece2?.type === 'Void') {
+            console.log('[AMPLIFICATION] ✅ Amplification detected at pos2');
+            return true;
+        }
+    }
+    console.log('[AMPLIFICATION] ❌ No amplification detected');
+    return false;
+}
+/**
+ * Get fireball targets along firing direction
+ * Based on game-logic-reference.gd lines 213-240
+ */
+function getFireballTargets(state, formation, direction, amplified) {
+    const targets = [];
+    const [pos1, pos2] = formation;
+    // Determine firing origin - the piece in the direction we're firing
+    let startPos;
+    if (direction[0] === (pos2[0] - pos1[0]) && direction[1] === (pos2[1] - pos1[1])) {
+        startPos = pos2; // Fire from second piece forward
+    }
+    else {
+        startPos = pos1; // Fire from first piece in opposite direction
+    }
+    // Set range based on amplification - corrected to match reference
+    const range = amplified ? 10 : 7;
+    console.log('[TARGETING] Starting fireball targeting', {
+        formation,
+        direction,
+        startPos,
+        amplified,
+        range
+    });
+    // Get formation piece for player comparison
+    const startIntersection = getIntersectionByCoords(state.board, startPos);
+    if (!startIntersection?.piece) {
+        console.log('[TARGETING] ❌ No piece at start position', startPos);
+        return targets;
+    }
+    const formationPiece = state.pieces[startIntersection.piece];
+    if (!formationPiece) {
+        console.log('[TARGETING] ❌ Formation piece not found in pieces dict');
+        return targets;
+    }
+    console.log('[TARGETING] Formation piece:', formationPiece);
+    // Normalize direction to unit steps
+    const stepX = direction[0] > 0 ? 1 : direction[0] < 0 ? -1 : 0;
+    const stepY = direction[1] > 0 ? 1 : direction[1] < 0 ? -1 : 0;
+    console.log('[TARGETING] Step direction:', [stepX, stepY]);
+    // Trace line and find targets
+    for (let step = 1; step <= range; step++) {
+        const targetPos = [
+            startPos[0] + stepX * step,
+            startPos[1] + stepY * step
+        ];
+        console.log(`[TARGETING] Step ${step}: Checking position [${targetPos}]`);
+        // Check if position is on board
+        if (!isValidCoords(state.board, targetPos)) {
+            console.log('[TARGETING] Position out of bounds, stopping');
+            break; // Out of bounds, stop tracing
+        }
+        const intersection = getIntersectionByCoords(state.board, targetPos);
+        console.log(`[TARGETING] Intersection at [${targetPos}]:`, intersection);
+        if (intersection?.piece) {
+            const piece = state.pieces[intersection.piece];
+            console.log('[TARGETING] Found piece:', piece);
+            if (piece) {
+                // Check if it's an opponent piece
+                if (piece.player !== formationPiece.player) {
+                    console.log('[TARGETING] 🎯 Opponent piece found!');
+                    // For standard fireball, Portal pieces block the attack
+                    if (!amplified && piece.type === 'Portal') {
+                        console.log('[TARGETING] Portal blocks standard fireball');
+                        break; // Portal blocks, no target hit
+                    }
+                    // Valid target found
+                    console.log('[TARGETING] ✅ Valid target added:', targetPos);
+                    targets.push(targetPos);
+                    break; // Stop after first valid target
+                }
+                else {
+                    // Own piece potentially blocks the attack
+                    // Exception: In amplified mode, allow passing through the amplifying Void piece
+                    if (amplified && piece.type === 'Void') {
+                        console.log('[TARGETING] Amplifying Void piece - continuing through');
+                        // Continue through amplifying Void
+                    }
+                    else {
+                        console.log('[TARGETING] Own piece blocks attack');
+                        break;
+                    }
+                }
+            }
+        }
+        else {
+            console.log('[TARGETING] Empty space, continuing...');
+        }
+        // Continue through empty spaces
+    }
+    console.log('[TARGETING] Final targets:', targets);
+    return targets;
+}
+/**
+ * Get available fireball firing directions from formation
+ * Based on game-logic-reference.gd bidirectional logic
+ */
+export function getFireballDirections(formation) {
+    const [pos1, pos2] = formation;
+    const formationDirection = [pos2[0] - pos1[0], pos2[1] - pos1[1]];
+    return [
+        formationDirection, // Fire from pos1 through pos2
+        [-formationDirection[0], -formationDirection[1]] // Fire from pos2 through pos1
+    ];
+}
+/**
+ * Validate fireball ability activation
+ * @param state - Game state
+ * @param move - Move that includes fireball ability
+ * @param pieceDefs - Piece definitions
+ * @param movedPieceCoords - Coordinates of piece that moved this turn
+ * @returns Validation result
+ */
+export function validateFireballMove(state, move, pieceDefs, movedPieceCoords) {
+    if (!move.ability || move.ability.type !== 'fireball') {
+        return { ok: false, reason: 'Not a fireball ability move' };
+    }
+    const { formation, direction } = move.ability;
+    if (!formation || !direction) {
+        return { ok: false, reason: 'Fireball ability missing formation or direction' };
+    }
+    // Validate formation
+    const formationValidation = validateFireballFormation(state, formation, pieceDefs);
+    if (!formationValidation.valid) {
+        return { ok: false, reason: formationValidation.reason };
+    }
+    // Validate movement requirement
+    if (!validateMovementRequirement(formation, movedPieceCoords)) {
+        return { ok: false, reason: 'Fireball can only be activated when at least one formation piece moved this turn' };
+    }
+    // Validate direction is one of the available options
+    const availableDirections = getFireballDirections(formation);
+    const directionValid = availableDirections.some(dir => dir[0] === direction[0] && dir[1] === direction[1]);
+    if (!directionValid) {
+        return { ok: false, reason: 'Invalid firing direction for fireball' };
+    }
+    return { ok: true };
 }
 /**
  * Get all legal moves for a player

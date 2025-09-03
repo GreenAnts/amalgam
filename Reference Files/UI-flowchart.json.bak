@@ -1,0 +1,774 @@
+{
+    "game_metadata": {
+      "name": "Amalgam",
+      "type": "2-player abstract strategy board game",
+      "players": ["Circles", "Squares"],
+      "description": "Players control magical gem pieces with unique abilities. Victory is achieved by moving the Void piece to the opponent's starting position or eliminating all opponent pieces."
+    },
+  
+    // ==========================================
+    // COORDINATE SYSTEM AND BOARD LAYOUT
+    // ==========================================
+    "coordinate_system": {
+      "board_dimensions": {
+        "grid_size": "25x25",
+        "coordinate_range": {
+          "x": {"min": -12, "max": 12},
+          "y": {"min": -12, "max": 12}
+        },
+        "coordinate_notes": "Origin (0,0) is at board center. Positive Y is up, positive X is right."
+      },
+      "pixel_calculations": {
+        "slot_size": {"width": 40, "height": 40},
+        "slot_spacing": {"horizontal": 0, "vertical": 0},
+        "piece_offset_from_slot_center": {"x": 20, "y": 20},
+        "board_total_pixels": {"width": 1000, "height": 1000},
+        "coordinate_to_pixel_formula": {
+          "description": "To convert board coordinates to pixel position",
+          "x_pixel": "(board_x + 12) * 40 + 20",
+          "y_pixel": "(12 - board_y) * 40 + 20",
+          "note": "This centers pieces in their slots with the Y-axis inverted for screen rendering"
+        }
+      },
+      "special_positions": {
+        "golden_lines": {
+          "description": "Special positions that form geometric patterns on the board where Portal pieces can move and land",
+          "vertex_positions": [
+            {"coord": [0, 12], "connections": [[-5, 11], [5, 11]]},
+            {"coord": [0, -12], "connections": [[-5, -11], [5, -11]]},
+            {"coord": [12, 0], "connections": [[11, 5], [11, -5], [8, 3], [8, -3]]},
+            {"coord": [-12, 0], "connections": [[-11, 5], [-11, -5], [-8, 3], [-8, -3]]}
+          ],
+          "note": "Golden lines form a complex geometric pattern including outer edges and inner diamond shapes"
+        },
+        "starting_zones": {
+          "circles": {
+            "description": "Top half of board where Circle pieces can be placed during setup",
+            "valid_coordinates": "All positions with y >= 7 and within board bounds"
+          },
+          "squares": {
+            "description": "Bottom half of board where Square pieces can be placed during setup",
+            "valid_coordinates": "All positions with y <= -7 and within board bounds"
+          }
+        },
+        "victory_positions": {
+          "circles_win": {"position": [0, -6], "required_piece": "Void Circle"},
+          "squares_win": {"position": [0, 6], "required_piece": "Void Square"}
+        }
+      }
+    },
+  
+    // ==========================================
+    // PIECE DEFINITIONS AND TYPES
+    // ==========================================
+    "piece_types": {
+      "encoding_scheme": {
+        "description": "Each piece type has a unique integer ID used throughout the system",
+        "circle_range": [0, 6],
+        "square_range": [7, 13]
+      },
+      "pieces": {
+        "0": {"name": "Ruby Circle", "player": "Circles", "category": "Ruby", "abilities": ["Fireball"]},
+        "1": {"name": "Pearl Circle", "player": "Circles", "category": "Pearl", "abilities": ["Tidal Wave"]},
+        "2": {"name": "Amber Circle", "player": "Circles", "category": "Amber", "abilities": ["Sap"]},
+        "3": {"name": "Jade Circle", "player": "Circles", "category": "Jade", "abilities": ["Launch"]},
+        "4": {"name": "Amalgam Circle", "player": "Circles", "category": "Amalgam", "abilities": ["Fireball", "Tidal Wave", "Sap", "Launch"]},
+        "5": {"name": "Portal Circle", "player": "Circles", "category": "Portal", "abilities": ["Portal Swap"]},
+        "6": {"name": "Void Circle", "player": "Circles", "category": "Void", "abilities": ["Amplify"]},
+        "7": {"name": "Ruby Square", "player": "Squares", "category": "Ruby", "abilities": ["Fireball"]},
+        "8": {"name": "Pearl Square", "player": "Squares", "category": "Pearl", "abilities": ["Tidal Wave"]},
+        "9": {"name": "Amber Square", "player": "Squares", "category": "Amber", "abilities": ["Sap"]},
+        "10": {"name": "Jade Square", "player": "Squares", "category": "Jade", "abilities": ["Launch"]},
+        "11": {"name": "Amalgam Square", "player": "Squares", "category": "Amalgam", "abilities": ["Fireball", "Tidal Wave", "Sap", "Launch"]},
+        "12": {"name": "Portal Square", "player": "Squares", "category": "Portal", "abilities": ["Portal Swap"]},
+        "13": {"name": "Void Square", "player": "Squares", "category": "Void", "abilities": ["Amplify"]}
+      },
+      "fixed_starting_positions": {
+        "description": "These pieces are placed automatically at game start",
+        "pieces": [
+          {"type": 6, "position": [0, 12], "piece": "Void Circle"},
+          {"type": 13, "position": [0, -12], "piece": "Void Square"},
+          {"type": 4, "position": [0, 6], "piece": "Amalgam Circle"},
+          {"type": 11, "position": [0, -6], "piece": "Amalgam Square"},
+          {"type": 5, "position": [6, 6], "piece": "Portal Circle"},
+          {"type": 5, "position": [-6, 6], "piece": "Portal Circle"},
+          {"type": 12, "position": [6, -6], "piece": "Portal Square"},
+          {"type": 12, "position": [-6, -6], "piece": "Portal Square"}
+        ]
+      }
+    },
+  
+    // ==========================================
+    // MOVEMENT INDICATORS AND POSITIONING
+    // ==========================================
+    "movement_indicators": {
+      "green_indicator": {
+        "purpose": "Shows valid movement positions for selected piece",
+        "visual_properties": {
+          "color": "green",
+          "opacity": 0.5,
+          "scale": 0.35,
+          "z_order": 10,
+          "blend_mode": "normal"
+        },
+        "positioning": {
+          "placement": "Center of target slot",
+          "offset_from_slot_center": {"x": 0, "y": 0},
+          "size_relative_to_slot": 0.35
+        },
+        "display_conditions": [
+          "Piece is selected",
+          "Target slot is valid move",
+          "Target slot is empty (except for special moves)"
+        ]
+      },
+      "purple_indicator": {
+        "purpose": "Shows valid Portal Swap targets",
+        "visual_properties": {
+          "color": "purple",
+          "opacity": 0.5,
+          "scale": 0.35,
+          "z_order": 10
+        },
+        "positioning": {
+          "placement": "Center of pieces that can be swapped",
+          "offset_from_slot_center": {"x": 0, "y": 0}
+        },
+        "display_conditions": [
+          "Portal piece is selected",
+          "Portal Swap ability is toggled on",
+          "Target is friendly non-portal piece on golden line position"
+        ]
+      },
+      "blue_indicator": {
+        "purpose": "Shows pieces that can be launched with Jade ability",
+        "visual_properties": {
+          "color": "blue",
+          "opacity": 0.7,
+          "scale": 0.4,
+          "z_order": 11,
+          "pulse_animation": true
+        },
+        "positioning": {
+          "placement": "Center of launchable piece",
+          "offset_from_piece_center": {"x": 0, "y": 0}
+        },
+        "display_conditions": [
+          "Launch ability is available",
+          "Piece is adjacent to Jade pair in launch direction"
+        ]
+      }
+    },
+  
+    // ==========================================
+    // ABILITY INDICATORS AND PRECISE POSITIONING
+    // ==========================================
+    "ability_indicators": {
+      "directional_arrow": {
+        "description": "Arrow sprite used for Fireball, Tidal Wave, and Sap abilities to show direction of effect",
+        "visual_properties": {
+          "sprite_dimensions": {"width": 220, "height": 415},
+          "scale": 0.2,
+          "anchor_point": {"x": 0.5, "y": 0.6},
+          "arrow_offset_from_origin": {"x": 0, "y": -250},
+          "z_order": 15
+        },
+        "rotation_mapping": {
+          "description": "Rotation angles for arrow based on direction vector",
+          "directions": {
+            "[0, 1]": {"angle": 0, "description": "North"},
+            "[1, 1]": {"angle": 45, "description": "Northeast"},
+            "[1, 0]": {"angle": 90, "description": "East"},
+            "[1, -1]": {"angle": 135, "description": "Southeast"},
+            "[0, -1]": {"angle": 180, "description": "South"},
+            "[-1, -1]": {"angle": 225, "description": "Southwest"},
+            "[-1, 0]": {"angle": 270, "description": "West"},
+            "[-1, 1]": {"angle": 315, "description": "Northwest"}
+          }
+        },
+        "click_area": {
+          "shape": "rectangle",
+          "dimensions": {"width": 44, "height": 83},
+          "offset_from_center": {"x": 0, "y": -50}
+        }
+      },
+      
+      "fireball_indicators": {
+        "description": "Indicators for Ruby/Amalgam Fireball ability showing two possible directions",
+        "activation_condition": "Two adjacent Ruby/Amalgam pieces of same player",
+        "indicator_placement": [
+          {
+            "position": "At first Ruby piece position",
+            "direction": "Pointing away from second Ruby",
+            "formula": "direction = normalize(ruby1_pos - ruby2_pos)",
+            "rotation": "Use rotation_mapping based on direction"
+          },
+          {
+            "position": "At second Ruby piece position",
+            "direction": "Pointing away from first Ruby",
+            "formula": "direction = normalize(ruby2_pos - ruby1_pos)",
+            "rotation": "Use rotation_mapping based on direction"
+          }
+        ],
+        "interaction": {
+          "on_click": "Execute Fireball in clicked arrow's direction",
+          "range": {
+            "normal": 6,
+            "amplified_by_void": 9
+          },
+          "targets": "First enemy piece in line (Portals block unless amplified)"
+        },
+        "void_amplification": {
+          "condition": "Void piece adjacent to Ruby pair in firing direction",
+          "effect": "Increases range and allows targeting through Portals"
+        }
+      },
+  
+      "tidal_wave_indicators": {
+        "description": "Indicators for Pearl/Amalgam Tidal Wave ability showing area effect directions",
+        "activation_condition": "Two adjacent Pearl/Amalgam pieces of same player",
+        "indicator_placement": [
+          {
+            "position": "At first Pearl piece position",
+            "direction": "Pointing away from second Pearl",
+            "rotation": "Use rotation_mapping based on direction"
+          },
+          {
+            "position": "At second Pearl piece position",
+            "direction": "Pointing away from first Pearl",
+            "rotation": "Use rotation_mapping based on direction"
+          }
+        ],
+        "area_calculation": {
+          "shape": "expanding_cone",
+          "forward_distance": {"normal": 4, "amplified": 5},
+          "side_width": {"normal": 2, "amplified": 3},
+          "pattern": "Width increases by 1 on each side per forward step",
+          "diagonal_handling": "Include intermediate cells between main grid points"
+        },
+        "interaction": {
+          "on_click": "Remove all enemy pieces in cone area"
+        }
+      },
+  
+      "sap_indicators": {
+        "description": "Indicators for Amber/Amalgam Sap ability showing line effect",
+        "activation_condition": "Two aligned Amber/Amalgam pieces (horizontal, vertical, or diagonal)",
+        "indicator_placement": [
+          {
+            "position": "At first Amber piece position",
+            "direction": "Pointing toward second Amber",
+            "rotation": "Use rotation_mapping based on direction"
+          },
+          {
+            "position": "At second Amber piece position", 
+            "direction": "Pointing toward first Amber",
+            "rotation": "Use rotation_mapping based on direction"
+          }
+        ],
+        "line_calculation": {
+          "main_line": "All positions between and including both Amber pieces",
+          "amplified_parallel_lines": {
+            "condition": "Void piece on main line between Ambers",
+            "effect": "Add parallel lines offset by 1 position perpendicular to main line"
+          }
+        },
+        "interaction": {
+          "on_click": "Remove all enemy pieces on line(s)",
+          "portal_interaction": "Portals only affected when amplified by Void"
+        }
+      },
+  
+      "launch_indicators": {
+        "description": "Blue indicators for Jade/Amalgam Launch ability",
+        "activation_condition": "Two adjacent Jade/Amalgam pieces of same player",
+        "phase_1_indicators": {
+          "description": "Shows which pieces can be launched",
+          "placement": [
+            {
+              "position": "Piece adjacent to Jade pair opposite first Jade",
+              "visual": "Blue pulsing indicator at piece center"
+            },
+            {
+              "position": "Piece adjacent to Jade pair opposite second Jade",
+              "visual": "Blue pulsing indicator at piece center"
+            }
+          ]
+        },
+        "phase_2_indicators": {
+          "description": "After selecting piece to launch, shows valid landing positions",
+          "placement": "Green indicators on valid landing slots",
+          "range": {"normal": 4, "amplified": 6},
+          "valid_targets": "Empty slots or enemy pieces in straight line",
+          "special_rules": {
+            "portal_launching": "Portal pieces can only land on golden line positions",
+            "portal_targeting": "Non-portal pieces cannot remove enemy portals"
+          }
+        }
+      }
+    },
+  
+    // ==========================================
+    // ANIMATION SPECIFICATIONS
+    // ==========================================
+    "animations": {
+      "piece_movement": {
+        "standard_move": {
+          "duration_ms": 500,
+          "easing": "ease-out-expo",
+          "path": "direct_line"
+        },
+        "portal_swap": {
+          "duration_ms": 800,
+          "easing": "ease-in-out-expo",
+          "path": "direct_line",
+          "simultaneous": true
+        },
+        "launch_movement": {
+          "duration_ms": 1500,
+          "easing": "ease-in-out-quad",
+          "path": "parabolic_arc",
+          "height_curve": {
+            "peak_height_multiplier": 2,
+            "peak_position": 0.5
+          },
+          "scaling": {
+            "max_scale": 2,
+            "scale_timing": "synchronized_with_height"
+          },
+          "z_order_change": "+1 during animation, restore after"
+        }
+      },
+      
+      "fireball_animation": {
+        "sprite_sheet": {
+          "travel_frames": 14,
+          "impact_frames": 4,
+          "frame_rate": 12
+        },
+        "movement": {
+          "speed_pixels_per_second": 200,
+          "acceleration_curve": {
+            "type": "custom_curve",
+            "control_points": [
+              {"t": 0, "value": 0},
+              {"t": 0.3, "value": 0.5},
+              {"t": 1, "value": 1}
+            ]
+          },
+          "rotation": "Face direction of travel",
+          "trail_effect": "Particle system with fire colors"
+        },
+        "timing": {
+          "launch_delay_ms": 100,
+          "impact_duration_ms": 500,
+          "total_sequence": "Calculate based on distance"
+        }
+      },
+  
+      "piece_removal": {
+        "standard_capture": {
+          "duration_ms": 300,
+          "effect": "fade_out",
+          "particle_burst": true
+        },
+        "ability_removal": {
+          "duration_ms": 500,
+          "effect": "scale_and_fade",
+          "delay_between_multiple_ms": 50
+        }
+      },
+  
+      "indicator_animations": {
+        "pulse": {
+          "scale_range": [0.9, 1.1],
+          "duration_ms": 1000,
+          "loop": true
+        },
+        "fade_in": {
+          "duration_ms": 200,
+          "easing": "ease-out"
+        }
+      }
+    },
+  
+    // ==========================================
+    // GAME STATE FLOW WITH DETAILED RULES
+    // ==========================================
+    "game_states": {
+      "initialization": {
+        "id": "init",
+        "description": "Game initialization phase where the board is created and fixed pieces are placed automatically. The board consists of a 25x25 grid with coordinates from (-12,-12) to (12,12). Special golden line positions are marked for Portal movement. Fixed pieces include Void pieces at (0,12) and (0,-12), Amalgam pieces at (0,6) and (0,-6), and Portal pieces at (±6,±6).",
+        "system_actions": [
+          "Create 625 slot elements in 25x25 grid",
+          "Map each slot to coordinate system",
+          "Place 8 fixed starting pieces",
+          "Mark golden line positions",
+          "Initialize piece tracking dictionary"
+        ],
+        "ui_setup": [
+          "Hide all ability buttons",
+          "Hide turn indicators",
+          "Show board grid"
+        ],
+        "next_state": "setup_phase_squares"
+      },
+  
+      "setup_phase_squares": {
+        "id": "setup_squares",
+        "description": "Squares player places one piece during setup. Player must select a piece type (Ruby, Pearl, Amber, or Jade) and place it in the bottom half of the board (y <= -7). Each player gets 2 of each piece type during setup, for a total of 8 pieces per player placed over 16 turns.",
+        "active_player": "Squares",
+        "ui_state": {
+          "visible_elements": ["board", "square_piece_selector", "squares_turn_indicator"],
+          "placement_indicators": "Green indicators on all valid empty positions with y <= -7"
+        },
+        "valid_actions": [
+          {
+            "action": "select_piece_type",
+            "validation": "Piece type still has remaining pieces (max 2 each)",
+            "result": "Show green indicators on valid placement positions"
+          },
+          {
+            "action": "click_valid_slot",
+            "validation": "Slot is empty AND y <= -7",
+            "result": "Place piece, increment setup counter",
+            "next_state": "setup_phase_circles"
+          },
+          {
+            "action": "auto_setup_button",
+            "result": "Place all remaining pieces automatically",
+            "next_state": "main_game_start"
+          }
+        ]
+      },
+  
+      "setup_phase_circles": {
+        "id": "setup_circles",
+        "description": "Circles player places one piece during setup. Identical to Squares setup but pieces must be placed in top half (y >= 7).",
+        "active_player": "Circles",
+        "ui_state": {
+          "visible_elements": ["board", "circle_piece_selector", "circles_turn_indicator"],
+          "placement_indicators": "Green indicators on all valid empty positions with y >= 7"
+        },
+        "valid_actions": [
+          {
+            "action": "select_piece_type",
+            "validation": "Piece type still has remaining pieces (max 2 each)",
+            "result": "Show green indicators on valid placement positions"
+          },
+          {
+            "action": "click_valid_slot",
+            "validation": "Slot is empty AND y >= 7",
+            "result": "Place piece, increment setup counter",
+            "next_state": "Check setup_counter: if < 16 then setup_phase_squares, else main_game_start"
+          }
+        ],
+        "setup_completion_check": {
+          "condition": "setup_counter == 16",
+          "action": "Transition to main game"
+        }
+      },
+  
+      "main_game_start": {
+        "id": "main_start",
+        "description": "Main game begins. System checks all pieces for available abilities and stores them for the turn. Squares player goes first.",
+        "system_actions": [
+          "Set current player to Squares",
+          "Scan board for all ability combinations",
+          "Store ability availability flags",
+          "Save board state for reset functionality"
+        ],
+        "next_state": "player_turn_movement"
+      },
+  
+      "player_turn_movement": {
+        "id": "turn_movement",
+        "description": "Player's movement phase (Turn Step 1). Player selects one of their pieces and moves it to a valid position. Movement rules vary by piece type. After movement, automatic attack phase occurs, then abilities are checked.",
+        "turn_phase": 1,
+        "active_player": "current_player",
+        "ui_state": {
+          "visible_elements": ["board", "reset_button", "turn_indicator"],
+          "ability_buttons": "Hidden until after movement"
+        },
+        "valid_actions": [
+          {
+            "action": "click_own_piece",
+            "validation": "Piece belongs to current player",
+            "result": "Calculate and display valid moves with green indicators",
+            "movement_calculation": {
+              "standard": "All adjacent empty positions (8 directions)",
+              "nexus": "Extended movement if adjacent to Pearl/Amber combination",
+              "portal_phase": "Can phase through consecutive Portals in straight line",
+              "portal_special": {
+                "golden_line_movement": "Portals can jump to connected golden line positions",
+                "swap_ability": "Show Portal Swap button if Portal selected"
+              }
+            }
+          },
+          {
+            "action": "click_valid_move",
+            "validation": "Target position is highlighted green",
+            "result": "Move piece with animation",
+            "next_sequence": [
+              "Execute automatic attacks",
+              "Check for triggered abilities",
+              "Transition to turn_step_2"
+            ]
+          },
+          {
+            "action": "portal_swap_toggle",
+            "validation": "Selected piece is Portal",
+            "result": "Show purple indicators on swappable pieces",
+            "swap_targets": "Friendly non-Portal pieces on golden line positions"
+          },
+          {
+            "action": "right_click",
+            "result": "Deselect piece and hide indicators"
+          }
+        ],
+        "attack_resolution": {
+          "standard_piece": "Remove adjacent enemy non-Portal pieces",
+          "portal_piece": "Remove adjacent enemy Portal pieces only",
+          "void_piece": "Remove ALL adjacent enemy pieces"
+        }
+      },
+  
+      "player_turn_abilities": {
+        "id": "turn_abilities",
+        "description": "Player's ability phase (Turn Step 2). Player can use abilities triggered by piece combinations. Multiple abilities may be available and can be used in sequence.",
+        "turn_phase": 2,
+        "ui_state": {
+          "visible_elements": ["board", "end_turn_button", "reset_button", "available_ability_buttons"],
+          "ability_availability": "Show buttons only for triggered abilities"
+        },
+        "ability_resolution_sequence": {
+          "fireball": {
+            "toggle_on": "Show directional arrows at Ruby positions",
+            "click_arrow": "Launch fireball animation in that direction",
+            "effect": "Remove first enemy piece in line (range 6, or 9 if amplified)",
+            "completion": "Hide button, check for more abilities"
+          },
+          "tidal_wave": {
+            "toggle_on": "Show directional arrows at Pearl positions",
+            "click_arrow": "Execute area removal",
+            "effect": "Remove all enemies in expanding cone area",
+            "completion": "Hide button, check for more abilities"
+          },
+          "sap": {
+            "toggle_on": "Show directional arrows at Amber positions",
+            "click_arrow": "Execute line removal",
+            "effect": "Remove all enemies on line between Ambers",
+            "completion": "Hide button, check for more abilities"
+          },
+          "launch": {
+            "phase_1": "Show blue indicators on launchable pieces",
+            "click_piece": "Select piece to launch",
+            "phase_2": "Show green indicators on valid landing spots",
+            "click_destination": "Launch piece with arc animation",
+            "effect": "Move piece, remove enemy at destination if present",
+            "completion": "Check abilities at new position"
+          }
+        },
+        "valid_actions": [
+          {
+            "action": "toggle_ability",
+            "result": "Show targeting indicators for that ability"
+          },
+          {
+            "action": "execute_ability",
+            "result": "Resolve ability effect, remove targets, hide ability button"
+          },
+          {
+            "action": "end_turn",
+            "result": "Switch to other player",
+            "next_state": "player_turn_movement with swapped player"
+          },
+          {
+            "action": "reset_turn",
+            "result": "Restore board to state at turn start",
+            "next_state": "player_turn_movement"
+          }
+        ]
+      },
+  
+      "game_over": {
+        "id": "game_end",
+        "description": "Game has ended with a winner. Victory is achieved either by moving your Void piece to the enemy's Void starting position, or by eliminating all enemy pieces.",
+        "victory_conditions": {
+          "void_victory": {
+            "circles_win": "Void Circle reaches position (0, -6)",
+            "squares_win": "Void Square reaches position (0, 6)"
+          },
+          "elimination_victory": "All pieces of one player have been removed"
+        },
+        "ui_state": {
+          "winner_overlay": "Display '[Winner] Win' message at screen center",
+          "board_state": "Frozen, no further interactions"
+        }
+      }
+    },
+  
+    // ==========================================
+    // DETAILED MOVEMENT RULES
+    // ==========================================
+    "movement_rules": {
+      "standard_movement": {
+        "description": "Basic movement available to all pieces",
+        "calculation": "All 8 adjacent positions that are empty and within board bounds",
+        "special_cases": {
+          "portal_restriction": "Portal pieces can only move to/land on golden line positions"
+        }
+      },
+      
+      "nexus_movement": {
+        "description": "Extended movement when specific piece combinations exist",
+        "activation": "When Pearl and Amber (or Amalgam) pieces of any player are adjacent",
+        "calculation": [
+          "Find all Nexus formations (Pearl-Amber adjacencies)",
+          "For each Nexus, add all adjacent empty positions to movement options",
+          "Remove duplicates and positions already in standard movement"
+        ],
+        "portal_special": "Portal pieces using Nexus movement still restricted to golden lines"
+      },
+      
+      "portal_phase": {
+        "description": "Ability to phase through pieces in straight lines",
+        "non_portal_pieces": {
+          "rule": "Can phase through consecutive Portal pieces in any of 8 directions",
+          "calculation": "Continue in direction until non-Portal piece or board edge, land in first empty space"
+        },
+        "portal_pieces": {
+          "rule": "Can phase through ANY pieces in straight lines",
+          "calculation": "Continue through all pieces until empty golden line position found"
+        }
+      },
+      
+      "golden_line_movement": {
+        "description": "Special movement for Portal pieces along golden lines",
+        "calculation": "Portal can jump to any connected golden line position as defined in coordinate_system.special_positions.golden_lines"
+      },
+      
+      "portal_swap": {
+        "description": "Portal ability to swap with friendly pieces",
+        "activation": "When Portal piece is selected",
+        "valid_targets": "Friendly non-Portal pieces that are on golden line positions",
+        "effect": "Pieces exchange positions, both positions are attacked after swap"
+      }
+    },
+  
+    // ==========================================
+    // DETAILED ABILITY MECHANICS
+    // ==========================================
+    "ability_mechanics": {
+      "ability_detection": {
+        "description": "System continuously checks for ability triggers after any piece movement",
+        "ruby_fireball": {
+          "trigger": "Two Ruby/Amalgam pieces of same player are adjacent",
+          "directions": "Two possible directions perpendicular to piece alignment",
+          "void_check": "If Void adjacent in firing direction, ability is amplified"
+        },
+        "pearl_tidal_wave": {
+          "trigger": "Two Pearl/Amalgam pieces of same player are adjacent",
+          "area_shape": "Expanding cone in two directions"
+        },
+        "amber_sap": {
+          "trigger": "Two Amber/Amalgam pieces of same player are aligned (not just adjacent)",
+          "alignment": "Horizontal, vertical, or diagonal line"
+        },
+        "jade_launch": {
+          "trigger": "Two Jade/Amalgam pieces of same player are adjacent",
+          "targets": "Pieces immediately beyond Jade pair"
+        }
+      },
+      
+      "void_amplification": {
+        "description": "Void pieces amplify abilities when positioned correctly",
+        "fireball": {
+          "condition": "Void adjacent to Ruby pair in line of fire",
+          "effect": "Range increases from 6 to 9, can target Portals"
+        },
+        "tidal_wave": {
+          "condition": "Void adjacent to Pearl pair in wave direction",
+          "effect": "Area increases: forward 4→5, width 2→3"
+        },
+        "sap": {
+          "condition": "Void on line between Amber pieces",
+          "effect": "Adds two parallel lines to removal area, can target Portals"
+        },
+        "launch": {
+          "condition": "Void adjacent to launch position",
+          "effect": "Range increases from 4 to 6"
+        }
+      },
+      
+      "ability_targeting": {
+        "multiple_options": {
+          "description": "When multiple ability combinations exist, all are shown simultaneously",
+          "player_choice": "Player selects which ability and direction to use by clicking specific indicator"
+        },
+        "target_validation": {
+          "fireball": "First enemy piece in line, Portals block unless amplified",
+          "tidal_wave": "All enemy pieces in calculated area, Portals immune unless amplified",
+          "sap": "All enemy pieces on line(s), Portals immune unless amplified",
+          "launch": "Can land on empty or enemy-occupied positions"
+        }
+      }
+    },
+  
+    // ==========================================
+    // INPUT HANDLING AND INTERACTIONS
+    // ==========================================
+    "input_handling": {
+      "mouse_interactions": {
+        "left_click": {
+          "on_piece": "Select if own piece, execute action if ability indicator",
+          "on_slot": "Move if valid, place piece if setup phase",
+          "on_indicator": "Execute associated action"
+        },
+        "right_click": {
+          "any_position": "Cancel current selection, hide all indicators"
+        },
+        "hover": {
+          "on_piece": "Optional: Show movement preview",
+          "on_indicator": "Optional: Highlight affected area"
+        }
+      },
+      
+      "click_detection": {
+        "piece_selection": {
+          "hit_area": "Circle with radius 20 pixels from piece center",
+          "z_order_priority": "Pieces have higher priority than slots"
+        },
+        "slot_selection": {
+          "hit_area": "40x40 pixel square",
+          "validation": "Only responds if slot is valid for current action"
+        },
+        "indicator_selection": {
+          "movement_indicators": "40x40 pixel area matching slot",
+          "ability_arrows": "44x83 pixel rectangle at arrow position",
+          "launch_indicators": "Circle with radius 20 pixels"
+        }
+      }
+    },
+  
+    // ==========================================
+    // RENDERING LAYERS AND Z-ORDER
+    // ==========================================
+    "rendering_order": {
+      "z_layers": {
+        "0": "Board background texture",
+        "5": "Slot elements",
+        "10": "Movement indicators (green/purple)",
+        "11": "Launch indicators (blue)",
+        "15": "Ability arrow indicators",
+        "20": "Pieces (normal state)",
+        "21": "Pieces (during launch animation)",
+        "25": "Fireball projectile",
+        "30": "UI overlays (winner message)"
+      },
+      "transparency_handling": {
+        "indicators": "Render with 0.5 alpha blend",
+        "animations": "Maintain opacity unless specified"
+      }
+    }
+  }
